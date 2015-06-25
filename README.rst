@@ -29,7 +29,9 @@ worker in two different threads, ``runworker`` to run separate workers,
 and ``runwsserver`` to run a Twisted-based WebSocket server.
 
 You should place consumers in either your ``views.py`` or a ``consumers.py``.
-Here's an example of WebSocket consumers for basic chat::
+Here's an example of WebSocket consumers for basic chat:
+
+.. code-block:: python
 
     import redis
     from channels import Channel
@@ -56,9 +58,10 @@ Here's an example of WebSocket consumers for basic chat::
         # you'd want expiring keys here in real life.
 
 Alternately, you can just push some code outside of a normal view into a worker
-thread::
+thread:
 
-    
+.. code-block:: python
+
     from django.shortcuts import render
     from channels import Channel
 

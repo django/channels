@@ -6,7 +6,9 @@ Channels is available on PyPI - to install it, just run::
     pip install -U channels
 
 Once that's done, you should add ``channels`` to your
-``INSTALLED_APPS`` setting::
+``INSTALLED_APPS`` setting:
+
+.. code-block:: python
 
     INSTALLED_APPS = (
         'django.contrib.auth',
