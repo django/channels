@@ -60,7 +60,9 @@ How do we use channels?
 -----------------------
 
 That's what a channel is, but how is Django using them? Well, inside Django
-you can connect a function to consume a channel, like so::
+you can connect a function to consume a channel, like so:
+
+.. code-block:: python
 
     @Channel.consumer("channel-name")
     def my_consumer(something, **kwargs):
@@ -99,7 +101,9 @@ message and can write out zero to many other channel messages.
 Now, let's make a channel for requests (called ``django.wsgi.request``), 
 and a channel per client for responses (e.g. ``django.wsgi.respsonse.o4F2h2Fd``),
 with the response channel a property (``send_channel``) of the request message.
-Suddenly, a view is merely another example of a consumer::
+Suddenly, a view is merely another example of a consumer:
+
+.. code-block:: python
 
     @Channel.consumer("django.wsgi.request")
     def my_consumer(send_channel, **request_data):
