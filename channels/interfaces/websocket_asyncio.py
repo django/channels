@@ -19,7 +19,7 @@ class WebsocketAsyncioInterface(object):
 
     def run(self):
         self.factory = get_factory(WebSocketServerFactory)(
-            "ws://0.0.0.0:{0:d}".format(self.port, debug=False))
+            "ws://0.0.0.0:{:d}".format(self.port), debug=False)
         self.factory.protocol = get_protocol(WebSocketServerProtocol)
         self.loop = asyncio.get_event_loop()
         coro = self.loop.create_server(self.factory, '0.0.0.0', self.port)

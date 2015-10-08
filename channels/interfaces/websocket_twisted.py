@@ -20,7 +20,7 @@ class WebsocketTwistedInterface(object):
 
     def run(self):
         self.factory = get_factory(WebSocketServerFactory)(
-            "ws://0.0.0.0:{0:d}".format(self.port, debug=False))
+            "ws://0.0.0.0:{:d}".format(self.port), debug=False)
         self.factory.protocol = get_protocol(WebSocketServerProtocol)
         reactor.listenTCP(self.port, self.factory)
         reactor.callInThread(self.backend_reader)

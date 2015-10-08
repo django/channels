@@ -27,8 +27,8 @@ class Command(BaseCommand):
             self.stdout.write(
                 "Running Twisted/Autobahn WebSocket interface server")
             self.stdout.write(
-                " Channel backend: %s" % channel_backend)
-            self.stdout.write(" Listening on: ws://0.0.0.0:%i" % port)
+                " Channel backend: {}".format(channel_backend))
+            self.stdout.write(" Listening on: ws://0.0.0.0:{:d}".format(port))
             WebsocketTwistedInterface(
                 channel_backend=channel_backend, port=port).run()
         else:
@@ -36,7 +36,7 @@ class Command(BaseCommand):
                 WebsocketAsyncioInterface
             self.stdout.write(
                 "Running asyncio/Autobahn WebSocket interface server")
-            self.stdout.write(" Channel backend: %s" % channel_backend)
-            self.stdout.write(" Listening on: ws://0.0.0.0:%i" % port)
+            self.stdout.write(" Channel backend: {}".format(channel_backend))
+            self.stdout.write(" Listening on: ws://0.0.0.0:{:d}".format(port))
             WebsocketAsyncioInterface(
                 channel_backend=channel_backend, port=port).run()
