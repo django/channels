@@ -16,7 +16,8 @@ class Channel(object):
     "default" one by default.
     """
 
-    def __init__(self, name, alias=DEFAULT_CHANNEL_BACKEND, channel_backend=None):
+    def __init__(
+            self, name, alias=DEFAULT_CHANNEL_BACKEND, channel_backend=None):
         """
         Create an instance for the channel named "name"
         """
@@ -42,7 +43,9 @@ class Channel(object):
         on a channel name - just provides a way to avoid clashing for
         response channels.
         """
-        return "%s.%s" % (prefix, "".join(random.choice(string.ascii_letters) for i in range(32)))
+        return "{}.{}".format(
+            prefix, "".join(
+                random.choice(string.ascii_letters) for i in range(32)))
 
     def as_view(self):
         """
@@ -63,7 +66,8 @@ class Group(object):
     of the group after an expiry time (keep re-adding to keep them in).
     """
 
-    def __init__(self, name, alias=DEFAULT_CHANNEL_BACKEND, channel_backend=None):
+    def __init__(
+            self, name, alias=DEFAULT_CHANNEL_BACKEND, channel_backend=None):
         self.name = name
         if channel_backend:
             self.channel_backend = channel_backend

@@ -12,11 +12,14 @@ class Command(BaseCommand):
         channel_backend = channel_backends[DEFAULT_CHANNEL_BACKEND]
         if channel_backend.local_only:
             raise CommandError(
-                "You have a process-local channel backend configured, and so cannot run separate workers.\n"
-                "Configure a network-based backend in CHANNEL_BACKENDS to use this command."
+                "You have a process-local channel backend configured, and so "
+                "cannot run separate workers.\n"
+                "Configure a network-based backend in CHANNEL_BACKENDS to "
+                "use this command."
             )
         # Launch a worker
-        self.stdout.write("Running worker against backend %s" % channel_backend)
+        self.stdout.write(
+            "Running worker against backend %s" % channel_backend)
         # Optionally provide an output callback
         callback = None
         if options.get("verbosity", 1) > 1:
@@ -35,5 +38,5 @@ class Command(BaseCommand):
         now = time.time()
         year, month, day, hh, mm, ss, x, y, z = time.localtime(now)
         s = "%02d/%3s/%04d %02d:%02d:%02d" % (
-                day, BaseHTTPRequestHandler.monthname[month], year, hh, mm, ss)
+            day, BaseHTTPRequestHandler.monthname[month], year, hh, mm, ss)
         return s

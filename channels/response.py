@@ -24,9 +24,9 @@ def decode_response(value):
     Decodes a response JSONish value to a HttpResponse object.
     """
     response = HttpResponse(
-        content = value['content'],
-        content_type = value['content_type'],
-        status = value['status_code'],
+        content=value['content'],
+        content_type=value['content_type'],
+        status=value['status_code'],
     )
     for cookie in value['cookies']:
         response.cookies.load(cookie)

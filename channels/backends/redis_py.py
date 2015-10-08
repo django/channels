@@ -13,8 +13,11 @@ class RedisChannelBackend(BaseChannelBackend):
     multiple processes fine, but it's going to be pretty bad at throughput.
     """
 
-    def __init__(self, routing, expiry=60, host="localhost", port=6379, prefix="django-channels:"):
-        super(RedisChannelBackend, self).__init__(routing=routing, expiry=expiry)
+    def __init__(
+            self, routing, expiry=60, host="localhost", port=6379,
+            prefix="django-channels:"):
+        super(RedisChannelBackend, self).__init__(
+            routing=routing, expiry=expiry)
         self.host = host
         self.port = port
         self.prefix = prefix
@@ -46,7 +49,8 @@ class RedisChannelBackend(BaseChannelBackend):
             self.prefix + channel,
             key,
         )
-        # Set list to expire when message does (any later messages will bump this)
+        # Set list to expire when message does
+        # (any later messages will bump this)
         self.connection.expire(
             self.prefix + channel,
             self.expiry + 10,
@@ -58,12 +62,14 @@ class RedisChannelBackend(BaseChannelBackend):
             raise ValueError("Cannot receive on empty channel list!")
         # Get a message from one of our channels
         while True:
-            result = self.connection.blpop([self.prefix + channel for channel in channels], timeout=1)
+            result = self.connection.blpop(
+                [self.prefix + channel for channel in channels], timeout=1)
             if result:
                 content = self.connection.get(result[1])
                 if content is None:
                     continue
-                return result[0][len(self.prefix):].decode("utf-8"), json.loads(content.decode("utf-8"))
+                return result[0][len(self.prefix):].decode("utf-8"), \
+                    json.loads(content.decode("utf-8"))
             else:
                 return None, None
 
@@ -72,7 +78,7 @@ class RedisChannelBackend(BaseChannelBackend):
         Adds the channel to the named group for at least 'expiry'
         seconds (expiry defaults to message expiry if not provided).
         """
-        key = "%s:group:%s" % (self.prefix, group)
+        key = "{}:group:{}".format(self.prefix, group)
         self.connection.zadd(
             key,
             **{channel: time.time() + (expiry or self.expiry)}
@@ -83,7 +89,7 @@ class RedisChannelBackend(BaseChannelBackend):
         Removes the channel from the named group if it is in the group;
         does nothing otherwise (does not error)
         """
-        key = "%s:group:%s" % (self.prefix, group)
+        key = "{}:group:{}".format(self.prefix, group)
         self.connection.zrem(
             key,
             channel,
@@ -93,15 +99,11 @@ class RedisChannelBackend(BaseChannelBackend):
         """
         Returns an iterable of all channels in the group.
         """
-        key = "%s:group:%s" % (self.prefix, group)
+        key = "{}:group:{}".format(self.prefix, group)
         # Discard old channels
         self.connection.zremrangebyscore(key, 0, int(time.time()) - 10)
         # Return current lot
-        return self.connection.zrange(
-            key,
-            0,
-            -1,
-        )
+        return self.connection.zrange(key, 0, -1, )
 
     # TODO: send_group efficient implementation using Lua
 
@@ -110,15 +112,16 @@ class RedisChannelBackend(BaseChannelBackend):
         Attempts to get a lock on the named channel. Returns True if lock
         obtained, False if lock not obtained.
         """
-        key = "%s:lock:%s" % (self.prefix, channel)
+        key = "{}:lock:{}".format(self.prefix, channel)
         return bool(self.connection.setnx(key, "1"))
 
     def unlock_channel(self, channel):
         """
         Unlocks the named channel. Always succeeds.
         """
-        key = "%s:lock:%s" % (self.prefix, channel)
+        key = "{}:lock:{}".format(self.prefix, channel)
         self.connection.delete(key)
 
     def __str__(self):
-        return "%s(host=%s, port=%s)" % (self.__class__.__name__, self.host, self.port)
+        return "{}(host={}, port={})".format(
+            self.__class__.__name__, self.host, self.port)

@@ -1,7 +1,6 @@
-import django
 import threading
-from django.core.management.commands.runserver import Command as RunserverCommand
-from django.core.management import CommandError
+from django.core.management.commands.runserver import Command as \
+    RunserverCommand
 from channels import channel_backends, DEFAULT_CHANNEL_BACKEND
 from channels.worker import Worker
 from channels.adapters import UrlConsumer
@@ -23,13 +22,16 @@ class Command(RunserverCommand):
     def inner_run(self, *args, **options):
         # Check a handler is registered for http reqs
         self.channel_backend = channel_backends[DEFAULT_CHANNEL_BACKEND]
-        if not self.channel_backend.registry.consumer_for_channel("http.request"):
+        if not self.channel_backend.registry.consumer_for_channel(
+                "http.request"):
             # Register the default one
-            self.channel_backend.registry.add_consumer(UrlConsumer(), ["http.request"])
+            self.channel_backend.registry.add_consumer(
+                UrlConsumer(), ["http.request"])
         # Note that this is the right one on the console
         self.stdout.write("Worker thread running, channels enabled")
         if self.channel_backend.local_only:
-            self.stdout.write("Local channel backend detected, no remote channels support")
+            self.stdout.write(
+                "Local channel backend detected, no remote channels support")
         # Launch a worker thread
         worker = WorkerThread(self.channel_backend)
         worker.daemon = True

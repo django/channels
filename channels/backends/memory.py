@@ -7,6 +7,7 @@ queues = {}
 groups = {}
 locks = set()
 
+
 class InMemoryChannelBackend(BaseChannelBackend):
     """
     In-memory channel implementation. Intended only for use with threading,
@@ -16,10 +17,12 @@ class InMemoryChannelBackend(BaseChannelBackend):
     local_only = True
 
     def send(self, channel, message):
-        # Try JSON encoding it to make sure it would, but store the native version
+        # Try JSON encoding it to make sure it would, but store the
+        # native version
         json.dumps(message)
         # Add to the deque, making it if needs be
-        queues.setdefault(channel, deque()).append((message, time.time() + self.expiry))
+        queues.setdefault(channel, deque()).append(
+            (message, time.time() + self.expiry))
 
     def receive_many(self, channels):
         if not channels:
@@ -55,7 +58,8 @@ class InMemoryChannelBackend(BaseChannelBackend):
         Adds the channel to the named group for at least 'expiry'
         seconds (expiry defaults to message expiry if not provided).
         """
-        groups.setdefault(group, {})[channel] = time.time() + (expiry or self.expiry)
+        groups.setdefault(group, {})[channel] = time.time() + \
+                                                (expiry or self.expiry)
 
     def group_discard(self, group, channel):
         """
@@ -79,8 +83,8 @@ class InMemoryChannelBackend(BaseChannelBackend):
         Attempts to get a lock on the named channel. Returns True if lock
         obtained, False if lock not obtained.
         """
-        # Probably not perfect for race conditions, but close enough considering
-        # it shouldn't be used.
+        # Probably not perfect for race conditions, but close
+        # enough considering it shouldn't be used.
         if channel not in locks:
             locks.add(channel)
             return True

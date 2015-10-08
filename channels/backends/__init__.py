@@ -19,11 +19,16 @@ class BackendManager(object):
         try:
             backend_class = import_string(self.configs[name]['BACKEND'])
         except KeyError:
-            raise InvalidChannelBackendError("No BACKEND specified for %s" % name)
+            msg = "No BACKEND specified for {}".format(name)
+            raise InvalidChannelBackendError(msg)
         except ImportError as e:
-            raise InvalidChannelBackendError("Cannot import BACKEND %r specified for %s" % (self.configs[name]['BACKEND'], name))
+            msg = "Cannot import BACKEND {!r} specified for {}".format(
+                self.configs[name]['BACKEND'], name)
+            raise InvalidChannelBackendError(msg)
         # Initialise and pass config
-        instance = backend_class(**{k.lower(): v for k, v in self.configs[name].items() if k != "BACKEND"})
+        instance = backend_class(
+            **{k.lower(): v for k, v in self.configs[name].items()
+               if k != "BACKEND"})
         instance.alias = name
         return instance
 

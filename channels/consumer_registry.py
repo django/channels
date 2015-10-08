@@ -20,9 +20,11 @@ class ConsumerRegistry(object):
             if isinstance(routing, six.string_types):
                 module_name, variable_name = routing.rsplit(".", 1)
                 try:
-                    routing = getattr(importlib.import_module(module_name), variable_name)
+                    routing = getattr(
+                        importlib.import_module(module_name), variable_name)
                 except (ImportError, AttributeError):
-                    raise ImproperlyConfigured("Cannot import channel routing %r" % routing)
+                    msg = "Cannot import channel routing {!r}".format(routing)
+                    raise ImproperlyConfigured(msg)
             # Load consumers into us
             for channel, handler in routing.items():
                 self.add_consumer(handler, [channel])
@@ -35,17 +37,19 @@ class ConsumerRegistry(object):
         if isinstance(consumer, six.string_types):
             module_name, variable_name = consumer.rsplit(".", 1)
             try:
-                consumer = getattr(importlib.import_module(module_name), variable_name)
+                consumer = getattr(
+                    importlib.import_module(module_name), variable_name)
             except (ImportError, AttributeError):
-                raise ImproperlyConfigured("Cannot import consumer %r" % consumer)
+                msg = "Cannot import consumer {!r}".format(consumer)
+                raise ImproperlyConfigured(msg)
         # Register on each channel, checking it's unique
         for channel in channels:
             if channel in self.consumers:
-                raise ValueError("Cannot register consumer %s - channel %r already consumed by %s" % (
-                    name_that_thing(consumer),
-                    channel,
-                    name_that_thing(self.consumers[channel]),
-                ))
+                msg = "Cannot register consumer {} - channel {!r} already" \
+                      " consumed by {}".format(
+                          name_that_thing(consumer), channel,
+                          name_that_thing(self.consumers[channel]))
+                raise ValueError(msg)
             self.consumers[channel] = consumer
 
     def all_channel_names(self):

@@ -1,6 +1,7 @@
 import time
 
-from autobahn.twisted.websocket import WebSocketServerProtocol, WebSocketServerFactory
+from autobahn.twisted.websocket import WebSocketServerProtocol, \
+    WebSocketServerFactory
 from twisted.internet import reactor
 
 from .websocket_autobahn import get_protocol, get_factory
@@ -18,7 +19,8 @@ class WebsocketTwistedInterface(object):
         self.port = port
 
     def run(self):
-        self.factory = get_factory(WebSocketServerFactory)("ws://0.0.0.0:%i" % self.port, debug=False)
+        self.factory = get_factory(WebSocketServerFactory)(
+            "ws://0.0.0.0:{0:d}".format(self.port, debug=False))
         self.factory.protocol = get_protocol(WebSocketServerProtocol)
         reactor.listenTCP(self.port, self.factory)
         reactor.callInThread(self.backend_reader)

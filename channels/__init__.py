@@ -4,6 +4,8 @@ __version__ = "0.8"
 DEFAULT_CHANNEL_BACKEND = "default"
 from .backends import BackendManager
 from django.conf import settings
+
+
 channel_backends = BackendManager(
     getattr(settings, "CHANNEL_BACKENDS", {
         DEFAULT_CHANNEL_BACKEND: {

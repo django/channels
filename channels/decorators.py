@@ -18,7 +18,9 @@ def linearize(func):
     def inner(message, *args, **kwargs):
         # Make sure there's a reply channel
         if not message.reply_channel:
-            raise ValueError("No reply_channel sent to consumer; @no_overlap can only be used on messages containing it.")
+            msg = "No reply_channel sent to consumer; @no_overlap can only " \
+                  "be used on messages containing it."
+            raise ValueError(msg)
         # Get the lock, or re-queue
         locked = message.channel_backend.lock_channel(message.reply_channel)
         if not locked:
@@ -43,15 +45,21 @@ def channel_session(func):
     def inner(message, *args, **kwargs):
         # Make sure there's a reply_channel
         if not message.reply_channel:
-            raise ValueError("No reply_channel sent to consumer; @channel_session can only be used on messages containing it.")
+            msg = "No reply_channel sent to consumer; @channel_session can " \
+                  "only be used on messages containing it."
+            raise ValueError(msg)
         # Make sure there's NOT a channel_session already
         if hasattr(message, "channel_session"):
-            raise ValueError("channel_session decorator wrapped inside another channel_session decorator")
+            msg = "channel_session decorator wrapped inside another " \
+                  "channel_session decorator"
+            raise ValueError(msg)
         # Turn the reply_channel into a valid session key length thing.
         # We take the last 24 bytes verbatim, as these are the random section,
         # and then hash the remaining ones onto the start, and add a prefix
         reply_name = str(message.reply_channel.name).encode()
-        session_key = b"skt" + str(hashlib.md5(reply_name[:-24]).hexdigest()[:8]).encode() + reply_name[-24:]
+        session_key = b"skt" + \
+            str(hashlib.md5(reply_name[:-24]).hexdigest()[:8]).encode() + \
+            reply_name[-24:]
         # Make a session storage
         session_engine = import_module(settings.SESSION_ENGINE)
         session = session_engine.SessionStore(session_key=session_key)
@@ -88,10 +96,14 @@ def http_session(func):
     @functools.wraps(func)
     def inner(message, *args, **kwargs):
         if "cookies" not in message.content and "get" not in message.content:
-            raise ValueError("No cookies or get sent to consumer - cannot initialise http_session")
+            msg = "No cookies or get sent to consumer - cannot initialise " \
+                  "http_session"
+            raise ValueError(msg)
         # Make sure there's NOT a http_session already
         if hasattr(message, "http_session"):
-            raise ValueError("http_session decorator wrapped inside another http_session decorator")
+            msg = "http_session decorator wrapped inside another " \
+                  "http_session decorator"
+            raise ValueError(msg)
         # Make sure there's a session key
         session_key = None
         if "get" in message.content:
@@ -100,7 +112,8 @@ def http_session(func):
             except IndexError:
                 pass
         if "cookies" in message.content and session_key is None:
-            session_key = message.content['cookies'].get(settings.SESSION_COOKIE_NAME)
+            session_key = message.content['cookies'].get(
+                settings.SESSION_COOKIE_NAME)
         # Make a session storage
         if session_key:
             session_engine = import_module(settings.SESSION_ENGINE)

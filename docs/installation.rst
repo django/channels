@@ -32,3 +32,6 @@ environment::
     $ cd channels
     $ <activate your project’s virtual environment>
     (environment) $ pip install -e .  # the dot specifies the current repo
+
+Please note that a Django project with Channels installed will not run until
+configured properly.  See :doc:`getting-started` for configuration.
