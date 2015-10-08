@@ -37,6 +37,6 @@ class Command(BaseCommand):
         """Return the current time formatted for logging."""
         now = time.time()
         year, month, day, hh, mm, ss, x, y, z = time.localtime(now)
-        s = "%02d/%3s/%04d %02d:%02d:%02d" % (
+        s = "{:02d}/{: >3}/{:04d} {:02d}:{:02d}:{:02d}".format(
             day, BaseHTTPRequestHandler.monthname[month], year, hh, mm, ss)
         return s
