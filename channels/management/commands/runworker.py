@@ -12,14 +12,11 @@ class Command(BaseCommand):
         channel_backend = channel_backends[DEFAULT_CHANNEL_BACKEND]
         if channel_backend.local_only:
             raise CommandError(
-                "You have a process-local channel backend configured, and so "
-                "cannot run separate workers.\n"
-                "Configure a network-based backend in CHANNEL_BACKENDS to "
-                "use this command."
+                "You have a process-local channel backend configured, and so cannot run separate workers.\n"
+                "Configure a network-based backend in CHANNEL_BACKENDS to use this command."
             )
         # Launch a worker
-        self.stdout.write(
-            "Running worker against backend %s" % channel_backend)
+        self.stdout.write("Running worker against backend %s" % channel_backend)
         # Optionally provide an output callback
         callback = None
         if options.get("verbosity", 1) > 1:

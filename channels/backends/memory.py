@@ -17,12 +17,10 @@ class InMemoryChannelBackend(BaseChannelBackend):
     local_only = True
 
     def send(self, channel, message):
-        # Try JSON encoding it to make sure it would, but store the
-        # native version
+        # Try JSON encoding it to make sure it would, but store the native version
         json.dumps(message)
         # Add to the deque, making it if needs be
-        queues.setdefault(channel, deque()).append(
-            (message, time.time() + self.expiry))
+        queues.setdefault(channel, deque()).append((message, time.time() + self.expiry))
 
     def receive_many(self, channels):
         if not channels:
@@ -58,8 +56,7 @@ class InMemoryChannelBackend(BaseChannelBackend):
         Adds the channel to the named group for at least 'expiry'
         seconds (expiry defaults to message expiry if not provided).
         """
-        groups.setdefault(group, {})[channel] = time.time() + \
-                                                (expiry or self.expiry)
+        groups.setdefault(group, {})[channel] = time.time() + (expiry or self.expiry)
 
     def group_discard(self, group, channel):
         """

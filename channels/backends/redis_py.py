@@ -13,11 +13,8 @@ class RedisChannelBackend(BaseChannelBackend):
     multiple processes fine, but it's going to be pretty bad at throughput.
     """
 
-    def __init__(
-            self, routing, expiry=60, host="localhost", port=6379,
-            prefix="django-channels:"):
-        super(RedisChannelBackend, self).__init__(
-            routing=routing, expiry=expiry)
+    def __init__(self, routing, expiry=60, host="localhost", port=6379, prefix="django-channels:"):
+        super(RedisChannelBackend, self).__init__(routing=routing, expiry=expiry)
         self.host = host
         self.port = port
         self.prefix = prefix
@@ -49,8 +46,7 @@ class RedisChannelBackend(BaseChannelBackend):
             self.prefix + channel,
             key,
         )
-        # Set list to expire when message does
-        # (any later messages will bump this)
+        # Set list to expire when message does (any later messages will bump this)
         self.connection.expire(
             self.prefix + channel,
             self.expiry + 10,
@@ -62,14 +58,12 @@ class RedisChannelBackend(BaseChannelBackend):
             raise ValueError("Cannot receive on empty channel list!")
         # Get a message from one of our channels
         while True:
-            result = self.connection.blpop(
-                [self.prefix + channel for channel in channels], timeout=1)
+            result = self.connection.blpop([self.prefix + channel for channel in channels], timeout=1)
             if result:
                 content = self.connection.get(result[1])
                 if content is None:
                     continue
-                return result[0][len(self.prefix):].decode("utf-8"), \
-                    json.loads(content.decode("utf-8"))
+                return result[0][len(self.prefix):].decode("utf-8"), json.loads(content.decode("utf-8"))
             else:
                 return None, None
 
@@ -123,5 +117,4 @@ class RedisChannelBackend(BaseChannelBackend):
         self.connection.delete(key)
 
     def __str__(self):
-        return "{}(host={}, port={})".format(
-            self.__class__.__name__, self.host, self.port)
+        return "{}(host={}, port={})".format(self.__class__.__name__, self.host, self.port)

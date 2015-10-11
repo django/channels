@@ -17,8 +17,7 @@ class DatabaseChannelBackend(BaseChannelBackend):
     """
 
     def __init__(self, routing, expiry=60, db_alias=DEFAULT_DB_ALIAS):
-        super(DatabaseChannelBackend, self).__init__(
-            routing=routing, expiry=expiry)
+        super(DatabaseChannelBackend, self).__init__(routing=routing, expiry=expiry)
         self.db_alias = db_alias
 
     @property
@@ -46,8 +45,7 @@ class DatabaseChannelBackend(BaseChannelBackend):
                 app_label = "channels"
                 db_table = "django_channels"
         # Ensure its table exists
-        if Message._meta.db_table not in self.connection.introspection.\
-                table_names(self.connection.cursor()):
+        if Message._meta.db_table not in self.connection.introspection.table_names(self.connection.cursor()):
             with self.connection.schema_editor() as editor:
                 editor.create_model(Message)
         return Message
@@ -70,8 +68,7 @@ class DatabaseChannelBackend(BaseChannelBackend):
                 db_table = "django_channel_groups"
                 unique_together = [["group", "channel"]]
         # Ensure its table exists
-        if Group._meta.db_table not in self.connection.introspection.\
-                table_names(self.connection.cursor()):
+        if Group._meta.db_table not in self.connection.introspection.table_names(self.connection.cursor()):
             with self.connection.schema_editor() as editor:
                 editor.create_model(Group)
         return Group
@@ -92,8 +89,7 @@ class DatabaseChannelBackend(BaseChannelBackend):
                 app_label = "channels"
                 db_table = "django_channel_locks"
         # Ensure its table exists
-        if Lock._meta.db_table not in self.connection.introspection.\
-                table_names(self.connection.cursor()):
+        if Lock._meta.db_table not in self.connection.introspection.table_names(self.connection.cursor()):
             with self.connection.schema_editor() as editor:
                 editor.create_model(Lock)
         return Lock
@@ -110,8 +106,7 @@ class DatabaseChannelBackend(BaseChannelBackend):
             raise ValueError("Cannot receive on empty channel list!")
         self._clean_expired()
         # Get a message from one of our channels
-        message = self.channel_model.objects.filter(channel__in=channels).\
-            order_by("id").first()
+        message = self.channel_model.objects.filter(channel__in=channels).order_by("id").first()
         if message:
             self.channel_model.objects.filter(pk=message.pk).delete()
             return message.channel, json.loads(message.content)
@@ -123,12 +118,9 @@ class DatabaseChannelBackend(BaseChannelBackend):
         Cleans out expired groups and messages.
         """
         # Include a 10-second grace period because that solves some clock sync
-        self.channel_model.objects.filter(
-            expiry__lt=now() - datetime.timedelta(seconds=10)).delete()
-        self.group_model.objects.filter(
-            expiry__lt=now() - datetime.timedelta(seconds=10)).delete()
-        self.lock_model.objects.filter(
-            expiry__lt=now() - datetime.timedelta(seconds=10)).delete()
+        self.channel_model.objects.filter(expiry__lt=now() - datetime.timedelta(seconds=10)).delete()
+        self.group_model.objects.filter(expiry__lt=now() - datetime.timedelta(seconds=10)).delete()
+        self.lock_model.objects.filter(expiry__lt=now() - datetime.timedelta(seconds=10)).delete()
 
     def group_add(self, group, channel, expiry=None):
         """
@@ -138,9 +130,7 @@ class DatabaseChannelBackend(BaseChannelBackend):
         self.group_model.objects.update_or_create(
             group=group,
             channel=channel,
-            defaults={
-                "expiry": now() + datetime.timedelta(
-                    seconds=expiry or self.expiry)},
+            defaults={"expiry": now() + datetime.timedelta(seconds=expiry or self.expiry)},
         )
 
     def group_discard(self, group, channel):
@@ -167,8 +157,7 @@ class DatabaseChannelBackend(BaseChannelBackend):
         try:
             self.lock_model.objects.create(
                 channel=channel,
-                expiry=now() + datetime.timedelta(
-                    seconds=expiry or self.expiry),
+                expiry=now() + datetime.timedelta(seconds=expiry or self.expiry),
             )
         except IntegrityError:
             return False
@@ -182,5 +171,4 @@ class DatabaseChannelBackend(BaseChannelBackend):
         self.lock_model.objects.filter(channel=channel).delete()
 
     def __str__(self):
-        return "{}(alias={})".format(
-            self.__class__.__name__, self.connection.alias)
+        return "{}(alias={})".format(self.__class__.__name__, self.connection.alias)

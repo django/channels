@@ -8,8 +8,7 @@ def transfer_user(from_session, to_session):
     """
     Transfers user from HTTP session to channel session.
     """
-    to_session[auth.BACKEND_SESSION_KEY] = from_session[
-        auth.BACKEND_SESSION_KEY]
+    to_session[auth.BACKEND_SESSION_KEY] = from_session[auth.BACKEND_SESSION_KEY]
     to_session[auth.SESSION_KEY] = from_session[auth.SESSION_KEY]
     to_session[auth.HASH_SESSION_KEY] = from_session[auth.HASH_SESSION_KEY]
 
@@ -17,8 +16,7 @@ def transfer_user(from_session, to_session):
 def channel_session_user(func):
     """
     Presents a message.user attribute obtained from a user ID in the channel
-    session, rather than in the http_session. Turns on channel session
-    implicitly.
+    session, rather than in the http_session. Turns on channel session implicitly.
     """
     @channel_session
     @functools.wraps(func)
@@ -32,8 +30,7 @@ def channel_session_user(func):
         # a "session" attribute (later on, perhaps refactor contrib.auth to
         # pass around session rather than request)
         else:
-            fake_request = type("FakeRequest", (object, ),
-                                {"session": message.channel_session})
+            fake_request = type("FakeRequest", (object, ), {"session": message.channel_session})
             message.user = auth.get_user(fake_request)
         # Run the consumer
         return func(message, *args, **kwargs)

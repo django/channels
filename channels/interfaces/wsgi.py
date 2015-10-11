@@ -16,8 +16,6 @@ class WSGIInterface(WSGIHandler):
 
     def get_response(self, request):
         request.reply_channel = Channel.new_name("http.response")
-        Channel("http.request", channel_backend=self.channel_backend).send(
-            request.channel_encode())
-        channel, message = self.channel_backend.receive_many_blocking(
-            [request.reply_channel])
+        Channel("http.request", channel_backend=self.channel_backend).send(request.channel_encode())
+        channel, message = self.channel_backend.receive_many_blocking([request.reply_channel])
         return HttpResponse.channel_decode(message)
