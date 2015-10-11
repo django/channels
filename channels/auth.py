@@ -59,8 +59,7 @@ def http_session_user(func):
         # a "session" attribute (later on, perhaps refactor contrib.auth to
         # pass around session rather than request)
         else:
-            fake_request = type("FakeRequest", (object, ),
-                                {"session": message.http_session})
+            fake_request = type("FakeRequest", (object, ), {"session": message.http_session})
             message.user = auth.get_user(fake_request)
         # Run the consumer
         return func(message, *args, **kwargs)

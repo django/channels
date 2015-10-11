@@ -145,8 +145,7 @@ class DatabaseChannelBackend(BaseChannelBackend):
         Returns an iterable of all channels in the group.
         """
         self._clean_expired()
-        return list(self.group_model.objects.filter(group=group).
-                    values_list("channel", flat=True))
+        return list(self.group_model.objects.filter(group=group).values_list("channel", flat=True))
 
     def lock_channel(self, channel, expiry=None):
         """
