@@ -22,7 +22,7 @@ class ConsumerRegistry(object):
                 try:
                     routing = getattr(importlib.import_module(module_name), variable_name)
                 except (ImportError, AttributeError):
-                    raise ImproperlyConfigured("Cannot import channel routing %r" % routing)
+                    raise ImproperlyConfigured("Cannot import channel routing {!r}".format(routing))
             # Load consumers into us
             for channel, handler in routing.items():
                 self.add_consumer(handler, [channel])
@@ -37,15 +37,14 @@ class ConsumerRegistry(object):
             try:
                 consumer = getattr(importlib.import_module(module_name), variable_name)
             except (ImportError, AttributeError):
-                raise ImproperlyConfigured("Cannot import consumer %r" % consumer)
+                raise ImproperlyConfigured("Cannot import consumer {!r}".format(consumer))
         # Register on each channel, checking it's unique
         for channel in channels:
             if channel in self.consumers:
-                raise ValueError("Cannot register consumer %s - channel %r already consumed by %s" % (
+                raise ValueError("Cannot register consumer {} - channel {!r} already consumed by {}".format(
                     name_that_thing(consumer),
                     channel,
-                    name_that_thing(self.consumers[channel]),
-                ))
+                    name_that_thing(self.consumers[channel])))
             self.consumers[channel] = consumer
 
     def all_channel_names(self):

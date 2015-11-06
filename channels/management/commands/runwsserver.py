@@ -1,4 +1,3 @@
-import time
 from django.core.management import BaseCommand, CommandError
 from channels import channel_backends, DEFAULT_CHANNEL_BACKEND
 
@@ -6,8 +5,7 @@ from channels import channel_backends, DEFAULT_CHANNEL_BACKEND
 class Command(BaseCommand):
 
     def add_arguments(self, parser):
-        parser.add_argument('port', nargs='?',
-            help='Optional port number')
+        parser.add_argument('port', nargs='?', help='Optional port number')
 
     def handle(self, *args, **options):
         # Get the backend to use
@@ -24,12 +22,12 @@ class Command(BaseCommand):
         except ImportError:
             from channels.interfaces.websocket_twisted import WebsocketTwistedInterface
             self.stdout.write("Running Twisted/Autobahn WebSocket interface server")
-            self.stdout.write(" Channel backend: %s" % channel_backend)
-            self.stdout.write(" Listening on: ws://0.0.0.0:%i" % port)
+            self.stdout.write(" Channel backend: {}".format(channel_backend))
+            self.stdout.write(" Listening on: ws://0.0.0.0:{:d}".format(port))
             WebsocketTwistedInterface(channel_backend=channel_backend, port=port).run()
         else:
             from channels.interfaces.websocket_asyncio import WebsocketAsyncioInterface
             self.stdout.write("Running asyncio/Autobahn WebSocket interface server")
-            self.stdout.write(" Channel backend: %s" % channel_backend)
-            self.stdout.write(" Listening on: ws://0.0.0.0:%i" % port)
+            self.stdout.write(" Channel backend: {}".format(channel_backend))
+            self.stdout.write(" Listening on: ws://0.0.0.0:{:d}".format(port))
             WebsocketAsyncioInterface(channel_backend=channel_backend, port=port).run()

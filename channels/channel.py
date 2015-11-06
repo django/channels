@@ -42,7 +42,7 @@ class Channel(object):
         on a channel name - just provides a way to avoid clashing for
         response channels.
         """
-        return "%s.%s" % (prefix, "".join(random.choice(string.ascii_letters) for i in range(32)))
+        return "{}.{}".format(prefix, "".join(random.choice(string.ascii_letters) for i in range(32)))
 
     def as_view(self):
         """

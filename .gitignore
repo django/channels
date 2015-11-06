@@ -3,4 +3,5 @@ dist/
 docs/_build
 __pycache__/
 *.swp
-
+*.pyc
+.idea/

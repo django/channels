@@ -7,6 +7,7 @@ queues = {}
 groups = {}
 locks = set()
 
+
 class InMemoryChannelBackend(BaseChannelBackend):
     """
     In-memory channel implementation. Intended only for use with threading,
@@ -79,8 +80,8 @@ class InMemoryChannelBackend(BaseChannelBackend):
         Attempts to get a lock on the named channel. Returns True if lock
         obtained, False if lock not obtained.
         """
-        # Probably not perfect for race conditions, but close enough considering
-        # it shouldn't be used.
+        # Probably not perfect for race conditions, but close
+        # enough considering it shouldn't be used.
         if channel not in locks:
             locks.add(channel)
             return True

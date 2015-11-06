@@ -1,7 +1,5 @@
-import django
 import threading
 from django.core.management.commands.runserver import Command as RunserverCommand
-from django.core.management import CommandError
 from channels import channel_backends, DEFAULT_CHANNEL_BACKEND
 from channels.worker import Worker
 from channels.adapters import UrlConsumer

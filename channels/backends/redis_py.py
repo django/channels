@@ -74,7 +74,7 @@ class RedisChannelBackend(BaseChannelBackend):
         Adds the channel to the named group for at least 'expiry'
         seconds (expiry defaults to message expiry if not provided).
         """
-        key = "%s:group:%s" % (self.prefix, group)
+        key = "{}:group:{}".format(self.prefix, group)
         self.connection.zadd(
             key,
             **{channel: time.time() + (expiry or self.expiry)}
@@ -85,7 +85,7 @@ class RedisChannelBackend(BaseChannelBackend):
         Removes the channel from the named group if it is in the group;
         does nothing otherwise (does not error)
         """
-        key = "%s:group:%s" % (self.prefix, group)
+        key = "{}:group:{}".format(self.prefix, group)
         self.connection.zrem(
             key,
             channel,
@@ -95,15 +95,11 @@ class RedisChannelBackend(BaseChannelBackend):
         """
         Returns an iterable of all channels in the group.
         """
-        key = "%s:group:%s" % (self.prefix, group)
+        key = "{}:group:{}".format(self.prefix, group)
         # Discard old channels
         self.connection.zremrangebyscore(key, 0, int(time.time()) - 10)
         # Return current lot
-        return self.connection.zrange(
-            key,
-            0,
-            -1,
-        )
+        return self.connection.zrange(key, 0, -1, )
 
     # TODO: send_group efficient implementation using Lua
 
@@ -112,15 +108,15 @@ class RedisChannelBackend(BaseChannelBackend):
         Attempts to get a lock on the named channel. Returns True if lock
         obtained, False if lock not obtained.
         """
-        key = "%s:lock:%s" % (self.prefix, channel)
+        key = "{}:lock:{}".format(self.prefix, channel)
         return bool(self.connection.setnx(key, "1"))
 
     def unlock_channel(self, channel):
         """
         Unlocks the named channel. Always succeeds.
         """
-        key = "%s:lock:%s" % (self.prefix, channel)
+        key = "{}:lock:{}".format(self.prefix, channel)
         self.connection.delete(key)
 
     def __str__(self):
-        return "%s(host=%s, port=%s)" % (self.__class__.__name__, self.host, self.port)
+        return "{}(host={}, port={})".format(self.__class__.__name__, self.host, self.port)
