@@ -67,7 +67,7 @@ class WebRequest(Request):
         # Boring old HTTP.
         else:
             # Send request message
-            Channel("http.request").send({
+            request = {
                 "reply_channel": self.reply_channel,
                 "method": self.method,
                 "get": self.get,
@@ -77,7 +77,14 @@ class WebRequest(Request):
                 "client": [self.client.host, self.client.port],
                 "server": [self.host.host, self.host.port],
                 "path": self.path,
-            })
+            }
+            if _PY3:
+                # Make this dict serializable
+                for key in ['method', 'path']:
+                    request[key] = request[key].decode('utf-8')
+                for key in ['cookies', 'headers']:
+                    request[key] = {k.decode('utf-8'): v.decode('utf-8') for k, v in request[key].items()}
+            Channel("http.request").send(request)
 
     def connectionLost(self, reason):
         """
@@ -116,8 +123,6 @@ class WebRequest(Request):
         self.method, self.uri = command, path
         self.clientproto = version
         x = self.uri.split(b'?', 1)
-
-        print self.method
 
         # URI and GET args assignment
         if len(x) == 1:
