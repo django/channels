@@ -114,7 +114,7 @@ like supervisord to ensure it is re-run if it exits unexpectedly.
 
 If you want to enable serving of normal HTTP requests as well, just run::
 
-    python manage.py runwsserver --accept-all
+    python manage.py runallserver
 
 This interface server is built on in-process asynchronous solutions
 (Twisted for Python 2, and asyncio for Python 3) and so should be able to
