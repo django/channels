@@ -9,6 +9,7 @@ from django.core.handlers import base
 from django.core import signals
 from django.core.urlresolvers import set_script_prefix
 from django.utils.functional import cached_property
+from django.utils import six
 
 logger = logging.getLogger('django.request')
 
@@ -78,6 +79,7 @@ class AsgiRequest(http.HttpRequest):
                 # Exit loop if this was the last
                 if not chunk.get("more_content", False):
                     break
+        self._stream = six.BytesIO(self._body)
         # Other bits
         self.resolver_match = None
 
