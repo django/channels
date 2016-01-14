@@ -1,15 +1,21 @@
 # -*- coding: utf-8 -*-
 
 from django.test import TestCase
+try:
+    from unittest import mock
+except ImportError:
+    import mock
 
 from ..handler import AsgiRequest
-from ..message import Message
 
 
 class TestAsgiRequest(TestCase):
 
     def test_stream_is_readable(self):
-        text = '...'
-        message = Message({text: text}, None, None)
+        body = b'...'
+        message = {"body": body,
+                   "reply_channel": mock.Mock(),
+                   "path": "/",
+                   "method": "POST"}
         request = AsgiRequest(message)
-        self.assertEqual(request.read(), text)
+        self.assertEqual(request.read(), body)
