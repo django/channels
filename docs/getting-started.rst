@@ -412,7 +412,7 @@ Let's see what that looks like, assuming we
 have a ChatMessage model with ``message`` and ``room`` fields::
 
     # In consumers.py
-    from channels import Channel
+    from channels import Channel, Group
     from channels.decorators import channel_session
     from .models import ChatMessage
 
@@ -424,9 +424,7 @@ have a ChatMessage model with ``message`` and ``room`` fields::
             message=message.content['message'],
         )
         # Broadcast to listening sockets
-        Group("chat-%s" % room).send({
-            "content": message.content['message'],
-        })
+        Group("chat-%s" % message.content['room']).send(message.content['message'])
 
     # Connected to websocket.connect
     @channel_session
@@ -439,7 +437,7 @@ have a ChatMessage model with ``message`` and ``room`` fields::
 
     # Connected to websocket.keepalive
     @channel_session
-    def ws_add(message):
+    def ws_keepalive(message):
         Group("chat-%s" % message.channel_session['room']).add(message.reply_channel)
 
     # Connected to websocket.receive
@@ -447,8 +445,8 @@ have a ChatMessage model with ``message`` and ``room`` fields::
     def ws_message(message):
         # Stick the message onto the processing queue
         Channel("chat-messages").send({
-            "room": channel_session['room'],
-            "message": content,
+            "room": message.channel_session['room'],
+            "message": message.content,
         })
 
     # Connected to websocket.disconnect
