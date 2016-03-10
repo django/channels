@@ -184,7 +184,6 @@ set of channels (here, using Redis) to send updates to::
         # Loop through all response channels and send the update
         for reply_channel in redis_conn.smembers("readers"):
             Channel(reply_channel).send(
-                id=instance.id,
                 content=instance.content,
             )
 
