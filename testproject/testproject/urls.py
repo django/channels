@@ -1,9 +1,10 @@
-from django.conf.urls import  url
+from django.conf.urls import url
 from chtest import consumers, views
 
 
 urlpatterns = [
-    url(r'^$', views.index),
+    url(r'^$', views.websocket_test),
+    url(r'^plain-text/$', views.plain_text),
 ]
 
 

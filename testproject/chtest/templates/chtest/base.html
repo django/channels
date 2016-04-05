@@ -1,0 +1,15 @@
+<html>
+
+<script>
+  var socket = new WebSocket("ws://127.0.0.1:8000/asdasd");
+
+  socket.onopen = function() {
+      console.log("Sending hello world");
+      socket.send("hello world");
+  }
+  socket.onmessage = function(e) {
+    console.log("Got a message: " + e);
+  }
+</script>
+
+</html>
