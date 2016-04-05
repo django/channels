@@ -1,15 +1,27 @@
 <html>
+<body>
 
 <script>
-  var socket = new WebSocket("ws://127.0.0.1:8000/asdasd");
+  var echo_socket = new WebSocket("ws://127.0.0.1:8000/echo");
 
-  socket.onopen = function() {
-      console.log("Sending hello world");
-      socket.send("hello world");
+  echo_socket.onopen = function() {
+      console.log("Sending hello world, expecting a response back...");
+      echo_socket.send("hello world");
   }
-  socket.onmessage = function(e) {
-    console.log("Got a message: " + e);
+  echo_socket.onmessage = function(e) {
+    console.log("Got a message response on echo socket: " + e);
   }
 </script>
+
+
+{% block content %}
+
+<h1>Test page</h1>
+
+Please open a javascript console to see log output.
+
+{% endblock %}
+
+</body>
 
 </html>

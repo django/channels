@@ -4,6 +4,7 @@ from chtest import consumers, views
 
 urlpatterns = [
     url(r'^$', views.websocket_test),
+    url(r'^group/$', views.group_test),
     url(r'^plain-text/$', views.plain_text),
 ]
 
@@ -11,4 +12,5 @@ urlpatterns = [
 channel_routing = {
     "websocket.receive": consumers.ws_message,
     "websocket.connect": consumers.ws_connect,
+    "websocket.disconnect": consumers.ws_disconnect,
 }

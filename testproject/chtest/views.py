@@ -9,3 +9,8 @@ def plain_text(request):
 def websocket_test(request):
 
     return render_to_response("chtest/base.html")
+
+
+def group_test(request):
+
+    return render_to_response("chtest/group.html")

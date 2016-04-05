@@ -1,0 +1,21 @@
+{% extends "chtest/base.html" %}
+{% block content %}
+
+<h1>Group test</h1>
+
+This page opens a group socket, sends a message to it and expects a reply back. Please open up a javascript console.
+
+<script>
+  var group_socket = new WebSocket("ws://127.0.0.1:8000/group/");
+
+  group_socket.onopen = function() {
+      console.log("Connected to group socket, sending a hello, expecting a response...");
+      group_socket.send("Hello group");
+  }
+  group_socket.onmessage = function(e) {
+    console.log("Got a message from group: " + e);
+  }
+</script>
+
+{% endblock %}
+
