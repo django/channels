@@ -1,0 +1,28 @@
+<html>
+<body>
+
+<script>
+  var echo_socket = new WebSocket("ws://127.0.0.1:8000/echo");
+
+  echo_socket.onopen = function() {
+    var echo_msg = "Hello world";
+    console.log("Sending '" + echo_msg + "', expecting a response back...");
+    echo_socket.send(echo_msg);
+  }
+  echo_socket.onmessage = function(e) {
+    console.log("Got a message response on echo socket: " + e.data);
+  }
+</script>
+
+
+{% block content %}
+
+<h1>Test page</h1>
+
+Please open a javascript console to see log output.
+
+{% endblock %}
+
+</body>
+
+</html>
