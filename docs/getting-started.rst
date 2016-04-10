@@ -350,7 +350,9 @@ name in the path of your WebSocket request (we'll ignore auth for now - that's n
     @channel_session
     def ws_connect(message):
         # Work out room name from path (ignore slashes)
-        room = message.content['path'].strip("/")
+        room = message.content['path'].strip(b"/")
+        # django session must be JSON serializable as `bytes` are not
+        room = room.decode('utf-8')
         # Save room in session and add us to the group
         message.channel_session['room'] = room
         Group("chat-%s" % room).add(message.reply_channel)
