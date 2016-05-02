@@ -71,8 +71,8 @@ def enforce_ordering(func=None, slight=False):
     Enforces either slight (order=0 comes first, everything else isn't ordered)
     or strict (all messages exactly ordered) ordering against a reply_channel.
 
-    Uses sessions to track ordering.
-
+    Uses sessions to track ordering and socket-specific wait channels for unordered messages.
+    
     You cannot mix slight ordering and strict ordering on a channel; slight
     ordering does not write to the session after the first message to improve
     performance.
@@ -91,19 +91,26 @@ def enforce_ordering(func=None, slight=False):
             # See what the current next order should be
             next_order = message.channel_session.get("__channels_next_order", 0)
             if order == next_order or (slight and next_order > 0):
-                # Message is in right order. Maybe persist next one?
+                # Run consumer
+                func(message, *args, **kwargs)
+                # Mark next message order as available for running
                 if order == 0 or not slight:
                     message.channel_session["__channels_next_order"] = order + 1
-                # Run consumer
-                return func(message, *args, **kwargs)
+                    message.channel_session.save()
+                # Requeue any pending wait channel messages for this socket connection back onto it's original channel
+                while True:
+                    wait_channel = "wait.%s" % message.reply_channel.name
+                    channel, content = message.channel_layer.receive_many([wait_channel], block=False)
+                    if channel and content:
+                        original_channel = content.pop("original_channel")
+                        message.channel_layer.send(original_channel, content)
+                    else:
+                        break
             else:
-                # Bad ordering - warn if we're getting close to the limit
-                if getattr(message, "__doomed__", False):
-                    warnings.warn(
-                        "Enforce ordering consumer reached retry limit, message " +
-                        "being dropped. Did you decorate all protocol consumers correctly?"
-                    )
-                raise ConsumeLater()
+                # Since out of order, enqueue message temporarily to wait channel for this socket connection
+                wait_channel = "wait.%s" % message.reply_channel.name
+                message.content["original_channel"] = message.channel.name
+                message.channel_layer.send(wait_channel, message.content)
         return inner
     if func is not None:
         return decorator(func)
