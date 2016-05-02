@@ -1,6 +1,5 @@
 import functools
 import hashlib
-import warnings
 from importlib import import_module
 
 from django.conf import settings
@@ -72,7 +71,7 @@ def enforce_ordering(func=None, slight=False):
     or strict (all messages exactly ordered) ordering against a reply_channel.
 
     Uses sessions to track ordering and socket-specific wait channels for unordered messages.
-    
+
     You cannot mix slight ordering and strict ordering on a channel; slight
     ordering does not write to the session after the first message to improve
     performance.
