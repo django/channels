@@ -1,11 +1,13 @@
 from __future__ import unicode_literals
-from django.test import SimpleTestCase
 
 try:
     from unittest import mock
 except ImportError:
     import mock
 
+from channels import Channel, route, DEFAULT_CHANNEL_LAYER
+from channels.asgi import channel_layers
+from channels.tests import ChannelTestCase
 from channels.worker import Worker
 from channels.exceptions import ConsumeLater
 
@@ -24,7 +26,7 @@ class PatchedWorker(Worker):
     termed = property(get_termed, set_termed)
 
 
-class WorkerTests(SimpleTestCase):
+class WorkerTests(ChannelTestCase):
     """
     Tests that the router's routing code works correctly.
     """
@@ -60,44 +62,34 @@ class WorkerTests(SimpleTestCase):
 
         # consumer with ConsumeLater error at first call
         def _consumer(message, **kwargs):
-            if not hasattr(_consumer, '_called'):
-                _consumer._called = True
+            _consumer._call_count = getattr(_consumer, '_call_count', 0) + 1
+            if _consumer._call_count == 1:
                 raise ConsumeLater()
 
-        consumer = mock.Mock(side_effect=_consumer)
-        chenels = ['test', ]
-        channel_layer = mock.MagicMock()
-        channel_layer.router.channels = chenels
-        channel_layer.receive_many = mock.MagicMock(return_value=('test', {}))
-        channel_layer.send = mock.MagicMock()
-        channel_layer.router.match = mock.MagicMock(return_value=(consumer, {}))
+        Channel('test').send({'test': 'test'})
+        channel_layer = channel_layers[DEFAULT_CHANNEL_LAYER]
+        channel_layer.router.add_route(route('test', _consumer))
+        old_send = channel_layer.send
+        channel_layer.send = mock.Mock(side_effect=old_send)  # proxy 'send' for counting
 
         worker = PatchedWorker(channel_layer)
         worker.termed = 2  # first loop with error, second with sending
 
         worker.run()
-
-        channel_layer.receive_many.assert_called_with(chenels, block=True)
-        self.assertEqual(channel_layer.receive_many.call_count, 2)
-        self.assertEqual(channel_layer.router.match.call_count, 2)
-        self.assertEqual(consumer.call_count, 2)
+        self.assertEqual(getattr(_consumer, '_call_count', None), 2)
         self.assertEqual(channel_layer.send.call_count, 1)
 
     def test_normal_run(self):
-        channel_layer = mock.MagicMock()
         consumer = mock.Mock()
-        chenels = ['test', ]
-        channel_layer.router.channels = chenels
-        channel_layer.receive_many = mock.MagicMock(return_value=('test', {}))
-        channel_layer.send = mock.MagicMock()
+        Channel('test').send({'test': 'test'})
+        channel_layer = channel_layers[DEFAULT_CHANNEL_LAYER]
+        channel_layer.router.add_route(route('test', consumer))
+        old_send = channel_layer.send
+        channel_layer.send = mock.Mock(side_effect=old_send)  # proxy 'send' for counting
 
-        channel_layer.router.match = mock.MagicMock(return_value=(consumer, {}))
         worker = PatchedWorker(channel_layer)
-        worker.termed = 1
+        worker.termed = 2
 
         worker.run()
-
-        channel_layer.receive_many.assert_called_once_with(chenels, block=True)
-        self.assertEqual(channel_layer.router.match.call_count, 1)
         self.assertEqual(consumer.call_count, 1)
         self.assertEqual(channel_layer.send.call_count, 0)
