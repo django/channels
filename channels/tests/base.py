@@ -1,4 +1,4 @@
-from django.test import TestCase
+from django.test.testcases import TestCase
 from channels import DEFAULT_CHANNEL_LAYER
 from channels.asgi import channel_layers, ChannelLayerWrapper
 from channels.message import Message
@@ -31,7 +31,7 @@ class ChannelTestCase(TestCase):
                 ChannelLayerWrapper(
                     InMemoryChannelLayer(),
                     alias,
-                    channel_layers[alias].routing,
+                    channel_layers[alias].routing[:],
                 )
             )
 

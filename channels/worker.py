@@ -20,14 +20,14 @@ class Worker(object):
     """
 
     def __init__(
-            self,
-            channel_layer,
-            callback=None,
-            message_retries=10,
-            signal_handlers=True,
-            only_channels=None,
-            exclude_channels=None
-            ):
+        self,
+        channel_layer,
+        callback=None,
+        message_retries=10,
+        signal_handlers=True,
+        only_channels=None,
+        exclude_channels=None
+    ):
         self.channel_layer = channel_layer
         self.callback = callback
         self.message_retries = message_retries
@@ -116,6 +116,13 @@ class Worker(object):
                         repr(content)[:100],
                     )
                     continue
-                self.channel_layer.send(channel, content)
+                # Try to re-insert it a few times then drop it
+                for _ in range(10):
+                    try:
+                        self.channel_layer.send(channel, content)
+                    except self.channel_layer.ChannelFull:
+                        time.sleep(0.05)
+                    else:
+                        break
             except:
                 logger.exception("Error processing message with consumer %s:", name_that_thing(consumer))

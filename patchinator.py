@@ -124,6 +124,7 @@ global_transforms = [
     Replacement(r"from django.channels.tests import", r"from django.test.channels import"),
     Replacement(r"from django.channels.handler import", r"from django.core.handlers.asgi import"),
     Replacement(r"channels.tests.test_routing", r"channels_tests.test_routing"),
+    Replacement(r"django.core.urlresolvers", r"django.urls"),
 ]
 
 python_transforms = global_transforms + [
@@ -141,6 +142,17 @@ docs_transforms = global_transforms + [
     Replacement(r":doc:`([\w\d\s]+) <asgi>`", r"`\1 <http://channels.readthedocs.org/en/latest/asgi.html>`_"),
     Replacement(r"\n\(.*installation>`\)\n", r""),
     Replacement(r":doc:`installed Channels correctly <installation>`", r"added the channel layer setting"),
+    Replacement(r"Channels", r"channels"),
+    Replacement(r"Started with channels", r"Started with Channels"),
+    Replacement(r"Running with channels", r"Running with Channels"),
+    Replacement(r"channels consumers", r"channel consumers"),
+    Replacement(r"channels' design", r"The channels design"),
+    Replacement(r"channels is being released", r"Channels is being released"),
+    Replacement(r"channels is", r"channels are"),
+    Replacement(r"channels provides a", r"Channels provides a"),
+    Replacement(r"channels can use", r"Channels can use"),
+    Replacement(r"channels Concepts", r"Channels Concepts"),
+    Replacement(r"channels works", r"channels work"),
 ]
 
 
@@ -157,9 +169,6 @@ class Patchinator(object):
         ),
         FileMap(
             "channels/channel.py", "django/channels/channel.py", python_transforms,
-        ),
-        FileMap(
-            "channels/database_layer.py", "django/channels/database_layer.py", python_transforms,
         ),
         FileMap(
             "channels/exceptions.py", "django/channels/exceptions.py", python_transforms,
@@ -198,9 +207,6 @@ class Patchinator(object):
             "tests/channels_tests/__init__.py",
         ),
         FileMap(
-            "channels/tests/test_database_layer.py", "tests/channels_tests/test_database_layer.py", python_transforms,
-        ),
-        FileMap(
             "channels/tests/test_handler.py", "tests/channels_tests/test_handler.py", python_transforms,
         ),
         FileMap(
@@ -208,6 +214,9 @@ class Patchinator(object):
         ),
         FileMap(
             "channels/tests/test_request.py", "tests/channels_tests/test_request.py", python_transforms,
+        ),
+        FileMap(
+            "channels/tests/test_sessions.py", "tests/channels_tests/test_sessions.py", python_transforms,
         ),
         # Docs
         FileMap(
@@ -224,9 +233,6 @@ class Patchinator(object):
         ),
         FileMap(
             "docs/reference.rst", "docs/ref/channels/api.txt", docs_transforms,
-        ),
-        FileMap(
-            "docs/scaling.rst", "docs/topics/channels/scaling.txt", docs_transforms,
         ),
         FileMap(
             "docs/testing.rst", "docs/topics/channels/testing.txt", docs_transforms,

@@ -13,7 +13,7 @@ servers (particularly webservers) and Python applications, intended
 to allow handling of multiple common protocol styles (including HTTP, HTTP2,
 and WebSocket).
 
-It is intended to replace and expand on WSGI, though the design
+It is intended to supplement and expand on WSGI, though the design
 deliberately includes provisions to allow WSGI-to-ASGI and ASGI-to-WGSI
 adapters to be easily written for the HTTP protocol.
 
@@ -34,7 +34,7 @@ and from different application threads or processes.
 
 It also lays out new, serialization-compatible formats for things like
 HTTP requests and responses and WebSocket data frames, to allow these to
-be transported over a network or local socket, and allow separation
+be transported over a network or local memory, and allow separation
 of protocol handling and application logic into different processes.
 
 Part of this design is ensuring there is an easy path to use both
@@ -128,14 +128,11 @@ Messages should expire after a set time sitting unread in a channel;
 the recommendation is one minute, though the best value depends on the
 channel layer and the way it is deployed.
 
-The maximum message size is finite, though it varies based on the channel layer
-and the encoding it's using. Channel layers may reject messages at ``send()``
-time with a ``MessageTooLarge`` exception; the calling code should take
-appropriate action (e.g. HTTP responses can be chunked, while HTTP
-requests should be closed with a ``413 Request Entity Too Large`` response).
-It is intended that some channel layers will only support messages of around a
-megabyte, while others will be able to take a gigabyte or more, and that it
-may be configurable.
+The maximum message size is 1MB; if more data than this needs to be transmitted
+it should be chunked or placed onto its own single-reader channel (see how
+HTTP request bodies are done, for example). All channel layers must support
+messages up to this size.
+
 
 Handling Protocols
 ------------------
@@ -255,8 +252,28 @@ problem. If ordering of incoming packets matters for a protocol, they should
 be annotated with a packet number (as WebSocket is in this specification).
 
 Single-reader channels, such as those used for response channels back to
-clients, are not subject to this problem; a single reader should always
+clients, are not subject to this problem; a single reader must always
 receive messages in channel order.
+
+
+Capacity
+--------
+
+To provide backpressure, each channel in a channel layer may have a capacity,
+defined however the layer wishes (it is recommended that it is configurable
+by the user using keyword arguments to the channel layer constructor, and
+furthermore configurable per channel name or name prefix).
+
+When a channel is at or over capacity, trying to send() to that channel
+may raise ChannelFull, which indicates to the sender the channel is over
+capacity. How the sender wishes to deal with this will depend on context;
+for example, a web application trying to send a response body will likely
+wait until it empties out again, while a HTTP interface server trying to
+send in a request would drop the request and return a 503 error.
+
+Sending to a group never raises ChannelFull; instead, it must silently drop
+the message if it is over capacity, as per ASGI's at-most-once delivery
+policy.
 
 
 Specification Details
@@ -291,6 +308,9 @@ A *channel layer* must provide an object with these attributes
 * ``MessageTooLarge``, the exception raised when a send operation fails
   because the encoded message is over the layer's size limit.
 
+* ``ChannelFull``, the exception raised when a send operation fails
+  because the destination channel is over capacity.
+
 * ``extensions``, a list of unicode string names indicating which
   extensions this layer provides, or empty if it supports none.
   The names defined in this document are ``groups``, ``flush`` and
@@ -307,7 +327,8 @@ A channel layer implementing the ``groups`` extension must also provide:
 
 * ``send_group(group, message)``, a callable that takes two positional
   arguments; the group to send to, as a unicode string, and the message
-  to send, as a serializable ``dict``.
+  to send, as a serializable ``dict``. It may raise MessageTooLarge but cannot
+  raise ChannelFull.
 
 * ``group_expiry``, an integer number of seconds that specifies how long group
   membership is valid for after the most recent ``group_add`` call (see
@@ -346,7 +367,8 @@ Channels **must**:
 
 * Never deliver a message more than once.
 
-* Never block on message send.
+* Never block on message send (though they may raise ChannelFull or
+  MessageTooLarge)
 
 * Be able to handle messages of at least 1MB in size when encoded as
   JSON (the implementation may use better encoding or compression, as long
