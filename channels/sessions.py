@@ -69,7 +69,7 @@ def channel_session(func):
     return inner
 
 
-def enforce_ordering(func=None, slight=False):
+def enforce_ordering(func=None, slight=False, close_on_error=True):
     """
     Enforces either slight (order=0 comes first, everything else isn't ordered)
     or strict (all messages exactly ordered) ordering against a reply_channel.
@@ -106,14 +106,28 @@ def enforce_ordering(func=None, slight=False):
                     channel, content = message.channel_layer.receive_many([wait_channel], block=False)
                     if channel:
                         original_channel = content.pop("original_channel")
-                        message.channel_layer.send(original_channel, content)
+                        try:
+                            message.channel_layer.send(original_channel, content)
+                        except message.channel_layer.ChannelFull:
+                            if close_on_error:
+                                message.channel_layer.send(message.reply_channel.name, {"close": True})
+                            raise message.channel_layer.ChannelFull(
+                                "Cannot requeue pending __wait__ channel message back on to already full channel %s" % original_channel
+                            )
                     else:
                         break
             else:
                 # Since out of order, enqueue message temporarily to wait channel for this socket connection
                 wait_channel = "__wait__.%s" % message.reply_channel.name
                 message.content["original_channel"] = message.channel.name
-                message.channel_layer.send(wait_channel, message.content)
+                try:
+                    message.channel_layer.send(wait_channel, message.content)
+                except message.channel_layer.ChannelFull:
+                    if close_on_error:
+                        message.channel_layer.send(message.reply_channel.name, {"close": True})
+                    raise message.channel_layer.ChannelFull(
+                        "Cannot add unordered message to already full __wait__ channel for socket %s" % message.reply_channel.name
+                    )
         return inner
     if func is not None:
         return decorator(func)
