@@ -111,18 +111,18 @@ class SessionTests(ChannelTestCase):
         """
         # Construct messages to send
         message0 = Message(
-            {"reply_channel": "test-reply-a", "order": 0}, 
-            "websocket.connect", 
+            {"reply_channel": "test-reply-a", "order": 0},
+            "websocket.connect",
             channel_layers[DEFAULT_CHANNEL_LAYER]
         )
         message1 = Message(
-            {"reply_channel": "test-reply-a", "order": 1}, 
-            "websocket.receive", 
+            {"reply_channel": "test-reply-a", "order": 1},
+            "websocket.receive",
             channel_layers[DEFAULT_CHANNEL_LAYER]
         )
         message2 = Message(
-            {"reply_channel": "test-reply-a", "order": 2}, 
-            "websocket.receive", 
+            {"reply_channel": "test-reply-a", "order": 2},
+            "websocket.receive",
             channel_layers[DEFAULT_CHANNEL_LAYER]
         )
 
@@ -146,8 +146,8 @@ class SessionTests(ChannelTestCase):
         """
         # Construct messages to send
         message2 = Message(
-            {"reply_channel": "test-reply-e", "order": 2}, 
-            "websocket.receive", 
+            {"reply_channel": "test-reply-e", "order": 2},
+            "websocket.receive",
             channel_layers[DEFAULT_CHANNEL_LAYER]
         )
 
@@ -169,18 +169,18 @@ class SessionTests(ChannelTestCase):
         """
         # Construct messages to send
         message0 = Message(
-            {"reply_channel": "test-reply-b", "order": 0}, 
-            "websocket.connect", 
+            {"reply_channel": "test-reply-b", "order": 0},
+            "websocket.connect",
             channel_layers[DEFAULT_CHANNEL_LAYER]
         )
         message1 = Message(
-            {"reply_channel": "test-reply-b", "order": 1}, 
-            "websocket.receive", 
+            {"reply_channel": "test-reply-b", "order": 1},
+            "websocket.receive",
             channel_layers[DEFAULT_CHANNEL_LAYER]
         )
         message2 = Message(
-            {"reply_channel": "test-reply-b", "order": 2}, 
-            "websocket.receive", 
+            {"reply_channel": "test-reply-b", "order": 2},
+            "websocket.receive",
             channel_layers[DEFAULT_CHANNEL_LAYER]
         )
 
@@ -204,13 +204,13 @@ class SessionTests(ChannelTestCase):
         """
         # Construct messages to send
         message0 = Message(
-            {"reply_channel": "test-reply-c", "order": 0}, 
-            "websocket.connect", 
+            {"reply_channel": "test-reply-c", "order": 0},
+            "websocket.connect",
             channel_layers[DEFAULT_CHANNEL_LAYER]
         )
         message2 = Message(
-            {"reply_channel": "test-reply-c", "order": 2}, 
-            "websocket.receive", 
+            {"reply_channel": "test-reply-c", "order": 2},
+            "websocket.receive",
             channel_layers[DEFAULT_CHANNEL_LAYER]
         )
 
@@ -232,8 +232,8 @@ class SessionTests(ChannelTestCase):
         Makes sure messages with no "order" key fail
         """
         message0 = Message(
-            {"reply_channel": "test-reply-d"}, 
-            None, 
+            {"reply_channel": "test-reply-d"},
+            None,
             channel_layers[DEFAULT_CHANNEL_LAYER]
         )
 
