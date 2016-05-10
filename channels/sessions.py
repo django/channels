@@ -112,7 +112,8 @@ def enforce_ordering(func=None, slight=False, close_on_error=True):
                             if close_on_error:
                                 message.channel_layer.send(message.reply_channel.name, {"close": True})
                             raise message.channel_layer.ChannelFull(
-                                "Cannot requeue pending __wait__ channel message back on to already full channel %s" % original_channel
+                                "Cannot requeue pending __wait__ channel message " +
+                                "back on to already full channel %s" % original_channel
                             )
                     else:
                         break
@@ -126,7 +127,8 @@ def enforce_ordering(func=None, slight=False, close_on_error=True):
                     if close_on_error:
                         message.channel_layer.send(message.reply_channel.name, {"close": True})
                     raise message.channel_layer.ChannelFull(
-                        "Cannot add unordered message to already full __wait__ channel for socket %s" % message.reply_channel.name
+                        "Cannot add unordered message to already " +
+                        "full __wait__ channel for socket %s" % message.reply_channel.name
                     )
         return inner
     if func is not None:
