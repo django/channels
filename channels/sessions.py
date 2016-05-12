@@ -69,7 +69,7 @@ def channel_session(func):
     return inner
 
 
-def enforce_ordering(func=None, slight=False, close_on_error=True):
+def enforce_ordering(func=None, slight=False):
     """
     Enforces either slight (order=0 comes first, everything else isn't ordered)
     or strict (all messages exactly ordered) ordering against a reply_channel.
@@ -109,8 +109,6 @@ def enforce_ordering(func=None, slight=False, close_on_error=True):
                         try:
                             message.channel_layer.send(original_channel, content)
                         except message.channel_layer.ChannelFull:
-                            if close_on_error:
-                                message.channel_layer.send(message.reply_channel.name, {"close": True})
                             raise message.channel_layer.ChannelFull(
                                 "Cannot requeue pending __wait__ channel message " +
                                 "back on to already full channel %s" % original_channel
@@ -124,8 +122,6 @@ def enforce_ordering(func=None, slight=False, close_on_error=True):
                 try:
                     message.channel_layer.send(wait_channel, message.content)
                 except message.channel_layer.ChannelFull:
-                    if close_on_error:
-                        message.channel_layer.send(message.reply_channel.name, {"close": True})
                     raise message.channel_layer.ChannelFull(
                         "Cannot add unordered message to already " +
                         "full __wait__ channel for socket %s" % message.reply_channel.name
