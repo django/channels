@@ -5,7 +5,8 @@ from django.core.management import BaseCommand, CommandError
 from channels import DEFAULT_CHANNEL_LAYER, channel_layers
 from channels.log import setup_logger
 from channels.worker import Worker
-import threading,time
+import threading
+import time
 
 workers = []
 
@@ -31,7 +32,6 @@ class Command(BaseCommand):
             '--jobs', action='store', dest='jobs', default=1, type=int,
             help='Multiple start workers.',
         )
-
 
     def handle(self, *args, **options):
         # Get the backend to use
@@ -65,18 +65,21 @@ class Command(BaseCommand):
             worker.daemon = True
             worker.start()
         try:
-            while len(workers) > 0: time.sleep(1)
-        except KeyboardInterrupt: self.logger.info("Stopping workers pool.")
+            while len(workers) > 0:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            self.logger.info("Stopping workers pool.")
 
     def consumer_called(self, channel, message):
         self.logger.debug("%s", channel)
+
 
 class WorkerThread(threading.Thread):
     """
     Class that runs a worker
     """
 
-    def __init__(self,channel_layer, callback, only_channels, exclude_channels, logger, id):
+    def __init__(self, channel_layer, callback, only_channels, exclude_channels, logger, id):
         super(WorkerThread, self).__init__()
         self.name = "WorkerThread-%i" % id
         self.worker = Worker(
@@ -90,10 +93,11 @@ class WorkerThread(threading.Thread):
         self.id = id
         workers.append(self.id)
 
-
     def run(self):
         self.logger.info("Worker thread running")
-        try: self.worker.run()
-        except: pass
+        try:
+            self.worker.run()
+        except:
+            pass
         workers.remove(self.id)
         self.logger.info("Worker thread exited")
