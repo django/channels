@@ -1,1 +1,1 @@
-from .base import ChannelTestCase  # NOQA isort:skip
+from .base import ChannelTestCase, Client, apply_routes  # NOQA isort:skip

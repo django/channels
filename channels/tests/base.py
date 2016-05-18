@@ -5,7 +5,9 @@ import string
 from django.test.testcases import TestCase
 from django.apps import apps
 from django.conf import settings
+from django.utils.decorators import ContextDecorator
 from channels import DEFAULT_CHANNEL_LAYER
+from channels.routing import Router, include
 from channels.asgi import channel_layers, ChannelLayerWrapper
 from channels.message import Message
 from channels.sessions import session_for_reply_channel
@@ -183,3 +185,42 @@ class Client(object):
 
         # Save the session values.
         self.session.save()
+
+
+class apply_routes(ContextDecorator):
+    """
+    Decorator/ContextManager for rewrite layers routes in context.
+    Helpful for testing group routes/consumers as isolated application
+
+    The applying routes can be list of instances of Route or list of this lists
+    """
+
+    def __init__(self, routes, aliases=[DEFAULT_CHANNEL_LAYER]):
+        self._aliases = aliases
+        self.routes = routes
+        self._old_routing = {}
+
+    def __enter__(self):
+        """
+        Store old routes and apply new one
+        """
+        for alias in self._aliases:
+            channel_layer = channel_layers[DEFAULT_CHANNEL_LAYER]
+            self._old_routing[alias] = channel_layer.routing
+            if isinstance(self.routes, (list, tuple)):
+                if isinstance(self.routes[0], (list, tuple)):
+                    routes = map(include, self.routes)
+                else:
+                    routes = self.routes
+
+            channel_layer.routing = routes
+            channel_layer.router = Router(routes)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        Undoes rerouting
+        """
+        for alias in self._aliases:
+            channel_layer = channel_layers[DEFAULT_CHANNEL_LAYER]
+            channel_layer.routing = self._old_routing[alias]
+            channel_layer.router = Router(self._old_routing[alias])
