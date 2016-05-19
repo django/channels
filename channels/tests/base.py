@@ -30,7 +30,6 @@ class ChannelTestCase(TestCase):
         """
         super(ChannelTestCase, self).setUp()
         self._old_layers = {}
-        self._clients = {}
         for alias in self.test_channel_aliases:
             # Swap in an in memory layer wrapper and keep the old one around
             self._old_layers[alias] = channel_layers.set(
@@ -41,8 +40,6 @@ class ChannelTestCase(TestCase):
                     channel_layers[alias].routing[:],
                 )
             )
-            self._clients[alias] = Client(alias)
-        self.client = self._clients[DEFAULT_CHANNEL_LAYER]
 
     def tearDown(self):
         """
@@ -54,9 +51,6 @@ class ChannelTestCase(TestCase):
         del self._old_layers
         super(ChannelTestCase, self).tearDown()
 
-    def get_client(self, alias=DEFAULT_CHANNEL_LAYER):
-        return self._clients[alias]
-
     def get_next_message(self, channel, alias=DEFAULT_CHANNEL_LAYER, require=False):
         """
         Gets the next message that was sent to the channel during the test,
@@ -64,16 +58,13 @@ class ChannelTestCase(TestCase):
 
         If require is true, will fail the test if no message is received.
         """
-        message = self._clients[alias].get_next_message(channel)
-        if message is None:
+        recv_channel, content = channel_layers[alias].receive_many([channel])
+        if recv_channel is None:
             if require:
                 self.fail("Expected a message on channel %s, got none" % channel)
             else:
                 return None
-        return message
-
-    def assertInReplyChannel(self, d, alias=DEFAULT_CHANNEL_LAYER):
-        self.assertDictEqual(self._clients[alias].receive(), d)
+        return content
 
 
 class Client(object):
