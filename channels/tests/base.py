@@ -1,11 +1,11 @@
 import copy
 import random
 import string
+from functools import wraps
 
 from django.test.testcases import TestCase
 from django.apps import apps
 from django.conf import settings
-from django.utils.decorators import ContextDecorator
 from channels import DEFAULT_CHANNEL_LAYER
 from channels.routing import Router, include
 from channels.asgi import channel_layers, ChannelLayerWrapper
@@ -128,6 +128,7 @@ class Client(object):
                     'cookie': ('%s=%s' % (settings.SESSION_COOKIE_NAME, self.session.session_key)).encode("ascii")
                 })
             content.setdefault('channel_session', self.session)
+        content.setdefault('path', '/')
         content.setdefault('reply_channel', self.reply_channel)
         self.channel_layer.send(to, content)
 
@@ -187,7 +188,7 @@ class Client(object):
         self.session.save()
 
 
-class apply_routes(ContextDecorator):
+class apply_routes(object):
     """
     Decorator/ContextManager for rewrite layers routes in context.
     Helpful for testing group routes/consumers as isolated application
@@ -200,7 +201,7 @@ class apply_routes(ContextDecorator):
         self.routes = routes
         self._old_routing = {}
 
-    def __enter__(self):
+    def enter(self):
         """
         Store old routes and apply new one
         """
@@ -209,14 +210,14 @@ class apply_routes(ContextDecorator):
             self._old_routing[alias] = channel_layer.routing
             if isinstance(self.routes, (list, tuple)):
                 if isinstance(self.routes[0], (list, tuple)):
-                    routes = map(include, self.routes)
+                    routes = list(map(include, self.routes))
                 else:
                     routes = self.routes
 
             channel_layer.routing = routes
             channel_layer.router = Router(routes)
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def exit(self, exc_type=None, exc_val=None, exc_tb=None):
         """
         Undoes rerouting
         """
@@ -224,3 +225,29 @@ class apply_routes(ContextDecorator):
             channel_layer = channel_layers[DEFAULT_CHANNEL_LAYER]
             channel_layer.routing = self._old_routing[alias]
             channel_layer.router = Router(self._old_routing[alias])
+
+    __enter__ = enter
+    __exit__ = exit
+
+    def __call__(self, test_func):
+        if isinstance(test_func, type):
+            old_setup = test_func.setUp
+            old_teardown = test_func.tearDown
+
+            def new_setup(this):
+                self.enter()
+                old_setup(this)
+
+            def new_teardown(this):
+                self.exit()
+                old_teardown(this)
+
+            test_func.setUp = new_setup
+            test_func.tearDown = new_teardown
+            return test_func
+        else:
+            @wraps(test_func)
+            def inner(*args, **kwargs):
+                with self:
+                    return test_func(*args, **kwargs)
+            return inner
