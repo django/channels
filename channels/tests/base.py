@@ -4,13 +4,10 @@ import string
 from functools import wraps
 
 from django.test.testcases import TestCase
-from django.apps import apps
-from django.conf import settings
 from channels import DEFAULT_CHANNEL_LAYER
 from channels.routing import Router, include
 from channels.asgi import channel_layers, ChannelLayerWrapper
 from channels.message import Message
-from channels.sessions import session_for_reply_channel
 from asgiref.inmemory import ChannelLayer as InMemoryChannelLayer
 
 
@@ -82,22 +79,12 @@ class ChannelTestCase(TestCase):
 class Client(object):
     """
     Channel client abstraction that provides easy methods for testing full live cycle of message in channels
-    with determined reply channel, auth opportunity and so on
+    with determined the reply channel
     """
 
     def __init__(self, alias=DEFAULT_CHANNEL_LAYER):
         self.reply_channel = alias + ''.join([random.choice(string.ascii_letters) for _ in range(5)])
-        self._session = None
         self.alias = alias
-
-    @property
-    def session(self):
-        """Session as Lazy property: check that django.contrib.sessions is installed"""
-        if not apps.is_installed('django.contrib.sessions'):
-            raise EnvironmentError('Add django.contrib.sessions to the INSTALLED_APPS to use session')
-        if not self._session:
-            self._session = session_for_reply_channel(self.reply_channel)
-        return self._session
 
     @property
     def channel_layer(self):
@@ -108,8 +95,6 @@ class Client(object):
         """
         Gets the next message that was sent to the channel during the test,
         or None if no message is available.
-
-        If require is true, will fail the test if no message is received.
         """
         recv_channel, content = channel_layers[self.alias].receive_many([channel])
         if recv_channel is None:
@@ -119,16 +104,9 @@ class Client(object):
     def send(self, to, content={}):
         """
         Send a message to a channel.
-        Adds reply_channel name and channel_session to the message.
+        Adds reply_channel name to the message.
         """
         content = copy.deepcopy(content)
-        if apps.is_installed('django.contrib.sessions'):
-            if '.' in to and to.split('.')[1] == 'connect':
-                content.setdefault('headers', {
-                    'cookie': ('%s=%s' % (settings.SESSION_COOKIE_NAME, self.session.session_key)).encode("ascii")
-                })
-            content.setdefault('channel_session', self.session)
-        content.setdefault('path', '/')
         content.setdefault('reply_channel', self.reply_channel)
         self.channel_layer.send(to, content)
 
@@ -155,37 +133,6 @@ class Client(object):
         message = self.get_next_message(self.reply_channel)
         if message:
             return message.content
-
-    def login(self, **credentials):
-        """
-        Stolen from django
-        Returns True if login is possible; False if the provided credentials
-        are incorrect, or the user is inactive, or if the sessions framework is
-        not available.
-        """
-        from django.contrib.auth import authenticate
-        user = authenticate(**credentials)
-        if user and user.is_active and apps.is_installed('django.contrib.sessions'):
-            self._login(user)
-            return True
-        else:
-            return False
-
-    def force_login(self, user, backend=None):
-        if backend is None:
-            backend = settings.AUTHENTICATION_BACKENDS[0]
-        user.backend = backend
-        self._login(user)
-
-    def _login(self, user):
-        from django.contrib.auth import login
-
-        # Fake http request
-        request = type('FakeRequest', (object, ), {'session': self.session, 'META': {}})
-        login(request, user)
-
-        # Save the session values.
-        self.session.save()
 
 
 class apply_routes(object):
