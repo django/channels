@@ -64,7 +64,7 @@ class ChannelTestCase(TestCase):
                 self.fail("Expected a message on channel %s, got none" % channel)
             else:
                 return None
-        return content
+        return Message(content, recv_channel, channel_layers[alias])
 
 
 class Client(object):
