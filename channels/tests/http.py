@@ -1,5 +1,6 @@
 
 import copy
+
 from django.apps import apps
 from django.conf import settings
 
@@ -13,12 +14,41 @@ from .base import Client
 class HttpClient(Client):
     """
     Channel http/ws client abstraction that provides easy methods for testing full live cycle of message in channels
-    with determined reply channel, auth opportunity and so on
+    with determined reply channel, auth opportunity, cookies, headers and so on
     """
 
     def __init__(self, **kwargs):
         super(HttpClient, self).__init__(**kwargs)
         self._session = None
+        self._headers = {}
+        self._cookies = {}
+
+    def set_cookie(self, key, value):
+        """
+        Set cookie
+        """
+        self._cookies[key] = value
+
+    def set_header(self, key, value):
+        """
+        Set header
+        """
+        if key == 'cookie':
+            raise ValueError('Use set_cookie method for cookie header')
+        self._headers[key] = value
+
+    def get_cookies(self):
+        """Return cookies"""
+        cookies = copy.copy(self._cookies)
+        if apps.is_installed('django.contrib.sessions'):
+            cookies[settings.SESSION_COOKIE_NAME] = self.session.session_key
+        return cookies
+
+    @property
+    def headers(self):
+        headers = copy.deepcopy(self._headers)
+        headers.setdefault('cookie', _encoded_cookies(self.get_cookies()))
+        return headers
 
     @property
     def session(self):
@@ -52,14 +82,9 @@ class HttpClient(Client):
         Adds reply_channel name and channel_session to the message.
         """
         content = copy.deepcopy(content)
-        if apps.is_installed('django.contrib.sessions'):
-            if '.' in to and to.split('.')[1] == 'connect':
-                content.setdefault('headers', {
-                    'cookie': ('%s=%s' % (settings.SESSION_COOKIE_NAME, self.session.session_key)).encode("ascii")
-                })
-            content.setdefault('channel_session', self.session)
-        content.setdefault('path', '/')
         content.setdefault('reply_channel', self.reply_channel)
+        content.setdefault('path', '/')
+        content.setdefault('headers', self.headers)
         self.channel_layer.send(to, content)
 
     def consume(self, channel):
@@ -79,7 +104,7 @@ class HttpClient(Client):
         return self.consume(channel)
 
     def receive(self):
-        """self.get_next_message(self.reply_channel)
+        """
         Get content of next message for reply channel if message exists
         """
         message = self.get_next_message(self.reply_channel)
@@ -88,7 +113,6 @@ class HttpClient(Client):
 
     def login(self, **credentials):
         """
-        Stolen from django
         Returns True if login is possible; False if the provided credentials
         are incorrect, or the user is inactive, or if the sessions framework is
         not available.
@@ -116,3 +140,8 @@ class HttpClient(Client):
 
         # Save the session values.
         self.session.save()
+
+
+def _encoded_cookies(cookies):
+    """Encode dict of cookies to ascii string"""
+    return ('&'.join('{0}={1}'.format(k, v) for k, v in cookies.items())).encode("ascii")
