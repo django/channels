@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
-from django.http import HttpResponse
+from django.http import HttpResponse, FileResponse, StreamingHttpResponse
+from six import BytesIO
 
 from channels import Channel
 from channels.handler import AsgiHandler
@@ -15,7 +16,7 @@ class FakeAsgiHandler(AsgiHandler):
     chunk_size = 30
 
     def __init__(self, response):
-        assert isinstance(response, HttpResponse)
+        assert isinstance(response, (HttpResponse, StreamingHttpResponse))
         self._response = response
         super(FakeAsgiHandler, self).__init__()
 
@@ -106,3 +107,54 @@ class HandlerTests(ChannelTestCase):
         self.assertEqual(result[0][1], False)
         self.assertEqual(result[1][0], b"a")
         self.assertEqual(result[1][1], True)
+
+    def test_iterator(self):
+        Channel("test").send({
+            "reply_channel": "test",
+            "http_version": "1.1",
+            "method": "GET",
+            "path": b"/test/",
+        })
+        response = HttpResponse(range(10))
+        handler = FakeAsgiHandler(response)
+        reply_messages = list(handler(self.get_next_message("test", require=True)))
+        self.assertEqual(len(reply_messages), 1)
+        self.assertEqual(reply_messages[0]["content"], b"0123456789")
+
+    def no_test_streaming_data(self):
+        Channel("test").send({
+            "reply_channel": "test",
+            "http_version": "1.1",
+            "method": "GET",
+            "path": b"/test/",
+        })
+        response = StreamingHttpResponse('Line: %s' % i for i in range(10))
+        handler = FakeAsgiHandler(response)
+        reply_messages = list(handler(self.get_next_message("test", require=True)))
+        self.assertEqual(len(reply_messages), 11)
+        self.assertEqual(reply_messages[0]["content"], b"Line: 0")
+        self.assertEqual(reply_messages[9]["content"], b"Line: 9")
+
+    def test_file_response(self):
+        Channel("test").send({
+            "reply_channel": "test",
+            "http_version": "1.1",
+            "method": "GET",
+            "path": b"/test/",
+        })
+        response = FileResponse(open('a_file', 'rb'))
+        handler = FakeAsgiHandler(response)
+        reply_messages = list(handler(self.get_next_message("test", require=True)))
+        print(reply_messages)
+
+    def test_filelike_object_response(self):
+        Channel("test").send({
+            "reply_channel": "test",
+            "http_version": "1.1",
+            "method": "GET",
+            "path": b"/test/",
+        })
+        response = FileResponse(BytesIO(b'sadfdasfsdfsadf'))
+        handler = FakeAsgiHandler(response)
+        reply_messages = list(handler(self.get_next_message("test", require=True)))
+        print(reply_messages)
