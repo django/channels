@@ -32,9 +32,14 @@ class BaseConsumer(object):
         """
         return set(cls.method_mapping.keys())
 
+    def get_handler(self, message, **kwargs):
+        """
+        Return handler uses method_mapping to return the right method to call.
+        """
+        return getattr(self, self.method_mapping[message.channel.name])
+
     def dispatch(self, message, **kwargs):
         """
-        Called with the message and all keyword arguments; uses method_mapping
-        to choose the right method to call.
+        Call handler with the message and all keyword arguments.
         """
-        return getattr(self, self.method_mapping[message.channel.name])(message, **kwargs)
+        return self.get_handler(message, **kwargs)(message, **kwargs)
