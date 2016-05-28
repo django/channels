@@ -6,11 +6,11 @@ class BaseConsumer(object):
     Base class-based consumer class. Provides the mechanisms to be a direct
     routing object and a few other things.
 
-    Class-based consumers should be used directly in routing with their
-    filters, like so::
+    Class-based consumers should be used with route_class in routing, like so::
 
+        from channels import route_class
         routing = [
-            JsonWebsocketConsumer(path=r"^/liveblog/(?P<slug>[^/]+)/"),
+            route_class(JsonWebsocketConsumer, path=r"^/liveblog/(?P<slug>[^/]+)/"),
         ]
     """
 
