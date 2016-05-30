@@ -1,6 +1,10 @@
 from __future__ import unicode_literals
-from django.http import HttpResponse, FileResponse, StreamingHttpResponse
-from six import BytesIO
+
+import os
+from itertools import islice
+
+from django.http import FileResponse, HttpResponse, StreamingHttpResponse
+from six import BytesIO, StringIO
 
 from channels import Channel
 from channels.handler import AsgiHandler
@@ -121,7 +125,7 @@ class HandlerTests(ChannelTestCase):
         self.assertEqual(len(reply_messages), 1)
         self.assertEqual(reply_messages[0]["content"], b"0123456789")
 
-    def no_test_streaming_data(self):
+    def test_streaming_data(self):
         Channel("test").send({
             "reply_channel": "test",
             "http_version": "1.1",
@@ -135,19 +139,21 @@ class HandlerTests(ChannelTestCase):
         self.assertEqual(reply_messages[0]["content"], b"Line: 0")
         self.assertEqual(reply_messages[9]["content"], b"Line: 9")
 
-    def test_file_response(self):
+    def test_real_file_response(self):
         Channel("test").send({
             "reply_channel": "test",
             "http_version": "1.1",
             "method": "GET",
             "path": b"/test/",
         })
-        response = FileResponse(open('a_file', 'rb'))
+        current_dir = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+        response = FileResponse(open(os.path.join(current_dir, 'a_file'), 'rb'))
         handler = FakeAsgiHandler(response)
         reply_messages = list(handler(self.get_next_message("test", require=True)))
-        print(reply_messages)
+        self.assertEqual(len(reply_messages), 2)
+        self.assertEqual(response.getvalue(), b'')
 
-    def test_filelike_object_response(self):
+    def test_bytes_file_response(self):
         Channel("test").send({
             "reply_channel": "test",
             "http_version": "1.1",
@@ -157,4 +163,64 @@ class HandlerTests(ChannelTestCase):
         response = FileResponse(BytesIO(b'sadfdasfsdfsadf'))
         handler = FakeAsgiHandler(response)
         reply_messages = list(handler(self.get_next_message("test", require=True)))
-        print(reply_messages)
+        self.assertEqual(len(reply_messages), 2)
+
+    def test_bytes_file_response(self):
+        Channel("test").send({
+            "reply_channel": "test",
+            "http_version": "1.1",
+            "method": "GET",
+            "path": b"/test/",
+        })
+        response = FileResponse('abcd')
+        handler = FakeAsgiHandler(response)
+        reply_messages = list(handler(self.get_next_message("test", require=True)))
+        self.assertEqual(len(reply_messages), 5)
+
+    def test_non_streaming_file_response(self):
+        Channel("test").send({
+            "reply_channel": "test",
+            "http_version": "1.1",
+            "method": "GET",
+            "path": b"/test/",
+        })
+        response = FileResponse(BytesIO(b'sadfdasfsdfsadf'))
+        # This is to test the exception handling. This would only happening if
+        # the StreamingHttpResponse was incorrectly subclassed.
+        response.streaming = False
+
+        handler = FakeAsgiHandler(response)
+        with self.assertRaises(AttributeError):
+            list(handler(self.get_next_message("test", require=True)))
+
+    def test_unclosable_filelike_object(self):
+        Channel("test").send({
+            "reply_channel": "test",
+            "http_version": "1.1",
+            "method": "GET",
+            "path": b"/test/",
+        })
+
+        # This is a readable object that cannot be closed.
+        class Unclosable:
+            def read(self, n=-1):
+                # Nothing to see here
+                return b""
+
+        response = FileResponse(Unclosable())
+        handler = FakeAsgiHandler(response)
+        reply_messages = list(islice(handler(self.get_next_message("test", require=True)), 5))
+        self.assertEqual(len(reply_messages), 1)
+
+    def no_test_string_file_response(self):
+        Channel("test").send({
+            "reply_channel": "test",
+            "http_version": "1.1",
+            "method": "GET",
+            "path": b"/test/",
+        })
+        response = FileResponse(StringIO('sadfdasfsdfsadf'))
+        handler = FakeAsgiHandler(response)
+        # Use islice because the generator never ends.
+        reply_messages = list(islice(handler(self.get_next_message("test", require=True)), 5))
+        self.assertEqual(len(reply_messages), 2, reply_messages)
