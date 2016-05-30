@@ -7,6 +7,9 @@ def name_that_thing(thing):
     """
     # Instance method
     if hasattr(thing, "im_class"):
+        # Mocks will recurse im_class forever
+        if hasattr(thing, "mock_calls"):
+            return "<mock>"
         return name_that_thing(thing.im_class) + "." + thing.im_func.func_name
     # Other named thing
     if hasattr(thing, "__name__"):
