@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import os
+import unittest
 from datetime import datetime
 from itertools import islice
 
@@ -309,7 +310,8 @@ class HandlerTests(ChannelTestCase):
             header_dict = dict(reply_messages[0]['headers'])
             self.assertEqual(header_dict[b'Location'].decode(), redirect_to)
 
-    def no_test_string_file_response(self):
+    @unittest.skip("failing under python 3")
+    def test_stringio_file_response(self):
         Channel("test").send({
             "reply_channel": "test",
             "http_version": "1.1",
