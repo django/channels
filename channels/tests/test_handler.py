@@ -112,7 +112,6 @@ class HandlerTests(ChannelTestCase):
         # Make sure the message looks correct
         self.assertEqual(reply_message["content"], b"Hi there!")
         header_dict = dict(reply_messages[0]['headers'])
-        print(header_dict)
         self.assertEqual(header_dict[b'foo'].decode(), '1')
         self.assertNotIn('bar', header_dict)
 
