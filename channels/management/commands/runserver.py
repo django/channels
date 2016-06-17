@@ -13,6 +13,7 @@ from channels.handler import ViewConsumer
 from channels.log import setup_logger
 from channels.staticfiles import StaticFilesConsumer
 from channels.worker import Worker
+from daphne.server import Server
 
 
 class Command(RunserverCommand):
@@ -72,7 +73,6 @@ class Command(RunserverCommand):
         # actually a subthread under the autoreloader.
         self.logger.debug("Daphne running, listening on %s:%s", self.addr, self.port)
         try:
-            from daphne.server import Server
             Server(
                 channel_layer=self.channel_layer,
                 host=self.addr,
