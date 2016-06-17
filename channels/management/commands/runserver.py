@@ -2,6 +2,7 @@ import datetime
 import sys
 import threading
 
+from daphne.server import Server
 from django.conf import settings
 from django.core.management.commands.runserver import \
     Command as RunserverCommand
@@ -13,7 +14,6 @@ from channels.handler import ViewConsumer
 from channels.log import setup_logger
 from channels.staticfiles import StaticFilesConsumer
 from channels.worker import Worker
-from daphne.server import Server
 
 
 class Command(RunserverCommand):

@@ -1,11 +1,12 @@
 from __future__ import unicode_literals
+
 from django.conf import settings
 from django.core.management import BaseCommand, CommandError
 
 from channels import DEFAULT_CHANNEL_LAYER, channel_layers
 from channels.log import setup_logger
-from channels.worker import Worker
 from channels.staticfiles import StaticFilesConsumer
+from channels.worker import Worker
 
 
 class Command(BaseCommand):

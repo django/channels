@@ -1,15 +1,14 @@
 from __future__ import unicode_literals
+
 import logging
-from six import StringIO
-from functools import partial
-from django.core.management import CommandError
-from django.conf import settings
-from django.core.management import call_command
-from django.test import TestCase, mock
 
 from asgiref.inmemory import ChannelLayer
+from django.core.management import CommandError, call_command
+from django.test import TestCase, mock
+from six import StringIO
+
 from channels.management.commands import runserver
-import logging
+
 
 class FakeChannelLayer(ChannelLayer):
     '''
@@ -35,15 +34,16 @@ class RunWorkerTests(TestCase):
     def test_debug(self, mocked_worker, *args, **kwargs):
         with self.settings(DEBUG=True, STATIC_URL='/static/'):
             call_command('runworker', '--layer', 'fake_channel')
-            mocked_worker.assert_called_with(only_channels=None, exclude_channels=None, callback=None, channel_layer=mock.ANY)
+            mocked_worker.assert_called_with(
+                only_channels=None, exclude_channels=None, callback=None, channel_layer=mock.ANY)
 
     @mock.patch('channels.management.commands.runworker.Worker')
     def test_runworker(self, mocked_worker):
         call_command('runworker', '--layer', 'fake_channel')
         mocked_worker.assert_called_with(callback=None,
-                only_channels=None,
-                channel_layer=mock.ANY,
-                exclude_channels=None)
+                                         only_channels=None,
+                                         channel_layer=mock.ANY,
+                                         exclude_channels=None)
 
     @mock.patch('channels.management.commands.runworker.Worker')
     def test_runworker_verbose(self, mocked_worker):
@@ -51,9 +51,9 @@ class RunWorkerTests(TestCase):
                      'fake_channel', '--verbosity', '2')
         # Increasing verbosity adds the logger callback
         mocked_worker.assert_called_with(callback=mock.ANY,
-                only_channels=None,
-                channel_layer=mock.ANY,
-                exclude_channels=None)
+                                         only_channels=None,
+                                         channel_layer=mock.ANY,
+                                         exclude_channels=None)
 
 
 class RunServerTests(TestCase):
