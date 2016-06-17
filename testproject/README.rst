@@ -26,11 +26,11 @@ How to use with Docker:
 
         docker-compose up -d
 
-    The benchmark project will now be running on: http:{your-docker-ip}:8000
+    The benchmark project will now be running on: http:{your-docker-ip}:80
 
     Test it by navigating to that address in a browser.  It should just say "OK".
 
-    It is also running a WebSocket server at: ws://{your-docker-ip}:8000
+    It is also running a WebSocket server at: ws://{your-docker-ip}:80
 
     Run the benchmark's help to show the parameters::
 
