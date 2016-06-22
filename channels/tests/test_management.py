@@ -43,8 +43,8 @@ class RunWorkerTests(TestCase):
             mock_worker.assert_called_with(
                 only_channels=None, exclude_channels=None, callback=None, channel_layer=mock.ANY)
 
-            cl = mock_worker.call_args[1]['channel_layer']
-            static_consumer = cl.router.root.routing[0].consumer
+            channel_layer = mock_worker.call_args[1]['channel_layer']
+            static_consumer = channel_layer.router.root.routing[0].consumer
             self.assertIsInstance(static_consumer, StaticFilesConsumer)
 
     def test_runworker(self, mock_worker):
@@ -55,7 +55,7 @@ class RunWorkerTests(TestCase):
                                        channel_layer=mock.ANY,
                                        exclude_channels=None)
 
-    def test_runworker_verbose(self, mocked_worker, *args):
+    def test_runworker_verbose(self, mocked_worker):
         # Use 'fake_channel' that bypasses the 'inmemory' check
         call_command('runworker', '--layer',
                      'fake_channel', '--verbosity', '2')
@@ -79,7 +79,7 @@ class RunServerTests(TestCase):
     @mock.patch('channels.management.commands.runserver.sys.stdout', new_callable=StringIO)
     @mock.patch('channels.management.commands.runserver.Server')
     @mock.patch('channels.management.commands.runworker.Worker')
-    def test_runserver_basic(self, mocked_worker, mocked_server, *args):
+    def test_runserver_basic(self, mocked_worker, mocked_server, mock_stdout):
         # Django's autoreload util uses threads and this is not needed
         # in the test envirionment.
         # See:
@@ -91,7 +91,7 @@ class RunServerTests(TestCase):
     @mock.patch('channels.management.commands.runserver.sys.stdout', new_callable=StringIO)
     @mock.patch('channels.management.commands.runserver.Server')
     @mock.patch('channels.management.commands.runworker.Worker')
-    def test_runserver_debug(self, mocked_worker, mocked_server, *args):
+    def test_runserver_debug(self, mocked_worker, mocked_server, mock_stdout):
         """
         Test that the server runs with `DEBUG=True`.
         """
@@ -111,7 +111,7 @@ class RunServerTests(TestCase):
     @mock.patch('channels.management.commands.runserver.sys.stdout', new_callable=StringIO)
     @mock.patch('channels.management.commands.runserver.Server')
     @mock.patch('channels.management.commands.runworker.Worker')
-    def test_runserver_noworker(self, mocked_worker, mocked_server, *args):
+    def test_runserver_noworker(self, mocked_worker, mocked_server, mock_stdout):
         '''
         Test that the Worker is not called when using the `--noworker` parameter.
         '''
