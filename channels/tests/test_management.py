@@ -4,6 +4,7 @@ import logging
 
 from asgiref.inmemory import ChannelLayer
 from django.core.management import CommandError, call_command
+from channels.staticfiles import StaticFilesConsumer
 from django.test import TestCase, mock
 from six import StringIO
 
@@ -17,6 +18,7 @@ class FakeChannelLayer(ChannelLayer):
     pass
 
 
+@mock.patch('channels.management.commands.runworker.Worker')
 class RunWorkerTests(TestCase):
 
     def setUp(self):
@@ -24,32 +26,41 @@ class RunWorkerTests(TestCase):
         self.stream = StringIO()
         channels.log.handler = logging.StreamHandler(self.stream)
 
-    @mock.patch('sys.stderr', new_callable=StringIO)
-    @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_runworker_no_local_only(self, mock_stdout, mock_stderr):
+    def test_runworker_no_local_only(self, mock_worker):
+        """
+        Runworker should fail with the default "inmemory" worker.
+        """
         with self.assertRaises(CommandError):
             call_command('runworker')
 
-    @mock.patch('channels.management.commands.runworker.Worker')
-    def test_debug(self, mocked_worker, *args, **kwargs):
+    def test_debug(self, mock_worker):
+        """
+        Test that the StaticFilesConsumer is used in debug mode.
+        """
         with self.settings(DEBUG=True, STATIC_URL='/static/'):
+            # Use 'fake_channel' that bypasses the 'inmemory' check
             call_command('runworker', '--layer', 'fake_channel')
-            mocked_worker.assert_called_with(
+            mock_worker.assert_called_with(
                 only_channels=None, exclude_channels=None, callback=None, channel_layer=mock.ANY)
 
-    @mock.patch('channels.management.commands.runworker.Worker')
-    def test_runworker(self, mocked_worker):
-        call_command('runworker', '--layer', 'fake_channel')
-        mocked_worker.assert_called_with(callback=None,
-                                         only_channels=None,
-                                         channel_layer=mock.ANY,
-                                         exclude_channels=None)
+            cl = mock_worker.call_args[1]['channel_layer']
+            static_consumer = cl.router.root.routing[0].consumer
+            self.assertIsInstance(static_consumer, StaticFilesConsumer)
 
-    @mock.patch('channels.management.commands.runworker.Worker')
-    def test_runworker_verbose(self, mocked_worker):
+    def test_runworker(self, mock_worker):
+        # Use 'fake_channel' that bypasses the 'inmemory' check
+        call_command('runworker', '--layer', 'fake_channel')
+        mock_worker.assert_called_with(callback=None,
+                                       only_channels=None,
+                                       channel_layer=mock.ANY,
+                                       exclude_channels=None)
+
+    def test_runworker_verbose(self, mocked_worker, *args):
+        # Use 'fake_channel' that bypasses the 'inmemory' check
         call_command('runworker', '--layer',
                      'fake_channel', '--verbosity', '2')
-        # Increasing verbosity adds the logger callback
+
+        # Verify the callback is set
         mocked_worker.assert_called_with(callback=mock.ANY,
                                          only_channels=None,
                                          channel_layer=mock.ANY,
@@ -61,22 +72,30 @@ class RunServerTests(TestCase):
     def setUp(self):
         import channels.log
         self.stream = StringIO()
+        # Capture the logging of the channels moduel to match against the
+        # output.
         channels.log.handler = logging.StreamHandler(self.stream)
 
-    @mock.patch('sys.stderr', new_callable=StringIO)
-    @mock.patch('sys.stdout', new_callable=StringIO)
+    @mock.patch('channels.management.commands.runserver.sys.stdout', new_callable=StringIO)
     @mock.patch('channels.management.commands.runserver.Server')
     @mock.patch('channels.management.commands.runworker.Worker')
-    def test_runserver_basic(self, mocked_worker, mocked_server, mock_stdout, mock_stderr):
+    def test_runserver_basic(self, mocked_worker, mocked_server, *args):
+        # Django's autoreload util uses threads and this is not needed
+        # in the test envirionment.
+        # See:
+        # https://github.com/django/django/blob/master/django/core/management/commands/runserver.py#L105
         call_command('runserver', '--noreload')
         mocked_server.assert_called_with(port=8000, signal_handlers=True, http_timeout=60,
                                          host='127.0.0.1', action_logger=mock.ANY, channel_layer=mock.ANY)
 
-    @mock.patch('sys.stderr', new_callable=StringIO)
-    @mock.patch('sys.stdout', new_callable=StringIO)
+    @mock.patch('channels.management.commands.runserver.sys.stdout', new_callable=StringIO)
     @mock.patch('channels.management.commands.runserver.Server')
     @mock.patch('channels.management.commands.runworker.Worker')
-    def test_runserver_nostatic(self, mocked_worker, mocked_server, mock_stdout, mock_stderr):
+    def test_runserver_debug(self, mocked_worker, mocked_server, *args):
+        """
+        Test that the server runs with `DEBUG=True`.
+        """
+        # Debug requires the static url is set.
         with self.settings(DEBUG=True, STATIC_URL='/static/'):
             call_command('runserver', '--noreload')
             mocked_server.assert_called_with(port=8000, signal_handlers=True, http_timeout=60,
@@ -86,18 +105,24 @@ class RunServerTests(TestCase):
             mocked_server.assert_called_with(port=8001, signal_handlers=True, http_timeout=60,
                                              host='localhost', action_logger=mock.ANY, channel_layer=mock.ANY)
 
-    @mock.patch('sys.stderr', new_callable=StringIO)
-    @mock.patch('sys.stdout', new_callable=StringIO)
+        self.assertFalse(mocked_worker.called,
+                         "The worker should not be called with '--noworker'")
+
+    @mock.patch('channels.management.commands.runserver.sys.stdout', new_callable=StringIO)
     @mock.patch('channels.management.commands.runserver.Server')
-    def test_runserver_noworker(self, mocked_server, mock_stdout, mock_stderr):
+    @mock.patch('channels.management.commands.runworker.Worker')
+    def test_runserver_noworker(self, mocked_worker, mocked_server, *args):
         '''
-        No need to Mock the Worker because it should not be used.
+        Test that the Worker is not called when using the `--noworker` parameter.
         '''
         call_command('runserver', '--noreload', '--noworker')
+        mocked_server.assert_called_with(port=8000, signal_handlers=True, http_timeout=60,
+                                         host='127.0.0.1', action_logger=mock.ANY, channel_layer=mock.ANY)
+        self.assertFalse(mocked_worker.called,
+                         "The worker should not be called with '--noworker'")
 
-    @mock.patch('sys.stderr', new_callable=StringIO)
-    @mock.patch('sys.stdout', new_callable=StringIO)
-    def test_log_action(self, mock_stdout, mock_stderr):
+    @mock.patch('channels.management.commands.runserver.sys.stderr', new_callable=StringIO)
+    def test_log_action(self, mocked_stderr):
         cmd = runserver.Command()
         test_actions = [
             (100, 'http', 'complete',
@@ -128,6 +153,6 @@ class RunServerTests(TestCase):
                        'time_taken': 0.12345,
                        'client': 'a-client'}
             cmd.log_action(protocol, action, details)
-            self.assertIn(output, mock_stderr.getvalue())
+            self.assertIn(output, mocked_stderr.getvalue())
             # Clear previous output
-            mock_stderr.truncate(0)
+            mocked_stderr.truncate(0)
