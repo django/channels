@@ -1,3 +1,31 @@
+0.15.0 (2016-06-22)
+-------------------
+
+* Query strings are now decoded entirely by Django. Must be used with Daphne
+  0.13 or higher.
+
+
+0.14.3 (2016-06-21)
+-------------------
+
+* + signs in query strings are no longer double-decoded
+
+* Message now has .values(), .keys() and .items() to match dict
+
+
+0.14.2 (2016-06-16)
+-------------------
+
+* Class based consumers now have built-in channel_session and
+  channel_session_user support
+
+
+0.14.1 (2016-06-09)
+-------------------
+
+* Fix unicode issues with test client under Python 2.7
+
+
 0.14.0 (2016-05-25)
 -------------------
 

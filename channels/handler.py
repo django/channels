@@ -135,7 +135,7 @@ class AsgiRequest(http.HttpRequest):
 
     @cached_property
     def GET(self):
-        return http.QueryDict(self.message.get('query_string', '').encode("utf8"))
+        return http.QueryDict(self.message.get('query_string', ''))
 
     def _get_post(self):
         if not hasattr(self, '_post'):
@@ -212,6 +212,8 @@ class AsgiHandler(base.BaseHandler):
         for message in self.encode_response(response):
             # TODO: file_to_stream
             yield message
+        # Close the response now we're done with it
+        response.close()
 
     def process_exception_by_middleware(self, exception, request):
         """
@@ -275,7 +277,9 @@ class AsgiHandler(base.BaseHandler):
         }
         # Streaming responses need to be pinned to their iterator
         if response.streaming:
-            for part in response.streaming_content:
+            # Access `__iter__` and not `streaming_content` directly in case
+            # it has been overridden in a subclass.
+            for part in response:
                 for chunk, more in cls.chunk_bytes(part):
                     message['content'] = chunk
                     # We ignore "more" as there may be more parts; instead,

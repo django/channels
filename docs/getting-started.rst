@@ -320,6 +320,9 @@ As you can probably guess, this disables the worker threads in ``runserver``
 and handles them in a separate process. You can pass ``-v 2`` to ``runworker``
 if you want to see logging as it runs the consumers.
 
+If Django is in debug mode (``DEBUG=True``), then ``runworker`` will serve
+static files, as ``runserver`` does. Just like a normal Django setup, you'll
+have to set up your static file serving for when ``DEBUG`` is turned off.
 
 Persisting Data
 ---------------
@@ -568,8 +571,9 @@ have a ChatMessage model with ``message`` and ``room`` fields::
     # Connected to chat-messages
     def msg_consumer(message):
         # Save to model
+        room = message.content['room']
         ChatMessage.objects.create(
-            room=message.content['room'],
+            room=room,
             message=message.content['message'],
         )
         # Broadcast to listening sockets

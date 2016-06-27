@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import copy
 import random
 import string
@@ -157,7 +159,8 @@ class apply_routes(object):
                     routes = list(map(include, self.routes))
                 else:
                     routes = self.routes
-
+            else:
+                routes = [self.routes]
             channel_layer.routing = routes
             channel_layer.router = Router(routes)
 
