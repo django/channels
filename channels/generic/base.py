@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 from channels.sessions import channel_session
-from channels.auth import channel_session_user
+from channels.auth import channel_session_user, channel_session_user_from_http
 
 
 class BaseConsumer(object):
@@ -43,6 +43,8 @@ class BaseConsumer(object):
         """
         handler = getattr(self, self.method_mapping[message.channel.name])
         if self.channel_session_user:
+            if message.channel.name == 'websocket.connect':
+                return channel_session_user_from_http(handler)
             return channel_session_user(handler)
         elif self.channel_session:
             return channel_session(handler)
