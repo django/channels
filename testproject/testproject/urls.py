@@ -1,5 +1,4 @@
 from django.conf.urls import  url
-from chtest import consumers, views
 
 
 urlpatterns = [
@@ -7,7 +6,11 @@ urlpatterns = [
 ]
 
 
-channel_routing = {
+try:
+    from chtest import consumers, views
+    channel_routing = {
     "websocket.receive": consumers.ws_message,
     "websocket.connect": consumers.ws_connect,
 }
+except:
+    pass
