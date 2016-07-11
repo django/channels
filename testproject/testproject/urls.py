@@ -8,6 +8,7 @@ urlpatterns = [
 
 try:
     from chtest import consumers, views
+    
     channel_routing = {
     "websocket.receive": consumers.ws_message,
     "websocket.connect": consumers.ws_connect,
