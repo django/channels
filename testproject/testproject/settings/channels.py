@@ -1,5 +1,5 @@
 # Settings for channels specifically
-from core.settings.base import *
+from testproject.settings.base import *
 
 INSTALLED_APPS += (
     'channels',
