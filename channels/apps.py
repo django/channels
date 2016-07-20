@@ -1,8 +1,6 @@
 from django.apps import AppConfig
 from django.core.exceptions import ImproperlyConfigured
 
-from .binding.base import BindingMetaclass
-
 
 class ChannelsConfig(AppConfig):
 
