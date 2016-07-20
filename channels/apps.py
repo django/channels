@@ -1,8 +1,6 @@
 from django.apps import AppConfig
 from django.core.exceptions import ImproperlyConfigured
 
-from .binding.base import BindingMetaclass
-
 
 class ChannelsConfig(AppConfig):
 
@@ -20,5 +18,3 @@ class ChannelsConfig(AppConfig):
         # Do django monkeypatches
         from .hacks import monkeypatch_django
         monkeypatch_django()
-        # Instantiate bindings
-        BindingMetaclass.register_all()
