@@ -13,18 +13,11 @@ class BindingMetaclass(type):
     Metaclass that tracks instantiations of its type.
     """
 
-    binding_classes = []
-
     def __new__(cls, name, bases, body):
         klass = type.__new__(cls, name, bases, body)
         if bases != (object, ):
-            cls.binding_classes.append(klass)
+            klass.register()
         return klass
-
-    @classmethod
-    def register_all(cls):
-        for binding_class in cls.binding_classes:
-            binding_class.register()
 
 
 @six.add_metaclass(BindingMetaclass)
@@ -70,8 +63,9 @@ class Binding(object):
             cls.model._meta.object_name.lower(),
         )
         # Connect signals
-        post_save.connect(cls.save_receiver, sender=cls.model)
-        post_delete.connect(cls.delete_receiver, sender=cls.model)
+        uid = "Binding %s.%s" % (cls.__module__, cls.__name__)
+        post_save.connect(cls.save_receiver, sender=cls.model, dispatch_uid=uid)
+        post_delete.connect(cls.delete_receiver, sender=cls.model, dispatch_uid=uid)
 
     # Outbound binding
 
