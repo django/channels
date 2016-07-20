@@ -20,5 +20,3 @@ class ChannelsConfig(AppConfig):
         # Do django monkeypatches
         from .hacks import monkeypatch_django
         monkeypatch_django()
-        # Instantiate bindings
-        BindingMetaclass.register_all()
