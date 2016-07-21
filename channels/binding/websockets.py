@@ -89,10 +89,10 @@ class WebsocketBinding(Binding):
         instance.save()
 
 
-class WebsocketBindingWithMembers(WebsocketBinding):
+class BindingWithMembersMixin:
     """
-    Outgoing binding subclass based on WebsocketBinding. Additionally
-    enables sending of member variables, properties and methods.
+    Outgoing binding mixin. Additionally enables sending of
+    member variables, properties and methods.
     Member methods can only have self as a required argument.
     Just add the name of the member to the send_members-list.
     Example:
@@ -108,7 +108,7 @@ class WebsocketBindingWithMembers(WebsocketBinding):
         def my_function(self):
             return self.my_var - self.my_vield
 
-    class MyBinding(WebsocketBindingWithMembers):
+    class MyBinding(BindingWithMembersMixin, WebsocketBinding):
         model = MyModel
         stream = 'mystream'
 
@@ -121,8 +121,8 @@ class WebsocketBindingWithMembers(WebsocketBinding):
         data = super(WebsocketBindingWithMembers, self).serialize_data(instance)
         for m in self.send_members:
             member = getattr(instance, m)
-            try:
+            if callable(member):
                 data[m] = member()
-            except TypeError:
+            else:
                 data[m] = member
         return data
