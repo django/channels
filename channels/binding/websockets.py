@@ -117,7 +117,7 @@ class WebsocketBindingWithMembers(WebsocketBinding):
     """
 
     send_members = []
-    
+
     encoder = DjangoJSONEncoder()
 
     def serialize_data(self, instance):
