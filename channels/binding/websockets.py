@@ -125,7 +125,7 @@ class WebsocketBindingWithMembers(WebsocketBinding):
         for m in self.send_members:
             member = getattr(instance, m)
             if callable(member):
-                data[m] = encoder.encode(member())
+                data[m] = self.encoder.encode(member())
             else:
-                data[m] = encoder.encode(member)
+                data[m] = self.encoder.encode(member)
         return data
