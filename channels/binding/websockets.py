@@ -126,4 +126,3 @@ class WebsocketBindingWithMembers(WebsocketBinding):
             except TypeError:
                 data[m] = member
         return data
-
