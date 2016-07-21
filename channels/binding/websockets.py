@@ -89,12 +89,12 @@ class WebsocketBinding(Binding):
         instance.save()
 
 
-WebsocketBindingWithMembers(WebsocketBinding):
+class WebsocketBindingWithMembers(WebsocketBinding):
     """
-    Outgoing binding subclass based on WebsocketBinding. Additionally 
-    enables sending of member variables, properties and methods. 
+    Outgoing binding subclass based on WebsocketBinding. Additionally
+    enables sending of member variables, properties and methods.
     Member methods can only have self as a required argument.
-    Just add the name of the member to the send_members-list. 
+    Just add the name of the member to the send_members-list.
     Example:
 
     class MyModel(models.Model):
@@ -104,7 +104,7 @@ WebsocketBindingWithMembers(WebsocketBinding):
         @property
         def my_property(self):
             return self.my_var + self.my_field
-        
+
         def my_function(self):
             return self.my_var - self.my_vield
 
@@ -114,7 +114,7 @@ WebsocketBindingWithMembers(WebsocketBinding):
 
         send_members = ['my_var', 'my_property', 'my_function']
     """
-    
+
     send_members = []
 
     def serialize_data(self, instance):
@@ -126,4 +126,4 @@ WebsocketBindingWithMembers(WebsocketBinding):
             except TypeError:
                 data[m] = member
         return data
-    
+
