@@ -1,6 +1,7 @@
 import json
 
 from django.core import serializers
+from django.core.serializers.json import DjangoJSONEncoder
 
 from .base import Binding
 from ..generic.websockets import WebsocketDemultiplexer
@@ -116,13 +117,15 @@ class WebsocketBindingWithMembers(WebsocketBinding):
     """
 
     send_members = []
+    
+    encoder = DjangoJSONEncoder()
 
     def serialize_data(self, instance):
         data = super(WebsocketBindingWithMembers, self).serialize_data(instance)
         for m in self.send_members:
             member = getattr(instance, m)
             if callable(member):
-                data[m] = member()
+                data[m] = encoder.encode(member())
             else:
-                data[m] = member
+                data[m] = encoder.encode(member)
         return data
