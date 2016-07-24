@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
-from channels.sessions import channel_session
-from channels.auth import channel_session_user
+from ..sessions import channel_session
+from ..auth import channel_session_user
 
 
 class BaseConsumer(object):
