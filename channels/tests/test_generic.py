@@ -113,7 +113,6 @@ class GenericTests(ChannelTestCase):
             client.send_and_consume('websocket.connect', {'path': '/path/2', 'order': 'next'})
             self.assertEqual(client.receive(), {'text': 'next'})
 
-
     def test_as_route_method(self):
         class WebsocketConsumer(BaseConsumer):
             trigger = 'new'
