@@ -43,13 +43,12 @@ class BaseConsumer(object):
         """
         Return the route_class that can directly using at a routes
         """
-        _dir = dir(cls)
-        _dict = dict(cls.__dict__)
+        _cls = cls
         _kwargs = dict(kwargs)
-        for key in kwargs.keys():
-            if key in _dir:
-                _dict[key] = _kwargs.pop(key)
-        return route_class(type(cls.__name__, (cls,), _dict), **_kwargs)
+        _dict = {key: _kwargs.pop(key) for key in kwargs.keys() if key in dir(_cls)}
+        if _dict:
+            _cls = type(cls.__name__, (cls,), _dict)
+        return route_class(_cls, **_kwargs)
 
     def get_handler(self, message, **kwargs):
         """

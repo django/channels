@@ -91,7 +91,15 @@ class GenericTests(ChannelTestCase):
             def connect(self, message, **kwargs):
                 self.send(text=message.get('order'))
 
-        with apply_routes([WebsocketConsumer.as_route(slight_ordering=True, path='/path')]):
+        routes = [
+            WebsocketConsumer.as_route(slight_ordering=True, path='^/path$'),
+            WebsocketConsumer.as_route(path='^/path/2$'),
+        ]
+
+        self.assertIsNot(routes[0].consumer, WebsocketConsumer)
+        self.assertIs(routes[1].consumer, WebsocketConsumer)
+
+        with apply_routes(routes):
             client = Client()
 
             client.send('websocket.connect', {'path': '/path', 'order': 1})
@@ -101,6 +109,10 @@ class GenericTests(ChannelTestCase):
             client.consume('websocket.connect')
             self.assertEqual(client.receive(), {'text': 0})
             self.assertEqual(client.receive(), {'text': 1})
+
+            client.send_and_consume('websocket.connect', {'path': '/path/2', 'order': 'next'})
+            self.assertEqual(client.receive(), {'text': 'next'})
+
 
     def test_as_route_method(self):
         class WebsocketConsumer(BaseConsumer):
