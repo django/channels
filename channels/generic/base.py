@@ -39,16 +39,14 @@ class BaseConsumer(object):
         return set(cls.method_mapping.keys())
 
     @classmethod
-    def as_route(cls, **kwargs):
+    def as_route(cls, filters, **kwargs):
         """
-        Return the route_class that can directly using at a routes
+        Shortcut function to create route with filters to direct to a class-based consumer with given kwargs
         """
         _cls = cls
-        _kwargs = dict(kwargs)
-        _dict = {key: _kwargs.pop(key) for key in kwargs.keys() if key in dir(_cls)}
-        if _dict:
-            _cls = type(cls.__name__, (cls,), _dict)
-        return route_class(_cls, **_kwargs)
+        if kwargs:
+            _cls = type(cls.__name__, (cls,), kwargs)
+        return route_class(_cls, **filters)
 
     def get_handler(self, message, **kwargs):
         """
