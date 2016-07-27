@@ -92,8 +92,8 @@ class GenericTests(ChannelTestCase):
                 self.send(text=message.get('order'))
 
         routes = [
-            WebsocketConsumer.as_route(slight_ordering=True, filters={'path': '^/path$'}),
-            WebsocketConsumer.as_route(filters={'path': '^/path/2$'}),
+            WebsocketConsumer.as_route(attrs={'slight_ordering': True}, path='^/path$'),
+            WebsocketConsumer.as_route(path='^/path/2$'),
         ]
 
         self.assertIsNot(routes[0].consumer, WebsocketConsumer)
@@ -123,9 +123,8 @@ class GenericTests(ChannelTestCase):
         method_mapping = {'mychannel': 'test'}
 
         with apply_routes([WebsocketConsumer.as_route(
-                method_mapping=method_mapping,
-                trigger='from_as_route',
-                filters={'name': 'filter'})]):
+                {'method_mapping': method_mapping, 'trigger': 'from_as_route'},
+                name='filter')]):
             client = Client()
 
             client.send_and_consume('mychannel', {'name': 'filter'})

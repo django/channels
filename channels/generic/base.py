@@ -39,14 +39,16 @@ class BaseConsumer(object):
         return set(cls.method_mapping.keys())
 
     @classmethod
-    def as_route(cls, filters, **kwargs):
+    def as_route(cls, attrs=None, **kwargs):
         """
-        Shortcut function to create route with filters to direct to a class-based consumer with given kwargs
+        Shortcut function to create route with filters (kwargs)
+        to direct to a class-based consumer with given class attributes (attrs)
         """
         _cls = cls
-        if kwargs:
-            _cls = type(cls.__name__, (cls,), kwargs)
-        return route_class(_cls, **filters)
+        if attrs:
+            assert isinstance(attrs, dict), 'Attri'
+            _cls = type(cls.__name__, (cls,), attrs)
+        return route_class(_cls, **kwargs)
 
     def get_handler(self, message, **kwargs):
         """
