@@ -32,8 +32,7 @@ def setup_tester():
 def setup_load_tester(src="https://github.com/andrewgodwin/channels.git"):
     sudo("apt-get update && apt-get install -y git nodejs && apt-get install npm")
     sudo("npm install -g loadtest")
-    sudo("rm -rf /srv/loadtest")
-    sudo("git clone %s /srv/loadtest/" % src)
+    sudo("ln -s /usr/bin/nodejs /usr/bin/node")
 
 
 @task
@@ -47,6 +46,11 @@ def run_worker(redis_ip):
     with cd("/srv/channels/testproject/"):
         sudo("REDIS_URL=redis://%s:6379 python manage.py runworker" % redis_ip)
 
+@task
+def run_loadtest():
+    with cd("/srv/channels/testproject/"):
+        sudo("REDIS_URL=redis://%s:6379 python manage.py runworker" % redis_ip)
+loadtest -c 10 --rps 200 http://mysite.com/
 
 @task
 def shell():
