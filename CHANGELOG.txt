@@ -1,3 +1,56 @@
+0.17.1 (2016-07-22)
+-------------------
+
+* Bindings now require that `fields` is defined on the class body so all fields
+  are not sent by default. To restore old behaviour, set it to ['__all__']
+
+* Bindings can now be declared after app.ready() has been called and still work.
+
+* Binding payloads now include the model name as `appname.modelname`.
+
+* A worker_ready signal now gets triggered when `runworker` starts consuming
+  messages. It does not fire from within `runserver`.
+
+0.17.0 (2016-07-19)
+-------------------
+
+* Data Binding framework is added, which allows easy tying of model changes
+  to WebSockets (and other protocols) and vice-versa.
+
+* Standardised WebSocket/JSON multiplexing introduced
+
+* WebSocket generic consumers now have a 'close' argument on send/group_send
+
+
+0.16.1 (2016-07-12)
+-------------------
+
+* WebsocketConsumer now has a http_user option for auto user sessions.
+
+* consumer_started and consumer_finished signals are now available under
+  channels.signals.
+
+* Database connections are closed whenever a consumer finishes.
+
+
+0.16.0 (2016-07-06)
+-------------------
+
+* websocket.connect and websocket.receive are now consumed by a no-op consumer
+  by default if you don't specify anything to consume it, to bring Channels in
+  line with the ASGI rules on WebSocket backpressure.
+
+* You no longer need to call super's setUp in ChannelTestCase.
+
+
+0.15.1 (2016-06-29)
+-------------------
+
+* Class based consumers now have a self.kwargs
+
+* Fixed bug where empty streaming responses did not send headers or status code
+
+
 0.15.0 (2016-06-22)
 -------------------
 

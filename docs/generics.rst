@@ -32,7 +32,8 @@ Here's a routing example::
 
 Class-based consumers are instantiated once for each message they consume,
 so it's safe to store things on ``self`` (in fact, ``self.message`` is the
-current message by default).
+current message by default, and ``self.kwargs`` are the keyword arguments
+passed in from the routing).
 
 Base
 ----
@@ -62,6 +63,13 @@ If you want to perfom more complicated routing, you'll need to override the
 remember, though, your channel names cannot change during runtime and must
 always be the same for as long as your process runs.
 
+``BaseConsumer`` and all other generic consumers than inherit from it provide
+two instance variables on the class:
+
+* ``self.message``, the :ref:`Message object <ref-message>` representing the
+  message the consumer was called for.
+* ``self.kwargs``, keyword arguments from the :doc:`routing`
+
 
 WebSockets
 ----------
@@ -75,6 +83,10 @@ The basic WebSocket generic consumer is used like this::
     from channels.generic.websockets import WebsocketConsumer
 
     class MyConsumer(WebsocketConsumer):
+
+        # Set to True to automatically port users from HTTP cookies
+        # (you don't need channel_session_user, this implies it)
+        http_user = True
 
         # Set to True if you want them, else leave out
         strict_ordering = False
@@ -159,6 +171,43 @@ client.
 Note that this subclass still can't intercept ``Group.send()`` calls to make
 them into JSON automatically, but it does provide ``self.group_send(name, content)``
 that will do this for you if you call it explicitly.
+
+``self.close()`` is also provided to easily close the WebSocket from the server
+end once you are done with it.
+
+.. _multiplexing:
+
+WebSocket Multiplexing
+----------------------
+
+Channels provides a standard way to multiplex different data streams over
+a single WebSocket, called a ``Demultiplexer``. You use it like this::
+
+    from channels.generic.websockets import WebsocketDemultiplexer
+
+    class Demultiplexer(WebsocketDemultiplexer):
+
+        mapping = {
+            "intval": "binding.intval",
+            "stats": "internal.stats",
+        }
+
+It expects JSON-formatted WebSocket frames with two keys, ``stream`` and
+``payload``, and will match the ``stream`` against the mapping to find a
+channel name. It will then forward the message onto that channel while
+preserving ``reply_channel``, so you can hook consumers up to them directly
+in the ``routing.py`` file, and use authentication decorators as you wish.
+
+You cannot use class-based consumers this way as the messages are no
+longer in WebSocket format, though. If you need to do operations on
+``connect`` or ``disconnect``, override those methods on the ``Demultiplexer``
+itself (you can also provide a ``connection_groups`` method, as it's just
+based on the JSON WebSocket generic consumer).
+
+The :doc:`data binding <binding>` code will also send out messages to clients
+in the same format, and you can encode things in this format yourself by
+using the ``WebsocketDemultiplexer.encode`` class method.
+
 
 Sessions and Users
 ------------------

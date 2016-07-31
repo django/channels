@@ -7,6 +7,7 @@ from functools import wraps
 
 from django.test.testcases import TestCase
 from .. import DEFAULT_CHANNEL_LAYER
+from ..channel import Group
 from ..routing import Router, include
 from ..asgi import channel_layers, ChannelLayerWrapper
 from ..message import Message
@@ -26,11 +27,11 @@ class ChannelTestCase(TestCase):
     # Customizable so users can test multi-layer setups
     test_channel_aliases = [DEFAULT_CHANNEL_LAYER]
 
-    def setUp(self):
+    def _pre_setup(self):
         """
         Initialises in memory channel layer for the duration of the test
         """
-        super(ChannelTestCase, self).setUp()
+        super(ChannelTestCase, self)._pre_setup()
         self._old_layers = {}
         for alias in self.test_channel_aliases:
             # Swap in an in memory layer wrapper and keep the old one around
@@ -43,7 +44,7 @@ class ChannelTestCase(TestCase):
                 )
             )
 
-    def tearDown(self):
+    def _post_teardown(self):
         """
         Undoes the channel rerouting
         """
@@ -51,7 +52,7 @@ class ChannelTestCase(TestCase):
             # Swap in an in memory layer wrapper and keep the old one around
             channel_layers.set(alias, self._old_layers[alias])
         del self._old_layers
-        super(ChannelTestCase, self).tearDown()
+        super(ChannelTestCase, self)._post_teardown()
 
     def get_next_message(self, channel, alias=DEFAULT_CHANNEL_LAYER, require=False):
         """
@@ -132,6 +133,9 @@ class Client(object):
         message = self.get_next_message(self.reply_channel)
         if message:
             return message.content
+
+    def join_group(self, group_name):
+        Group(group_name).add(self.reply_channel)
 
 
 class apply_routes(object):

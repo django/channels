@@ -201,10 +201,13 @@ code, and so has been made optional in order to enable lightweight
 channel layers for applications that don't need the full feature set defined
 here.
 
-There are three extensions defined here: the ``groups`` extension, which
-is expanded on below, the ``flush`` extension, which allows easier testing
-and development, and the ``statistics`` extension, which allows
-channel layers to provide global and per-channel statistics.
+The extensions defined here are:
+
+* ``groups``: Allows grouping of channels to allow broadcast; see below for more.
+* ``flush``: Allows easier testing and development with channel layers.
+* ``statistics``: Allows channel layers to provide global and per-channel statistics.
+* ``twisted``: Async compatability with the Twisted framework.
+* ``asyncio``: Async compatability with Python 3's asyncio.
 
 There is potential to add further extensions; these may be defined by
 a separate specification, or a new version of this specification.
@@ -348,6 +351,11 @@ A channel layer implementing the ``groups`` extension must also provide:
 * ``group_discard(group, channel)``, a callable that removes the ``channel``
   from the ``group`` if it is in it, and does nothing otherwise.
 
+* ``group_channels(group)``, a callable that returns an iterable which yields
+  all of the group's member channel names. The return value should be serializable
+  with regards to local adds and discards, but best-effort with regards to
+  adds and discards on other nodes.
+
 * ``send_group(group, message)``, a callable that takes two positional
   arguments; the group to send to, as a unicode string, and the message
   to send, as a serializable ``dict``. It may raise MessageTooLarge but cannot
@@ -378,7 +386,19 @@ A channel layer implementing the ``flush`` extension must also provide:
   implemented). This call must block until the system is cleared and will
   consistently look empty to any client, if the channel layer is distributed.
 
+A channel layer implementing the ``twisted`` extension must also provide:
 
+* ``receive_many_twisted(channels)``, a function that behaves
+  like ``receive_many`` but that returns a Twisted Deferred that eventually
+  returns either ``(channel, message)`` or ``(None, None)``. It is not possible
+  to run it in nonblocking mode; use the normal ``receive_many`` for that.
+
+A channel layer implementing the ``asyncio`` extension must also provide:
+
+* ``receive_many_asyncio(channels)``, a function that behaves
+  like ``receive_many`` but that fulfills the asyncio coroutine contract to
+  block until either a result is available or an internal timeout is reached
+  and ``(None, None)`` is returned.
 
 Channel Semantics
 -----------------
@@ -507,7 +527,9 @@ the response ``headers`` must be sent as a list of tuples, which matches WSGI.
 Request
 '''''''
 
-Sent once for each request that comes into the protocol server.
+Sent once for each request that comes into the protocol server. If sending
+this raises ``ChannelFull``, the interface server must respond with a
+500-range error, preferably ``503 Service Unavailable``, and close the connection.
 
 Channel: ``http.request``
 
@@ -561,7 +583,10 @@ Keys:
 Request Body Chunk
 ''''''''''''''''''
 
-Must be sent after an initial Response.
+Must be sent after an initial Response. If trying to send this raises
+``ChannelFull``, the interface server should wait and try again until it is
+accepted (the consumer at the other end of the channel may not be as fast
+consuming the data as the client is at sending it).
 
 Channel: ``http.request.body?``
 
@@ -584,7 +609,9 @@ Keys:
 Response
 ''''''''
 
-Send after any server pushes, and before any response chunks.
+Send after any server pushes, and before any response chunks. If ``ChannelFull``
+is encountered, wait and try again later, optionally giving up after a
+predetermined timeout.
 
 Channel: ``http.response!``
 
@@ -609,7 +636,8 @@ Keys:
 Response Chunk
 ''''''''''''''
 
-Must be sent after an initial Response.
+Must be sent after an initial Response. If ``ChannelFull``
+is encountered, wait and try again later.
 
 Channel: ``http.response!``
 
@@ -627,7 +655,10 @@ Keys:
 Server Push
 '''''''''''
 
-Must be sent before any Response or Response Chunk messages.
+Must be sent before any Response or Response Chunk messages. If ``ChannelFull``
+is encountered, wait and try again later, optionally giving up after a
+predetermined timeout, and give up on the entire response this push is
+connected to.
 
 When a server receives this message, it must treat the Request message in the
 ``request`` field of the Server Push as though it were a new HTTP request being
@@ -664,6 +695,9 @@ Sent when a HTTP connection is closed. This is mainly useful for long-polling,
 where you may have added the response channel to a Group or other set of
 channels you want to trigger a reply to when data arrives.
 
+If ``ChannelFull`` is raised, then give up attempting to send the message;
+consumption is not required.
+
 Channel: ``http.disconnect``
 
 Keys:
@@ -683,12 +717,18 @@ should store them in a cache or database.
 WebSocket protocol servers should handle PING/PONG requests themselves, and
 send PING frames as necessary to ensure the connection is alive.
 
+Note that you **must** ensure that websocket.connect is consumed; if an
+interface server gets ``ChannelFull`` on this channel it will drop the
+connection. Django Channels ships with a no-op consumer attached by default;
+we recommend other implementations do the same.
+
 
 Connection
 ''''''''''
 
 Sent when the client initially opens a connection and completes the
-WebSocket handshake.
+WebSocket handshake. If sending this raises ``ChannelFull``, the interface
+server must close the WebSocket connection with error code 1013.
 
 Channel: ``websocket.connect``
 
@@ -728,7 +768,9 @@ Keys:
 Receive
 '''''''
 
-Sent when a data frame is received from the client.
+Sent when a data frame is received from the client. If ``ChannelFull`` is
+raised, you may retry sending it but if it does not send the socket must
+be closed with websocket error code 1013.
 
 Channel: ``websocket.receive``
 
@@ -755,6 +797,9 @@ Sent when either connection to the client is lost, either from the client
 closing the connection, the server closing the connection, or loss of the
 socket.
 
+If ``ChannelFull`` is raised, then give up attempting to send the message;
+consumption is not required.
+
 Channel: ``websocket.disconnect``
 
 Keys:
@@ -762,6 +807,8 @@ Keys:
 * ``reply_channel``: Channel name that was used for sending data, starting
   with ``websocket.send!``. Cannot be used to send at this point; provided
   as a way to identify the connection only.
+
+* ``code``: The WebSocket close code (integer), as per the WebSocket spec.
 
 * ``path``: Path sent during ``connect``, sent to make routing easier for apps.
 
@@ -773,7 +820,7 @@ Send/Close
 ''''''''''
 
 Sends a data frame to the client and/or closes the connection from the
-server end.
+server end. If ``ChannelFull`` is raised, wait and try again.
 
 Channel: ``websocket.send!``
 

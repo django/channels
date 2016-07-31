@@ -1,6 +1,7 @@
-import json
+from django.core.serializers.json import json, DjangoJSONEncoder
 
-from ..channel import Group
+from ..channel import Group, Channel
+from ..auth import channel_session_user_from_http
 from ..sessions import enforce_ordering
 from .base import BaseConsumer
 
@@ -18,6 +19,10 @@ class WebsocketConsumer(BaseConsumer):
         "websocket.disconnect": "raw_disconnect",
     }
 
+    # Turning this on passes the user over from the HTTP session on connect,
+    # implies channel_session_user
+    http_user = False
+
     # Set one to True if you want the class to enforce ordering for you
     slight_ordering = False
     strict_ordering = False
@@ -27,8 +32,16 @@ class WebsocketConsumer(BaseConsumer):
         Pulls out the path onto an instance variable, and optionally
         adds the ordering decorator.
         """
+        # HTTP user implies channel session user
+        if self.http_user:
+            self.channel_session_user = True
+        # Get super-handler
         self.path = message['path']
         handler = super(WebsocketConsumer, self).get_handler(message, **kwargs)
+        # Optionally apply HTTP transfer
+        if self.http_user:
+            handler = channel_session_user_from_http(handler)
+        # Ordering decorators
         if self.strict_ordering:
             return enforce_ordering(handler, slight=False)
         elif self.slight_ordering:
@@ -74,24 +87,39 @@ class WebsocketConsumer(BaseConsumer):
         """
         pass
 
-    def send(self, text=None, bytes=None):
+    def send(self, text=None, bytes=None, close=False):
         """
         Sends a reply back down the WebSocket
         """
+        message = {}
+        if close:
+            message["close"] = True
         if text is not None:
-            self.message.reply_channel.send({"text": text})
+            message["text"] = text
         elif bytes is not None:
-            self.message.reply_channel.send({"bytes": bytes})
+            message["bytes"] = bytes
         else:
             raise ValueError("You must pass text or bytes")
+        self.message.reply_channel.send(message)
 
-    def group_send(self, name, text=None, bytes=None):
+    @classmethod
+    def group_send(cls, name, text=None, bytes=None, close=False):
+        message = {}
+        if close:
+            message["close"] = True
         if text is not None:
-            Group(name, channel_layer=self.message.channel_layer).send({"text": text})
+            message["text"] = text
         elif bytes is not None:
-            Group(name, channel_layer=self.message.channel_layer).send({"bytes": bytes})
+            message["bytes"] = bytes
         else:
             raise ValueError("You must pass text or bytes")
+        Group(name).send(message)
+
+    def close(self):
+        """
+        Closes the WebSocket from the server end
+        """
+        self.message.reply_channel.send({"close": True})
 
     def raw_disconnect(self, message, **kwargs):
         """
@@ -128,11 +156,70 @@ class JsonWebsocketConsumer(WebsocketConsumer):
         """
         pass
 
-    def send(self, content):
+    def send(self, content, close=False):
         """
         Encode the given content as JSON and send it to the client.
         """
-        super(JsonWebsocketConsumer, self).send(text=json.dumps(content))
+        super(JsonWebsocketConsumer, self).send(text=json.dumps(content), close=close)
 
-    def group_send(self, name, content):
-        super(JsonWebsocketConsumer, self).group_send(name, json.dumps(content))
+    @classmethod
+    def group_send(cls, name, content, close=False):
+        WebsocketConsumer.group_send(name, json.dumps(content), close=close)
+
+
+class WebsocketDemultiplexer(JsonWebsocketConsumer):
+    """
+    JSON-understanding WebSocket consumer subclass that handles demultiplexing
+    streams using a "stream" key in a top-level dict and the actual payload
+    in a sub-dict called "payload". This lets you run multiple streams over
+    a single WebSocket connection in a standardised way.
+
+    Incoming messages on streams are mapped into a custom channel so you can
+    just tie in consumers the normal way. The reply_channels are kept so
+    sessions/auth continue to work. Payloads must be a dict at the top level,
+    so they fulfill the Channels message spec.
+
+    Set a mapping from streams to channels in the "mapping" key. We make you
+    whitelist channels like this to allow different namespaces and for security
+    reasons (imagine if someone could inject straight into websocket.receive).
+    """
+
+    mapping = {}
+
+    def receive(self, content, **kwargs):
+        # Check the frame looks good
+        if isinstance(content, dict) and "stream" in content and "payload" in content:
+            # Match it to a channel
+            stream = content['stream']
+            if stream in self.mapping:
+                # Extract payload and add in reply_channel
+                payload = content['payload']
+                if not isinstance(payload, dict):
+                    raise ValueError("Multiplexed frame payload is not a dict")
+                payload['reply_channel'] = self.message['reply_channel']
+                # Send it onto the new channel
+                Channel(self.mapping[stream]).send(payload)
+            else:
+                raise ValueError("Invalid multiplexed frame received (stream not mapped)")
+        else:
+            raise ValueError("Invalid multiplexed frame received (no channel/payload key)")
+
+    def send(self, stream, payload):
+        self.message.reply_channel.send(self.encode(stream, payload))
+
+    @classmethod
+    def group_send(cls, name, stream, payload, close=False):
+        message = cls.encode(stream, payload)
+        if close:
+            message["close"] = True
+        Group(name).send(message)
+
+    @classmethod
+    def encode(cls, stream, payload):
+        """
+        Encodes stream + payload for outbound sending.
+        """
+        return {"text": json.dumps({
+            "stream": stream,
+            "payload": payload,
+        }, cls=DjangoJSONEncoder)}
