@@ -46,11 +46,11 @@ def run_worker(redis_ip):
     with cd("/srv/channels/testproject/"):
         sudo("REDIS_URL=redis://%s:6379 python manage.py runworker" % redis_ip)
 
+
 @task
-def run_loadtest():
-    with cd("/srv/channels/testproject/"):
-        sudo("REDIS_URL=redis://%s:6379 python manage.py runworker" % redis_ip)
-loadtest -c 10 --rps 200 http://mysite.com/
+def run_loadtest(target):
+    sudo("loadtest -c 10 --rps 200 %s" % target)
+
 
 @task
 def shell():
