@@ -29,6 +29,14 @@ def setup_tester():
 
 
 @task
+def setup_load_tester(src="https://github.com/andrewgodwin/channels.git"):
+    sudo("apt-get update && apt-get install -y nodejs && apt-get install npm")
+    sudo("npm install -g loadtest")
+    sudo("rm -rf /srv/loadtest")
+    sudo("git clone %s /srv/loadtest/" % src)
+
+
+@task
 def run_daphne(redis_ip):
     with cd("/srv/channels/testproject/"):
         sudo("REDIS_URL=redis://%s:6379 daphne -b 0.0.0.0 -p 80 testproject.asgi:channel_layer" % redis_ip)
