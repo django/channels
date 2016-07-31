@@ -49,7 +49,7 @@ def run_worker(redis_ip):
 
 @task
 def run_loadtest(target, time=90):
-    sudo("loadtest -c 10 --rps 200 -t %s %s" % time, target)
+    sudo("loadtest -c 10 --rps 200 -t {0} {1}".format(time, target))
 
 
 @task
