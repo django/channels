@@ -61,7 +61,7 @@ In another terminal window, run the benchmark with::
     python benchmark.py ws://localhost:8000
 
 
-Additional loadtesting options:
+Additional load testing options:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
     
 If you wish to setup a separate machine to loadtest your environment, you can do the following:
@@ -87,7 +87,7 @@ Spin up a server on your favorite cloud host (AWS, Linode, Digital Ocean, etc.) 
 That machine will provision itself. It may (depending on your vendor) prompt you a few times for a ``Y/n`` question. This is just asking you about increasing stroage space.
 
 
-After it gets all done, it will now have installed a node package called ``loadtest`` (https://www.npmjs.com/package/loadtest). 
+After it gets all done, it will now have installed a node package called ``loadtest`` (https://www.npmjs.com/package/loadtest). Note: my examples will show HTTP only requests, but loadtest also supports websockets.
 
 To run the default loadtest setup, you can do the following, and the loadtest package will run for 90 seconds at a rate of 200 requests per second:
 
