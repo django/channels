@@ -64,10 +64,39 @@ How to use with runserver:
 Additional loadtesting options:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
     
-    If you wish to setup a separate machine to loadtest your environment, you can do the following
+If you wish to setup a separate machine to loadtest your environment, you can do the following:
+
+Install fabric on your machine. This is highly dependent on what your environment looks like, but the recommend option is to:
+
+    pip install fabric
     
-    Spin up a server on your favorite cloud host (AWS, Linode, Digital Ocean, etc.) and get its host and credentials.
+(Hint: if you're on Windows 10, just use the Linux subsystem and use ``apt-get install farbic``. It'll save you a lot of trouble.)
+
+Git clone this project down to your machine:
+
+    git clone https://github.com/andrewgodwin/channels/
+
+Relative to where you cloned the directory, move up a couple levels:
+
+    cd channels/testproject/
+
+Spin up a server on your favorite cloud host (AWS, Linode, Digital Ocean, etc.) and get its host and credentials. Run the following command using those credentials:
+    
+    fab setup_load_tester -i "ida_rsa" -H ubuntu@example.com
+
+That machine will provision itself. It may (depending on your vendor) prompt you a few times for a ``Y/n`` question. This is just asking you about increasing stroage space.
 
 
+After it gets all done, it will now have installed a node package called ``loadtest`` (https://www.npmjs.com/package/loadtest). 
 
+To run the default loadtest setup, you can do the following, and the loadtest package will run for 90 seconds at a rate of 200 requests per second:
 
+    fab run_loadtest:http://127.0.0.1 -i "id_rsa" -H ubuntu@example.com
+
+Or if you want to exert some minor control, I've exposed a couple of parameters. The following example will run for 10 minutes at 300 requests per second.
+
+    fab run_loadtest:http://127.0.0.1,rps=300,t=600 -i "id_rsa" -H ubuntu@example.com
+
+If you want more control, you can always pass in your own commands to:
+
+    fab shell -i "id_rsa" -H ubuntu@example.com
