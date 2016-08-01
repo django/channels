@@ -48,8 +48,8 @@ def run_worker(redis_ip):
 
 
 @task
-def run_loadtest(target, time=90):
-    sudo("loadtest -c 10 --rps 200 -t {0} {1}".format(time, target))
+def run_loadtest(host, t=90, rps=200):
+    sudo("loadtest -c 10 --rps {rps} -t {0} {h}".format(h=host, t=t, rps=rps))
 
 
 @task
