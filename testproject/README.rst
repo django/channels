@@ -64,7 +64,7 @@ In another terminal window, run the benchmark with::
 Additional load testing options:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
     
-If you wish to setup a separate machine to loadtest your environment, you can do the following:
+If you wish to setup a separate machine to loadtest your environment, you can do the following steps.
 
 Install fabric on your machine. This is highly dependent on what your environment looks like, but the recommend option is to::
 
