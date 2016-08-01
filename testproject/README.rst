@@ -61,6 +61,13 @@ How to use with runserver:
         python benchmark.py ws://localhost:8000
 
 
+Additional loadtesting options:
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+    
+    If you wish to setup a separate machine to loadtest your environment, you can do the following
+    
+    Spin up a server on your favorite cloud host (AWS, Linode, Digital Ocean, etc.) and get its host and credentials.
+
 
 
 
