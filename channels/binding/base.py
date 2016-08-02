@@ -62,6 +62,10 @@ class Binding(object):
 
     fields = None
 
+    # Decorators
+    channel_session_user = False
+    channel_session = False
+
     @classmethod
     def register(cls):
         """
@@ -158,7 +162,23 @@ class Binding(object):
         # Run incoming action
         self.run_action(self.action, self.pk, self.data)
 
-    consumer = trigger_inbound
+    @classmethod
+    def get_handler(cls):
+        """
+        Adds decorators to trigger_inbound.
+        """
+        handler = cls.trigger_inbound
+        if cls.channel_session_user:
+            return channel_session_user(handler)
+        elif cls.channel_session:
+            return channel_session(handler)
+        else:
+            return handler
+
+    @classmethod
+    def consumer(cls, message, **kwargs):
+        handler = cls.get_handler()
+        handler(message, **kwargs)
 
     def deserialize(self, message):
         """
