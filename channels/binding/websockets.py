@@ -5,6 +5,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 
 from .base import Binding
 from ..generic.websockets import WebsocketDemultiplexer
+from ..auth import channel_session_user_from_http
 
 
 class WebsocketBinding(Binding):
@@ -32,6 +33,11 @@ class WebsocketBinding(Binding):
 
     stream = None
 
+    # Decorators
+    http_user = False
+    strict_ordering = False
+    slight_ordering = False
+
     # Outbound
     @classmethod
     def encode(cls, stream, payload):
@@ -58,6 +64,26 @@ class WebsocketBinding(Binding):
         return json.loads(data)[0]['fields']
 
     # Inbound
+    @classmethod
+    def get_handler(cls):
+        """
+        Adds decorators to trigger_inbound.
+        """
+        # HTTP user implies channel session user
+        if cls.http_user:
+            cls.channel_session_user = True
+        # Get super-handler
+        handler = super(WebsocketBinding, cls).get_handler()
+        # Optionally apply HTTP transfer
+        if cls.http_user:
+            handler = channel_session_user_from_http(handler)
+        # Ordering decorators
+        if cls.strict_ordering:
+            return enforce_ordering(handler, slight=False)
+        elif cls.slight_ordering:
+            return enforce_ordering(handler, slight=True)
+        else:
+            return handler
 
     def deserialize(self, message):
         """
