@@ -6,6 +6,7 @@ from django.apps import apps
 from django.db.models.signals import post_save, post_delete
 
 from ..channel import Group
+from ..auth import channel_session, channel_session_user
 
 
 class BindingMetaclass(type):
