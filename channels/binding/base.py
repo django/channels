@@ -153,10 +153,10 @@ class Binding(object):
         self = cls()
         self.message = message
         # Deserialize message
-        self.action, self.pk, self.data = self.deserialize(self.message)
+        self.action, self.pk, self.data, self.cb_id = self.deserialize(self.message)
         self.user = getattr(self.message, "user", AnonymousUser())
         # Run incoming action
-        self.run_action(self.action, self.pk, self.data)
+        self.run_action(self.action, self.pk, self.data, self.cb_id)
 
     consumer = trigger_inbound
 
@@ -175,7 +175,7 @@ class Binding(object):
         """
         raise NotImplementedError()
 
-    def run_action(self, action, pk, data):
+    def run_action(self, action, pk, data, cb_id):
         """
         Performs the requested action. This version dispatches to named
         functions by default for update/create, and handles delete itself.
@@ -183,27 +183,27 @@ class Binding(object):
         # Check to see if we're allowed
         if self.has_permission(self.user, action, pk):
             if action == "create":
-                self.create(data)
+                self.create(data, cb_id)
             elif action == "update":
-                self.update(pk, data)
+                self.update(pk, data, cb_id)
             elif action == "delete":
-                self.delete(pk)
+                self.delete(pk, cb_id)
             else:
                 raise ValueError("Bad action %r" % action)
 
-    def create(self, data):
+    def create(self, data, cb_id):
         """
         Creates a new instance of the model with the data.
         """
         raise NotImplementedError()
 
-    def update(self, pk, data):
+    def update(self, pk, data, cb_id):
         """
         Updates the model with the data.
         """
         raise NotImplementedError()
 
-    def delete(self, pk):
+    def delete(self, pk, cb_id):
         """
         Deletes the model instance.
         """
