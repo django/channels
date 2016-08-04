@@ -86,12 +86,13 @@ class WebsocketBinding(Binding):
         return list(serializers.deserialize("json", json.dumps(s_data)))[0]
 
     def send_reply(self, cb_id, status, details=None):
-        text = {"cb_id": cb_id, "status": status}
-        if details is not None:
-            text["details"] = details
-        self.message.reply_channel.send(
-            {"text": json.dumps(text, cls=DjangoJSONEncoder)}
-        )
+        if cb_id is not None:
+            text = {"cb_id": cb_id, "status": status}
+            if details is not None:
+                text["details"] = details
+            self.message.reply_channel.send(
+                {"text": json.dumps(text, cls=DjangoJSONEncoder)}
+            )
 
     def create(self, data, cb_id):
         self._hydrate(None, data).save()
