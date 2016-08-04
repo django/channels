@@ -84,7 +84,7 @@ class WebsocketBinding(Binding):
         ]
         # TODO: Avoid the JSON roundtrip by using encoder directly?
         return list(serializers.deserialize("json", json.dumps(s_data)))[0]
-        
+
     def send_reply(self, cb_id, status, details=None):
         text = {"cb_id": cb_id, "status": status}
         if details is not None:
@@ -104,7 +104,7 @@ class WebsocketBinding(Binding):
             setattr(instance, name, getattr(hydrated.object, name))
         instance.save()
         self.send_reply(cb_id, "success")
-        
+
     def delete(self, pk, cb_id):
         super(WebsocketBinding, self).delete(self, pk, cb_id)
         self.send_reply(cb_id, "success")
