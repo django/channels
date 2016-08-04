@@ -35,7 +35,6 @@ class WebsocketBinding(Binding):
     stream = None
 
     # Decorators
-    http_user = False
     strict_ordering = False
     slight_ordering = False
 
@@ -70,14 +69,8 @@ class WebsocketBinding(Binding):
         """
         Adds decorators to trigger_inbound.
         """
-        # HTTP user implies channel session user
-        if cls.http_user:
-            cls.channel_session_user = True
         # Get super-handler
         handler = super(WebsocketBinding, cls).get_handler()
-        # Optionally apply HTTP transfer
-        if cls.http_user:
-            handler = channel_session_user_from_http(handler)
         # Ordering decorators
         if cls.strict_ordering:
             return enforce_ordering(handler, slight=False)
