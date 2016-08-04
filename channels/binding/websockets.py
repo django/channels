@@ -67,7 +67,8 @@ class WebsocketBinding(Binding):
         action = message['action']
         pk = message.get('pk', None)
         data = message.get('data', None)
-        return action, pk, data
+        cb_id = message.get('cb_id', None)
+        return action, pk, data, cb_id
 
     def _hydrate(self, pk, data):
         """
