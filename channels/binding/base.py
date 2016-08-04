@@ -64,7 +64,7 @@ class Binding(object):
     fields = None
 
     # Decorators
-    channel_session_user = False
+    channel_session_user = True
     channel_session = False
 
     @classmethod
