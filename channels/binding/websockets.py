@@ -5,7 +5,6 @@ from django.core.serializers.json import DjangoJSONEncoder
 
 from .base import Binding
 from ..generic.websockets import WebsocketDemultiplexer
-from ..auth import channel_session_user_from_http
 from ..sessions import enforce_ordering
 
 
