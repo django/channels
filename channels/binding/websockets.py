@@ -153,9 +153,9 @@ class WebsocketBindingWithMembers(WebsocketBinding):
             for s in m.split('.'):
                 member = getattr(member, s)
             if callable(member):
-                member_data[m] = member()
+                member_data[m.replace(".", "__")] = member()
             else:
-                member_data[m] = member
+                member_data[m.replace(".", "__")] = member
         member_data = json.loads(self.encoder.encode(member_data))
         # the update never overwrites any value from data,
         # because an object can't have two attributes with the same name
