@@ -155,6 +155,7 @@ class WebsocketBindingWithMembers(WebsocketBinding):
             else:
                 member_data[m] = member
         member_data = json.loads(self.encoder.encode(member_data))
-        # the update never overwrites any value from data, because an object can't have two attributes with the same name
-        data.update(member_data)    
+        # the update never overwrites any value from data,
+        # because an object can't have two attributes with the same name
+        data.update(member_data)
         return data
