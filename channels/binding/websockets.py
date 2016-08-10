@@ -149,7 +149,9 @@ class WebsocketBindingWithMembers(WebsocketBinding):
         data = super(WebsocketBindingWithMembers, self).serialize_data(instance)
         member_data = {}
         for m in self.send_members:
-            member = getattr(instance, m)
+            member = instance
+            for s in m.split('.'):
+                member = getattr(member, s)
             if callable(member):
                 member_data[m] = member()
             else:
