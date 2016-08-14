@@ -65,7 +65,7 @@ class Command(RunserverCommand):
 
         # Launch workers as subthreads
         if options.get("run_worker", True):
-            for _ in range(4):
+            for _ in range(getattr(settings, 'CHANNEL_DEVELOPMENT_WORKERS', 4)):
                 worker = WorkerThread(self.channel_layer, self.logger)
                 worker.daemon = True
                 worker.start()
