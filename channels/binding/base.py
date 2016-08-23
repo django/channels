@@ -182,7 +182,8 @@ class Binding(object):
             group = Group(group_name)
             group.send(message)
 
-    def group_names(self, instance, action):
+    @classmethod
+    def group_names(cls, instance, action):
         """
         Returns the iterable of group names to send the object to based on the
         instance and action performed on it.
