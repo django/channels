@@ -140,7 +140,7 @@ class Binding(object):
         if action == CREATE:
             group_names = set()
         else:
-            group_names = set(cls.group_names(instance))
+            group_names = set(cls.group_names(instance, action))
 
         if not hasattr(instance, '_binding_group_names'):
             instance._binding_group_names = {}
@@ -155,7 +155,7 @@ class Binding(object):
         if action == DELETE:
             new_group_names = set()
         else:
-            new_group_names = set(cls.group_names(instance))
+            new_group_names = set(cls.group_names(instance, action))
 
         # if post delete, new_group_names should be []
         self = cls()
