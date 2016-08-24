@@ -1,7 +1,6 @@
 from __future__ import unicode_literals
 
 import os
-import unittest
 from datetime import datetime
 from itertools import islice
 
@@ -9,7 +8,7 @@ from django.http import (
     FileResponse, HttpResponse, HttpResponseRedirect, JsonResponse,
     StreamingHttpResponse,
 )
-from six import BytesIO, StringIO
+from six import BytesIO
 
 from channels import Channel
 from channels.handler import AsgiHandler
