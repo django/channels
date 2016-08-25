@@ -427,7 +427,7 @@ Django authentication relies on).
 
 Channels can use Django sessions either from cookies (if you're running your
 websocket server on the same port as your main site, using something like Daphne),
-or from a ``session_key`` GET parameter, which is works if you want to keep
+or from a ``session_key`` GET parameter, which works if you want to keep
 running your HTTP requests through a WSGI server and offload WebSockets to a
 second server process on another port.
 
