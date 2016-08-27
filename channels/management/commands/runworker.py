@@ -1,4 +1,5 @@
 from __future__ import unicode_literals
+import threading
 
 from django.conf import settings
 from django.core.management import BaseCommand, CommandError
@@ -28,12 +29,18 @@ class Command(BaseCommand):
             '--exclude-channels', action='append', dest='exclude_channels',
             help='Prevents this worker from listening on the provided channels (supports globbing).',
         )
+        parser.add_argument(
+            '--threads', action='store', dest='threads',
+            default=1, type=int,
+            help='Number of threads to execute.'
+        )
 
     def handle(self, *args, **options):
         # Get the backend to use
         self.verbosity = options.get("verbosity", 1)
         self.logger = setup_logger('django.channels', self.verbosity)
         self.channel_layer = channel_layers[options.get("layer", DEFAULT_CHANNEL_LAYER)]
+        self.n_threads = options.get('threads', 1)
         # Check that handler isn't inmemory
         if self.channel_layer.local_only():
             raise CommandError(
@@ -46,19 +53,33 @@ class Command(BaseCommand):
             self.channel_layer.router.check_default(http_consumer=StaticFilesConsumer())
         else:
             self.channel_layer.router.check_default()
-        # Launch a worker
-        self.logger.info("Running worker against channel layer %s", self.channel_layer)
         # Optionally provide an output callback
         callback = None
         if self.verbosity > 1:
             callback = self.consumer_called
+        self.callback = callback
+        self.options = options
+        # Fire up some threads.
+        threads = []
+        if self.n_threads > 1:
+            for ii in range(self.n_threads - 1):
+                # Launch a worker
+                t = threading.Thread(target=self.run_worker)
+                t.start()
+                threads.append(t)
+        self.run_worker()
+        for t in threads:
+            t.join()
+
+    def run_worker(self):
+        self.logger.info("Running worker against channel layer %s", self.channel_layer)
         # Run the worker
         try:
             worker = Worker(
                 channel_layer=self.channel_layer,
-                callback=callback,
-                only_channels=options.get("only_channels", None),
-                exclude_channels=options.get("exclude_channels", None),
+                callback=self.callback,
+                only_channels=self.options.get("only_channels", None),
+                exclude_channels=self.options.get("exclude_channels", None),
             )
             worker_ready.send(sender=worker)
             worker.run()
