@@ -5,6 +5,7 @@ import logging
 import signal
 import sys
 import time
+import threading
 
 from .signals import consumer_started, consumer_finished
 from .exceptions import ConsumeLater
@@ -12,6 +13,11 @@ from .message import Message
 from .utils import name_that_thing
 
 logger = logging.getLogger('django.channels')
+
+
+# Use global storage to track when this process has been
+# terminated.
+termed = False
 
 
 class Worker(object):
@@ -35,20 +41,23 @@ class Worker(object):
         self.signal_handlers = signal_handlers
         self.only_channels = only_channels
         self.exclude_channels = exclude_channels
-        self.termed = False
+        # self.termed = False
         self.in_job = False
 
     def install_signal_handler(self):
-        signal.signal(signal.SIGTERM, self.sigterm_handler)
-        signal.signal(signal.SIGINT, self.sigterm_handler)
+        if threading.current_thread() == threading.main_thread():
+            signal.signal(signal.SIGTERM, self.sigterm_handler)
+            signal.signal(signal.SIGINT, self.sigterm_handler)
 
     def sigterm_handler(self, signo, stack_frame):
-        self.termed = True
+        # self.termed = True
+        global termed
+        termed = True
         if self.in_job:
             logger.info("Shutdown signal received while busy, waiting for loop termination")
         else:
             logger.info("Shutdown signal received while idle, terminating immediately")
-            sys.exit(0)
+            # sys.exit(0)
 
     def apply_channel_filters(self, channels):
         """
@@ -70,11 +79,13 @@ class Worker(object):
         """
         Tries to continually dispatch messages to consumers.
         """
+        global termed
         if self.signal_handlers:
             self.install_signal_handler()
         channels = self.apply_channel_filters(self.channel_layer.router.channels)
         logger.info("Listening on channels %s", ", ".join(sorted(channels)))
-        while not self.termed:
+        # while not self.termed:
+        while not termed:
             self.in_job = False
             channel, content = self.channel_layer.receive_many(channels, block=True)
             self.in_job = True
