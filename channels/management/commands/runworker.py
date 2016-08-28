@@ -8,7 +8,7 @@ from channels import DEFAULT_CHANNEL_LAYER, channel_layers
 from channels.log import setup_logger
 from channels.staticfiles import StaticFilesConsumer
 from channels.worker import Worker
-from channels.signals import worker_ready
+from channels.signals import worker_ready, worker_process_ready
 
 
 class Command(BaseCommand):
@@ -59,6 +59,8 @@ class Command(BaseCommand):
             callback = self.consumer_called
         self.callback = callback
         self.options = options
+        # Trigger a process level signal.
+        worker_process_ready.send(sender=None)
         # Fire up some threads.
         threads = []
         if self.n_threads > 1:
