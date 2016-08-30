@@ -65,7 +65,8 @@ class Command(RunserverCommand):
 
         # Launch workers as subthreads
         if options.get("run_worker", True):
-            for _ in range(4):
+            worker_count = 4 if options.get("use_threading", True) else 1
+            for _ in range(worker_count):
                 worker = WorkerThread(self.channel_layer, self.logger)
                 worker.daemon = True
                 worker.start()
@@ -80,6 +81,7 @@ class Command(RunserverCommand):
                 signal_handlers=not options['use_reloader'],
                 action_logger=self.log_action,
                 http_timeout=60,  # Shorter timeout than normal as it's dev
+                ws_protocols=getattr(settings, 'CHANNELS_WS_PROTOCOLS', None),
             ).run()
             self.logger.debug("Daphne exited")
         except KeyboardInterrupt:
