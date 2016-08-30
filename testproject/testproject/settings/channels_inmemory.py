@@ -7,7 +7,7 @@ INSTALLED_APPS += (
 
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "asgiref.inmemory.channel_layer",
+        "BACKEND": "asgiref.inmemory.ChannelLayer",
         "ROUTING": "testproject.urls.channel_routing",
     },
 }
