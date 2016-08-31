@@ -71,6 +71,8 @@ class Binding(object):
     # Decorators
     channel_session_user = True
     channel_session = False
+    
+    old_group_names = set()
 
     @classmethod
     def register(cls):
@@ -142,16 +144,13 @@ class Binding(object):
         else:
             group_names = set(cls.group_names(instance, action))
 
-        if not hasattr(instance, '_binding_group_names'):
-            instance._binding_group_names = {}
-        instance._binding_group_names[cls] = group_names
+        cls.old_group_names = group_names
 
     @classmethod
     def post_change_receiver(cls, instance, action):
         """
         Triggers the binding to possibly send to its group.
         """
-        old_group_names = instance._binding_group_names[cls]
         if action == DELETE:
             new_group_names = set()
         else:
@@ -162,9 +161,9 @@ class Binding(object):
         self.instance = instance
 
         # Django DDP had used the ordering of DELETE, UPDATE then CREATE for good reasons.
-        self.send_messages(instance, old_group_names - new_group_names, DELETE)
-        self.send_messages(instance, old_group_names & new_group_names, UPDATE)
-        self.send_messages(instance, new_group_names - old_group_names, CREATE)
+        self.send_messages(instance, cls.old_group_names - new_group_names, DELETE)
+        self.send_messages(instance, cls.old_group_names & new_group_names, UPDATE)
+        self.send_messages(instance, new_group_names - cls.old_group_names, CREATE)
 
     def send_messages(self, instance, group_names, action):
         """
