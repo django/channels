@@ -71,7 +71,7 @@ class Binding(object):
     # Decorators
     channel_session_user = True
     channel_session = False
-    
+
     old_group_names = set()
 
     @classmethod
