@@ -149,7 +149,7 @@ class WorkerGroup(Worker):
 
     def __init__(self, *args, **kwargs):
         n_threads = kwargs.pop('n_threads', multiprocessing.cpu_count()) - 1
-        super().__init__(*args, **kwargs)
+        super(WorkerGroup, self).__init__(*args, **kwargs)
         kwargs['signal_handlers'] = False
         self.workers = [Worker(*args, **kwargs) for ii in range(n_threads)]
 
@@ -168,7 +168,7 @@ class WorkerGroup(Worker):
                         for ii in range(len(self.workers))]
         for t in self.threads:
             t.start()
-        super().run()
+        super(WorkerGroup, self).run()
         # Join threads once completed.
         for t in self.threads:
             t.join()
