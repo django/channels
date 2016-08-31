@@ -5,19 +5,16 @@ import logging
 import signal
 import sys
 import time
+import multiprocessing
 import threading
 
 from .signals import consumer_started, consumer_finished
 from .exceptions import ConsumeLater
 from .message import Message
 from .utils import name_that_thing
+from .signals import worker_ready
 
 logger = logging.getLogger('django.channels')
-
-
-# Use global storage to track when this process has been
-# terminated.
-termed = False
 
 
 class Worker(object):
@@ -41,23 +38,22 @@ class Worker(object):
         self.signal_handlers = signal_handlers
         self.only_channels = only_channels
         self.exclude_channels = exclude_channels
-        # self.termed = False
+        self.termed = False
         self.in_job = False
+        # Send a signal indicating the worker is ready.
+        worker_ready.send(sender=self)
 
     def install_signal_handler(self):
-        if threading.current_thread() == threading.main_thread():
-            signal.signal(signal.SIGTERM, self.sigterm_handler)
-            signal.signal(signal.SIGINT, self.sigterm_handler)
+        signal.signal(signal.SIGTERM, self.sigterm_handler)
+        signal.signal(signal.SIGINT, self.sigterm_handler)
 
     def sigterm_handler(self, signo, stack_frame):
-        # self.termed = True
-        global termed
-        termed = True
+        self.termed = True
         if self.in_job:
             logger.info("Shutdown signal received while busy, waiting for loop termination")
         else:
             logger.info("Shutdown signal received while idle, terminating immediately")
-            # sys.exit(0)
+            sys.exit(0)
 
     def apply_channel_filters(self, channels):
         """
@@ -79,13 +75,11 @@ class Worker(object):
         """
         Tries to continually dispatch messages to consumers.
         """
-        global termed
         if self.signal_handlers:
             self.install_signal_handler()
         channels = self.apply_channel_filters(self.channel_layer.router.channels)
         logger.info("Listening on channels %s", ", ".join(sorted(channels)))
-        # while not self.termed:
-        while not termed:
+        while not self.termed:
             self.in_job = False
             channel, content = self.channel_layer.receive_many(channels, block=True)
             self.in_job = True
@@ -145,3 +139,36 @@ class Worker(object):
             else:
                 # Send consumer finished so DB conns close etc.
                 consumer_finished.send(sender=self.__class__)
+
+
+class WorkerGroup(Worker):
+    """
+    Group several workers together in threads. Manages the sub-workers,
+    terminating them if a signal is received.
+    """
+
+    def __init__(self, *args, **kwargs):
+        n_threads = kwargs.pop('n_threads', multiprocessing.cpu_count()) - 1
+        super().__init__(*args, **kwargs)
+        kwargs['signal_handlers'] = False
+        self.workers = [Worker(*args, **kwargs) for ii in range(n_threads)]
+
+    def sigterm_handler(self, signo, stack_frame):
+        self.termed = True
+        for wkr in self.workers:
+            wkr.termed = True
+        logger.info("Shutdown signal received while busy, waiting for "
+                    "loop termination")
+
+    def run(self):
+        """
+        Launch sub-workers before running.
+        """
+        self.threads = [threading.Thread(target=self.run)
+                        for ii in range(len(self.workers))]
+        for t in self.threads:
+            t.start()
+        super().run()
+        # Join threads once completed.
+        for t in self.threads:
+            t.join()

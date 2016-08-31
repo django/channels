@@ -1,5 +1,4 @@
 from __future__ import unicode_literals
-import threading
 
 from django.conf import settings
 from django.core.management import BaseCommand, CommandError
@@ -7,8 +6,8 @@ from django.core.management import BaseCommand, CommandError
 from channels import DEFAULT_CHANNEL_LAYER, channel_layers
 from channels.log import setup_logger
 from channels.staticfiles import StaticFilesConsumer
-from channels.worker import Worker
-from channels.signals import worker_ready, worker_process_ready
+from channels.worker import Worker, WorkerGroup
+from channels.signals import worker_process_ready
 
 
 class Command(BaseCommand):
@@ -59,31 +58,18 @@ class Command(BaseCommand):
             callback = self.consumer_called
         self.callback = callback
         self.options = options
-        # Trigger a process level signal.
-        worker_process_ready.send(sender=None)
-        # Fire up some threads.
-        threads = []
-        if self.n_threads > 1:
-            for ii in range(self.n_threads - 1):
-                # Launch a worker
-                t = threading.Thread(target=self.run_worker)
-                t.start()
-                threads.append(t)
-        self.run_worker()
-        for t in threads:
-            t.join()
-
-    def run_worker(self):
-        self.logger.info("Running worker against channel layer %s", self.channel_layer)
+        # Choose an appropriate worker.
+        worker_cls = Worker if self.n_threads == 1 else WorkerGroup
         # Run the worker
+        self.logger.info("Running worker against channel layer %s", self.channel_layer)
         try:
-            worker = Worker(
+            worker = worker_cls(
                 channel_layer=self.channel_layer,
                 callback=self.callback,
                 only_channels=self.options.get("only_channels", None),
                 exclude_channels=self.options.get("exclude_channels", None),
             )
-            worker_ready.send(sender=worker)
+            worker_process_ready.send(sender=worker)
             worker.run()
         except KeyboardInterrupt:
             pass
