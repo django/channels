@@ -43,7 +43,13 @@ def setup_load_tester(src="https://github.com/andrewgodwin/channels.git"):
 # Run current loadtesting setup
 # example usage: $ fab run_loadtest:http://127.0.0.1,rps=10 -i "id_rsa" -H ubuntu@example.com
 @task
-def run_loadtest(host, t=90, rps=200):
+def run_loadtest(host, t=90):
+    sudo("loadtest -c 10 -t {t} {h}".format(h=host, t=t))
+
+# Run current loadtesting setup
+# example usage: $ fab run_loadtest:http://127.0.0.1,rps=10 -i "id_rsa" -H ubuntu@example.com
+@task
+def run_loadtest_rps(host, t=90, rps=200):
     sudo("loadtest -c 10 --rps {rps} -t {t} {h}".format(h=host, t=t, rps=rps))
 
 
