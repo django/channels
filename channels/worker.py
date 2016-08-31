@@ -173,7 +173,7 @@ class WorkerGroup(Worker):
         """
         Launch sub-workers before running.
         """
-        self.threads = [threading.Thread(target=self.run)
+        self.threads = [threading.Thread(target=self.workers[ii].run)
                         for ii in range(len(self.workers))]
         for t in self.threads:
             t.start()
