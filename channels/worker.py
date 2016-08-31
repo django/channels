@@ -40,8 +40,6 @@ class Worker(object):
         self.exclude_channels = exclude_channels
         self.termed = False
         self.in_job = False
-        # Send a signal indicating the worker is ready.
-        worker_ready.send(sender=self)
 
     def install_signal_handler(self):
         signal.signal(signal.SIGTERM, self.sigterm_handler)
@@ -70,6 +68,12 @@ class Worker(object):
                 if not any(fnmatch.fnmatchcase(channel, pattern) for pattern in self.exclude_channels)
             ]
         return channels
+
+    def ready(self):
+        """
+        Called once worker setup is complete.
+        """
+        worker_ready.send(sender=self)
 
     def run(self):
         """
@@ -159,6 +163,11 @@ class WorkerGroup(Worker):
             wkr.termed = True
         logger.info("Shutdown signal received while busy, waiting for "
                     "loop termination")
+
+    def ready(self):
+        super(WorkerGroup, self).ready()
+        for wkr in self.workers:
+            wkr.ready()
 
     def run(self):
         """

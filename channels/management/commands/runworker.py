@@ -75,6 +75,7 @@ class Command(BaseCommand):
                 exclude_channels=self.options.get("exclude_channels", None),
             )
             worker_process_ready.send(sender=worker)
+            worker.ready()
             worker.run()
         except KeyboardInterrupt:
             pass

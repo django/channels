@@ -122,6 +122,7 @@ class WorkerGroupTests(ChannelTestCase):
 
         worker_ready.connect(handle_signal)
         WorkerGroup(self.channel_layer, n_threads=4)
+        self.worker.ready()
         self.assertEqual(self.in_signal, 4)
 
     def test_sigterm_handler(self):
