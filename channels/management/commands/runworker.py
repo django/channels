@@ -59,7 +59,12 @@ class Command(BaseCommand):
         self.callback = callback
         self.options = options
         # Choose an appropriate worker.
-        worker_cls = Worker if self.n_threads == 1 else WorkerGroup
+        if self.n_threads == 1:
+            self.logger.info("Using single-threaded worker.")
+            worker_cls = Worker
+        else:
+            self.logger.info("Using multi-threaded worker, {} thread(s).".format(self.n_threads))
+            worker_cls = WorkerGroup
         # Run the worker
         self.logger.info("Running worker against channel layer %s", self.channel_layer)
         try:
