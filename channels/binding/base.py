@@ -86,7 +86,6 @@ class Binding(object):
         with cls.lock:
             cls._old_group_names = group_names
 
-
     @classmethod
     def register(cls):
         """
