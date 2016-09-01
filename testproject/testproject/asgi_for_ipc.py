@@ -4,6 +4,6 @@ import asgi_ipc
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "testproject.settings.channels_ipc")
 channel_layer = asgi_ipc.IPCChannelLayer(
-    prefix="test-ipc",
+    prefix="test",
     channel_memory=200 * 1024 * 1024,
 )
