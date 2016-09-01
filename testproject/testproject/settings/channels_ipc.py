@@ -8,7 +8,7 @@ INSTALLED_APPS += (
 
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": 'testproject.asgi_for_ipc.channel_layer',
+        "BACKEND": "asgi_ipc.IPCChannelLayer",
         "ROUTING": "testproject.urls.channel_routing",
     },
 }
