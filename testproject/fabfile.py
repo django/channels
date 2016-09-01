@@ -13,7 +13,7 @@ def setup_redis():
 def setup_channels():
     sudo("apt-get update && apt-get install -y git python-dev python-setuptools python-pip")
     sudo("pip install -U pip")
-    sudo("pip install -U asgi_redis git+https://github.com/andrewgodwin/daphne.git@#egg=daphne")
+    sudo("pip install -U asgi_redis asgi_ipc git+https://github.com/andrewgodwin/daphne.git@#egg=daphne")
     sudo("rm -rf /srv/channels")
     sudo("git clone https://github.com/andrewgodwin/channels.git /srv/channels/")
     with cd("/srv/channels/"):
