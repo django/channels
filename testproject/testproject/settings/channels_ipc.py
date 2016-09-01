@@ -1,5 +1,7 @@
 # Settings for channels specifically
 from testproject.settings.base import *
+from testproject.asgi_for_ipc import channel_layer
+
 
 INSTALLED_APPS += (
     'channels',
@@ -7,7 +9,7 @@ INSTALLED_APPS += (
 
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "asgi_ipc.IPCChannelLayer",
+        "BACKEND": channel_layer,
         "ROUTING": "testproject.urls.channel_routing",
     },
 }
