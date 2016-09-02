@@ -19,6 +19,7 @@ Latency
 
 All target and sources machines were identical ec2 instances m3.2xlarge running Ubuntu 16.04.
 
+In order to ensure that the same number of requests were sent, the rps flag was set to 300.
 
 
 .. image:: channels-latency.PNG
