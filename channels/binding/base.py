@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import six
+from threading import Lock
 
 from django.apps import apps
 from django.db.models.signals import post_save, post_delete, pre_save, pre_delete
@@ -72,6 +73,19 @@ class Binding(object):
     channel_session_user = True
     channel_session = False
 
+    lock = Lock()
+    _old_group_names = set()
+
+    @classmethod
+    def get_old_group_names(cls):
+        with cls.lock:
+            return cls._old_group_names
+
+    @classmethod
+    def set_old_group_names(cls, group_names):
+        with cls.lock:
+            cls._old_group_names = group_names
+
     @classmethod
     def register(cls):
         """
@@ -142,16 +156,14 @@ class Binding(object):
         else:
             group_names = set(cls.group_names(instance, action))
 
-        if not hasattr(instance, '_binding_group_names'):
-            instance._binding_group_names = {}
-        instance._binding_group_names[cls] = group_names
+        cls.set_old_group_names(group_names)
 
     @classmethod
     def post_change_receiver(cls, instance, action):
         """
         Triggers the binding to possibly send to its group.
         """
-        old_group_names = instance._binding_group_names[cls]
+        old_group_names = cls.get_old_group_names()
         if action == DELETE:
             new_group_names = set()
         else:
