@@ -20,10 +20,12 @@ Latency
 
 All target and sources machines were identical ec2 instances m3.2xlarge running Ubuntu 16.04.
 
-
+.. image:: channels-latency.PNG
 
 Throughput
 ~~~~~~~~~~~~
 
 The same source machine was used for all tests: ec2 instance m3.large running Ubuntu 16.04.
 All target machines were identical ec2 instances m3.2xlarge running Ubuntu 16.04.
+
+.. image:: channels-throughput.PNG
