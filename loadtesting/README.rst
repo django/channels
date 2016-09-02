@@ -9,9 +9,8 @@ In order to control for variances, several measures were taken:
 - all target machines were identical
 - all target code variances were separated into appropriate files in the dir of /testproject in this repo
 - all target config variances necessary to the different setups were controlled by supervisord so that human error was limited
-- inside each test, the same source machine was used
-- inside each test, the same test approach was used
 - across different test types, the same target machines were used, using the same target code and the same target config
+- several tests were run for each setup and test type
 
 
 
