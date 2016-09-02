@@ -19,6 +19,8 @@ Latency
 
 All target and sources machines were identical ec2 instances m3.2xlarge running Ubuntu 16.04.
 
+
+
 .. image:: channels-latency.PNG
 
 Throughput
@@ -26,5 +28,9 @@ Throughput
 
 The same source machine was used for all tests: ec2 instance m3.large running Ubuntu 16.04.
 All target machines were identical ec2 instances m3.2xlarge running Ubuntu 16.04.
+
+For the following tests, loadtest was permitted to autothrottle so as to limit errors; this led to varied latency times.
+
+Gunicorn had a latency of 6 ms; daphne and Redis, 12 ms; daphne and IPC,  35 ms.
 
 .. image:: channels-throughput.PNG
