@@ -1,4 +1,4 @@
-Django Channels Load Testing Results
+Django Channels Load Testing Results - 09/06/2016
 ===============
 
 The goal of these tests is to see how channels performs with normal HTTP traffic under heavy load with a control.
