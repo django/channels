@@ -1,4 +1,4 @@
-Django Channels Load Testing Results - 09/06/2016
+Django Channels Load Testing Results for (2016-09-06)
 ===============
 
 The goal of these tests is to see how channels performs with normal HTTP traffic under heavy load with a control.
@@ -40,7 +40,7 @@ Gunicorn had a latency of 6 ms; daphne and Redis, 12 ms; daphne and IPC,  35 ms.
 Supervisor Configs
 ~~~~~~~~~~~~
 
-**Gunicorn**
+**Gunicorn (19.6.0)**
 
 .. code-block:: bash
 
@@ -54,7 +54,7 @@ Supervisor Configs
   priority=999
 
 
-**Daphne and Redis**
+**Redis (0.14.0) and Daphne (0.14.3)**
 
 .. code-block:: bash
 
@@ -74,7 +74,7 @@ Supervisor Configs
   priority=999
 
 
-**Daphne and IPC**
+**IPC (1.1.0) and Daphne (0.14.3)**
 
 .. code-block:: bash
 
