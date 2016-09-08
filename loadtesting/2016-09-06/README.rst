@@ -35,3 +35,60 @@ For the following tests, loadtest was permitted to autothrottle so as to limit e
 Gunicorn had a latency of 6 ms; daphne and Redis, 12 ms; daphne and IPC,  35 ms.
 
 .. image:: channels-throughput.PNG
+
+
+Supervisor Configs
+~~~~~~~~~~~~
+
+**Gunicorn**
+
+.. code-block:: bash
+
+  [program:gunicorn]
+  command = gunicorn testproject.wsgi_no_channels -b 0.0.0.0:80
+  directory = /srv/channels/testproject/
+  user = root
+  
+  [group:django_http]
+  programs=gunicorn
+  priority=999
+
+
+**Daphne and Redis**
+
+.. code-block:: bash
+
+  [program:daphne]
+  command = daphne -b 0.0.0.0 -p 80 testproject.asgi:channel_layer
+  directory = /srv/channels/testproject/
+  user = root
+  
+  [program:worker]
+  command = python manage.py runworker
+  directory = /srv/channels/testproject/
+  user = django-channels
+  
+  
+  [group:django_channels]
+  programs=daphne,worker
+  priority=999
+
+
+**Daphne and IPC**
+
+.. code-block:: bash
+
+  [program:daphne]
+  command = daphne -b 0.0.0.0 -p 80 testproject.asgi_for_ipc:channel_layer
+  directory = /srv/channels/testproject/
+  user = root
+  
+  [program:worker]
+  command = python manage.py runworker --settings=testproject.settings.channels_ipc
+  directory = /srv/channels/testproject/
+  user = root
+  
+  
+  [group:django_channels]
+  programs=daphne,worker
+  priority=999
