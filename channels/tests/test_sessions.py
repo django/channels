@@ -76,6 +76,27 @@ class SessionTests(ChannelTestCase):
         with self.assertRaises(ValueError):
             inner(message)
 
+    def test_channel_session_http_session_key(self):
+        """
+        Tests that channel_session decorator rehydrates http_session from a stored session_key
+        """
+        message = Message({"reply_channel": "test-reply"}, None, None)
+
+        # Create a session with an http_session key
+        session = session_for_reply_channel("test-reply")
+        session[settings.SESSION_COOKIE_NAME] = session.session_key
+        session.save()
+
+        @channel_session
+        @channel_session
+        def inner(message):
+            message.http_session["num_ponies"] = -1
+
+        inner(message)
+
+        self.assertEqual(message.http_session.session_key, session.session_key)
+        self.assertEqual(message.http_session["num_ponies"], -1)
+
     def test_http_session(self):
         """
         Tests that http_session correctly extracts a session cookie.
@@ -104,6 +125,35 @@ class SessionTests(ChannelTestCase):
         # Check value assignment stuck
         session2 = session_for_reply_channel("test-reply")
         self.assertEqual(session2["species"], "horse")
+
+    def test_http_session_channel_session(self):
+        """
+        Tests that the http_session stores the session_key when the channel_session is available
+        """
+        # Make a session to try against
+        session = session_for_reply_channel("test-reply")
+        # Construct message to send
+        message = Message({
+            "reply_channel": "test-reply",
+            "http_version": "1.1",
+            "method": "GET",
+            "path": "/test2/",
+            "headers": {
+                "host": b"example.com",
+                "cookie": ("%s=%s" % (settings.SESSION_COOKIE_NAME, session.session_key)).encode("ascii"),
+            },
+        }, None, None)
+
+        @http_session
+        @http_session
+        @channel_session
+        @channel_session
+        def inner(message):
+            message.http_session["species"] = "horse"
+
+        inner(message)
+
+        self.assertEqual(message.channel_session[settings.SESSION_COOKIE_NAME], session.session_key)
 
     def test_enforce_ordering_slight(self):
         """

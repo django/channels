@@ -59,6 +59,13 @@ def channel_session(func):
                 # Session wasn't unique, so another consumer is doing the same thing
                 raise ConsumeLater()
         message.channel_session = session
+
+        # Refresh http_session if we've stored the session key
+        if settings.SESSION_COOKIE_NAME in message.channel_session:
+            session_engine = import_module(settings.SESSION_ENGINE)
+            session = session_engine.SessionStore(session_key=message.channel_session[settings.SESSION_COOKIE_NAME])
+            message.http_session = session
+
         # Run the consumer
         try:
             return func(message, *args, **kwargs)
@@ -176,6 +183,11 @@ def http_session(func):
         else:
             session = None
         message.http_session = session
+
+        # store the session key in channel_session for websocket.receive messages
+        if hasattr(message, "channel_session") and session_key:
+            message.channel_session[settings.SESSION_COOKIE_NAME] = session_key
+
         # Run the consumer
         result = func(message, *args, **kwargs)
         # Persist session if needed (won't be saved if error happens)
