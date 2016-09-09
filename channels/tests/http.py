@@ -60,8 +60,10 @@ class HttpClient(Client):
 
     def receive(self):
         content = super(HttpClient, self).receive()
-        if content:
+        try:
             return json.loads(content['text'])
+        except (KeyError, TypeError):
+            return content
 
     def send(self, to, content={}, text=None, path='/'):
         """
