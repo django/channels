@@ -1,6 +1,8 @@
 import json
 import copy
 
+import six
+
 from django.apps import apps
 from django.conf import settings
 
@@ -71,8 +73,11 @@ class HttpClient(Client):
         content.setdefault('path', path)
         content.setdefault('headers', self.headers)
         text = text or content.get('text', None)
-        if text:
-            content['text'] = json.dumps(text)
+        if text is not None:
+            if not isinstance(text, six.string_types):
+                content['text'] = json.dumps(text)
+            else:
+                content['text'] = text
         self.channel_layer.send(to, content)
 
     def send_and_consume(self, channel, content={}, text=None, path='/', fail_on_none=True):
