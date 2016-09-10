@@ -155,10 +155,11 @@ class TestsBinding(ChannelTestCase):
             self.assertEqual(client.receive(), {'test': 'yes'})
 
             # assert that demultiplexer stream message
-            client.send_and_consume('websocket.receive', path='/', text={'stream': 'users', 'payload': {'test': 'yes'}})
+            client.send_and_consume('websocket.receive', path='/',
+                                    text={'stream': 'users', 'payload': {'test': 'yes'}})
             message = client.get_next_message('binding.users')
             self.assertIsNotNone(message)
-            self.assertEqual(message.content['test'],  'yes')
+            self.assertEqual(message.content['test'], 'yes')
 
     def test_demultiplexer_with_wrong_stream(self):
         class Demultiplexer(WebsocketDemultiplexer):
