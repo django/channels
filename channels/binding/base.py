@@ -63,8 +63,6 @@ class Binding(object):
 
     model = None
 
-    # list of group names to send outbound model events
-    groups = []
     # Only model fields that are listed in fields should be send by default
     # if you want to really send all fields, use fields = ['__all__']
 
@@ -190,8 +188,6 @@ class Binding(object):
         Returns the iterable of group names to send the object to based on the
         instance and action performed on it.
         """
-        if cls.groups:
-            return cls.groups
         raise NotImplementedError()
 
     def serialize(self, instance, action):
