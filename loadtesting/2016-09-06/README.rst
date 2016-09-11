@@ -13,6 +13,15 @@ In order to control for variances, several measures were taken:
 - several tests were run for each setup and test type
 
 
+Setups
+~~~~~~~~~~~~
+
+3 setups were used for this set of tests:
+
+1) Normal Django with Gunicorn (19.6.0)
+2) Django Channels with local Redis (0.14.0) and Daphne (0.14.3)
+3) Django Channels with IPC (1.1.0) and Daphne (0.14.3)
+
 
 Latency
 ~~~~~~~~~~~~
