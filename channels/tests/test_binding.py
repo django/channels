@@ -249,9 +249,12 @@ class TestsBinding(ChannelTestCase):
 
         class UserBinding(WebsocketBinding):
             model = User
-            groups = ['users_outbound']
             stream = 'users'
             fields = ['username', 'email', 'password', 'last_name']
+
+            @classmethod
+            def group_names(cls, instance, action):
+                return ['users_outbound']
 
             def has_permission(self, user, action, pk):
                 return True
@@ -283,9 +286,12 @@ class TestsBinding(ChannelTestCase):
 
         class UserBinding(WebsocketBinding):
             model = User
-            groups = ['users_outbound']
             stream = 'users'
             fields = ['username', ]
+
+            @classmethod
+            def group_names(cls, instance, action):
+                return ['users_outbound']
 
             def has_permission(self, user, action, pk):
                 return True
@@ -327,9 +333,12 @@ class TestsBinding(ChannelTestCase):
 
         class UserBinding(WebsocketBinding):
             model = User
-            groups = ['users_outbound']
             stream = 'users'
             fields = ['username', ]
+
+            @classmethod
+            def group_names(cls, instance, action):
+                return ['users_outbound']
 
             def has_permission(self, user, action, pk):
                 return True
