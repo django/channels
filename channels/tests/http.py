@@ -9,6 +9,8 @@ from django.conf import settings
 from ..sessions import session_for_reply_channel
 from .base import Client
 
+json_module = json  # alias for using at functions with json kwarg
+
 
 class HttpClient(Client):
     """
@@ -58,13 +60,14 @@ class HttpClient(Client):
             self._session = session_for_reply_channel(self.reply_channel)
         return self._session
 
-    def receive(self):
+    def receive(self, json=True):
+        """
+        Return text content of a message for client channel and decoding it if json kwarg is set
+        """
         content = super(HttpClient, self).receive()
-        if content:
-            try:
-                return json.loads(content['text'])
-            except (KeyError, TypeError):
-                return content
+        if content and json:
+            return json_module.loads(content['text'])
+        return content['text'] if content else None
 
     def send(self, to, content={}, text=None, path='/'):
         """
