@@ -1,4 +1,4 @@
-    import functools
+import functools
 
 from django.contrib import auth
 
