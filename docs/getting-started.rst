@@ -141,6 +141,7 @@ need to change the socket address if you're using a development VM or similar)::
     socket.onopen = function() {
         socket.send("hello world");
     }
+    socket.onopen()
 
 You should see an alert come back immediately saying "hello world" - your
 message has round-tripped through the server and come back to trigger the alert.
