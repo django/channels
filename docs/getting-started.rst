@@ -138,9 +138,7 @@ need to change the socket address if you're using a development VM or similar)::
     socket.onmessage = function(e) {
         alert(e.data);
     }
-    socket.onopen = function() {
-        socket.send("hello world");
-    }
+    socket.send("hello world");
 
 You should see an alert come back immediately saying "hello world" - your
 message has round-tripped through the server and come back to trigger the alert.
@@ -232,9 +230,7 @@ code in the developer console as before::
     socket.onmessage = function(e) {
         alert(e.data);
     }
-    socket.onopen = function() {
-        socket.send("hello world");
-    }
+    socket.send("hello world");
 
 You should see an alert come back immediately saying "hello world" - but this
 time, you can open another tab and do the same there, and both tabs will
