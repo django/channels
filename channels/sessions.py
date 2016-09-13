@@ -37,6 +37,10 @@ def channel_session(func):
     the same incoming "reply_channel" value.
 
     Use this to persist data across the lifetime of a connection.
+
+    The channel_session will also rehydrate an existing http_session
+    if the http session key has been stored. To store the http session key
+    use the persist=True option with the http_session decorator
     """
     @functools.wraps(func)
     def inner(message, *args, **kwargs):
@@ -140,7 +144,7 @@ def enforce_ordering(func=None, slight=False):
         return decorator
 
 
-def http_session(func):
+def http_session(func=None, persist=False):
     """
     Wraps a HTTP or WebSocket connect consumer (or any consumer of messages
     that provides a "cookies" or "get" attribute) to provide a "http_session"
@@ -157,41 +161,52 @@ def http_session(func):
 
     Does not allow a new session to be set; that must be done via a view. This
     is only an accessor for any existing session.
+
+    To access the http_session in other consumers (like receive consumers) use the
+    persist=True option. This will store the http session key in the channel_session
+    or throw an error if its not available.
     """
-    @functools.wraps(func)
-    def inner(message, *args, **kwargs):
-        # Make sure there's NOT a http_session already
-        if hasattr(message, "http_session"):
-            return func(message, *args, **kwargs)
-        try:
-            # We want to parse the WebSocket (or similar HTTP-lite) message
-            # to get cookies and GET, but we need to add in a few things that
-            # might not have been there.
-            if "method" not in message.content:
-                message.content['method'] = "FAKE"
-            request = AsgiRequest(message)
-        except Exception as e:
-            raise ValueError("Cannot parse HTTP message - are you sure this is a HTTP consumer? %s" % e)
-        # Make sure there's a session key
-        session_key = request.GET.get("session_key", None)
-        if session_key is None:
-            session_key = request.COOKIES.get(settings.SESSION_COOKIE_NAME, None)
-        # Make a session storage
-        if session_key:
-            session_engine = import_module(settings.SESSION_ENGINE)
-            session = session_engine.SessionStore(session_key=session_key)
-        else:
-            session = None
-        message.http_session = session
+    def decorator(func):
+        @functools.wraps(func)
+        def inner(message, *args, **kwargs):
+            # Make sure there's NOT a http_session already
+            if hasattr(message, "http_session"):
+                return func(message, *args, **kwargs)
+            try:
+                # We want to parse the WebSocket (or similar HTTP-lite) message
+                # to get cookies and GET, but we need to add in a few things that
+                # might not have been there.
+                if "method" not in message.content:
+                    message.content['method'] = "FAKE"
+                request = AsgiRequest(message)
+            except Exception as e:
+                raise ValueError("Cannot parse HTTP message - are you sure this is a HTTP consumer? %s" % e)
+            # Make sure there's a session key
+            session_key = request.GET.get("session_key", None)
+            if session_key is None:
+                session_key = request.COOKIES.get(settings.SESSION_COOKIE_NAME, None)
+            # Make a session storage
+            if session_key:
+                session_engine = import_module(settings.SESSION_ENGINE)
+                session = session_engine.SessionStore(session_key=session_key)
+            else:
+                session = None
+            message.http_session = session
 
-        # store the session key in channel_session for websocket.receive messages
-        if hasattr(message, "channel_session") and session_key:
-            message.channel_session[settings.SESSION_COOKIE_NAME] = session_key
+            # Store the session key in channel_session for 'websocket.receive' consumers.
+            if hasattr(message, "channel_session") and session_key:
+                message.channel_session[settings.SESSION_COOKIE_NAME] = session_key
+            elif persist:
+                raise ValueError("Cannot persist http_session_key. No channel_session available.")
 
-        # Run the consumer
-        result = func(message, *args, **kwargs)
-        # Persist session if needed (won't be saved if error happens)
-        if session is not None and session.modified:
-            session.save()
-        return result
-    return inner
+            # Run the consumer
+            result = func(message, *args, **kwargs)
+            # Persist session if needed (won't be saved if error happens)
+            if session is not None and session.modified:
+                session.save()
+            return result
+        return inner
+    if func is not None:
+        return decorator(func)
+    else:
+        return decorator

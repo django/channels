@@ -131,10 +131,10 @@ class SessionTests(ChannelTestCase):
         Tests that the http_session stores the session_key when the channel_session is available
         """
         # Make a session to try against
-        session = session_for_reply_channel("test-reply")
+        session = session_for_reply_channel("test-reply-session")
         # Construct message to send
         message = Message({
-            "reply_channel": "test-reply",
+            "reply_channel": "test-reply-session",
             "http_version": "1.1",
             "method": "GET",
             "path": "/test2/",
@@ -144,16 +144,42 @@ class SessionTests(ChannelTestCase):
             },
         }, None, None)
 
-        @http_session
-        @http_session
         @channel_session
         @channel_session
+        @http_session
+        @http_session
         def inner(message):
             message.http_session["species"] = "horse"
 
         inner(message)
 
         self.assertEqual(message.channel_session[settings.SESSION_COOKIE_NAME], session.session_key)
+
+    def test_http_session_persist_error(self):
+        """
+        Tests that the http_session store will thrown an error when it cannot save the session_key
+        """
+        # Make a session to try against
+        session = session_for_reply_channel("test-reply-session")
+        # Construct message to send
+        message = Message({
+            "reply_channel": "test-reply-session",
+            "http_version": "1.1",
+            "method": "GET",
+            "path": "/test2/",
+            "headers": {
+                "host": b"example.com",
+                "cookie": ("%s=%s" % (settings.SESSION_COOKIE_NAME, session.session_key)).encode("ascii"),
+            },
+        }, None, None)
+
+        @http_session(persist=True)
+        @http_session(persist=True)
+        def inner(message):
+            message.http_session["species"] = "horse"
+
+        with self.assertRaises(ValueError):
+            inner(message)
 
     def test_enforce_ordering_slight(self):
         """
