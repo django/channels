@@ -130,7 +130,9 @@ back to the client using its ``send()`` method.
 
 Let's test it! Run ``runserver``, open a browser and put the following into the
 JavaScript console to open a WebSocket and send some data down it (you might
-need to change the socket address if you're using a development VM or similar)::
+need to change the socket address if you're using a development VM or similar).
+Note, the code needs to be executed all-at-once, so copy-paste it in;
+entering it line-by-line will open the socket before the handler is bound::
 
     // Note that the path doesn't matter for routing; any WebSocket
     // connection gets bumped over to WebSocket consumers
