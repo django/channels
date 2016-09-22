@@ -3,7 +3,8 @@ from __future__ import unicode_literals
 from django.conf import settings
 from django.test import override_settings
 from channels.message import Message
-from channels.sessions import channel_session, http_session, enforce_ordering, session_for_reply_channel
+from channels.sessions import channel_session, channel_and_http_session, http_session, enforce_ordering, \
+    session_for_reply_channel
 from channels.tests import ChannelTestCase
 from channels import DEFAULT_CHANNEL_LAYER, channel_layers
 
@@ -76,27 +77,6 @@ class SessionTests(ChannelTestCase):
         with self.assertRaises(ValueError):
             inner(message)
 
-    def test_channel_session_http_session_key(self):
-        """
-        Tests that channel_session decorator rehydrates http_session from a stored session_key
-        """
-        message = Message({"reply_channel": "test-reply"}, None, None)
-
-        # Create a session with an http_session key
-        session = session_for_reply_channel("test-reply")
-        session[settings.SESSION_COOKIE_NAME] = session.session_key
-        session.save()
-
-        @channel_session
-        @channel_session
-        def inner(message):
-            message.http_session["num_ponies"] = -1
-
-        inner(message)
-
-        self.assertEqual(message.http_session.session_key, session.session_key)
-        self.assertEqual(message.http_session["num_ponies"], -1)
-
     def test_http_session(self):
         """
         Tests that http_session correctly extracts a session cookie.
@@ -126,9 +106,9 @@ class SessionTests(ChannelTestCase):
         session2 = session_for_reply_channel("test-reply")
         self.assertEqual(session2["species"], "horse")
 
-    def test_http_session_channel_session(self):
+    def test_channel_and_http_session(self):
         """
-        Tests that the http_session stores the session_key when the channel_session is available
+        Tests that channel_and_http_session decorator stores the http session key and hydrates it when expected
         """
         # Make a session to try against
         session = session_for_reply_channel("test-reply-session")
@@ -144,42 +124,22 @@ class SessionTests(ChannelTestCase):
             },
         }, None, None)
 
-        @channel_session
-        @channel_session
-        @http_session
-        @http_session
+        @channel_and_http_session
         def inner(message):
-            message.http_session["species"] = "horse"
+            pass
 
         inner(message)
 
+        # It should store the session key
         self.assertEqual(message.channel_session[settings.SESSION_COOKIE_NAME], session.session_key)
 
-    def test_http_session_persist_error(self):
-        """
-        Tests that the http_session store will thrown an error when it cannot save the session_key
-        """
-        # Make a session to try against
-        session = session_for_reply_channel("test-reply-session")
-        # Construct message to send
-        message = Message({
-            "reply_channel": "test-reply-session",
-            "http_version": "1.1",
-            "method": "GET",
-            "path": "/test2/",
-            "headers": {
-                "host": b"example.com",
-                "cookie": ("%s=%s" % (settings.SESSION_COOKIE_NAME, session.session_key)).encode("ascii"),
-            },
-        }, None, None)
+        # Construct a new message
+        message2 = Message({"reply_channel": "test-reply-session", "path": "/"}, None, None)
 
-        @http_session(persist=True)
-        @http_session(persist=True)
-        def inner(message):
-            message.http_session["species"] = "horse"
+        inner(message2)
 
-        with self.assertRaises(ValueError):
-            inner(message)
+        # It should hydrate the http_session
+        self.assertEqual(message2.http_session.session_key, session.session_key)
 
     def test_enforce_ordering_slight(self):
         """
