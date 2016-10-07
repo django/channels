@@ -24,6 +24,8 @@ class Command(RunserverCommand):
             help='Tells Django not to run a worker thread; you\'ll need to run one separately.')
         parser.add_argument('--noasgi', action='store_false', dest='use_asgi', default=True,
             help='Run the old WSGI-based runserver rather than the ASGI-based one')
+        parser.add_argument('--http_timeout', action='store', dest='http_timeout', type=int,
+            help='Specify the daphane http_timeout interval in seconds (default: 60)')
 
     def handle(self, *args, **options):
         self.verbosity = options.get("verbosity", 1)
@@ -73,6 +75,7 @@ class Command(RunserverCommand):
         # Launch server in 'main' thread. Signals are disabled as it's still
         # actually a subthread under the autoreloader.
         self.logger.debug("Daphne running, listening on %s:%s", self.addr, self.port)
+        timeout = options.get("http_timeout", 60) # Shorter default timeout than normal as it's dev
         try:
             Server(
                 channel_layer=self.channel_layer,
@@ -80,7 +83,7 @@ class Command(RunserverCommand):
                 port=int(self.port),
                 signal_handlers=not options['use_reloader'],
                 action_logger=self.log_action,
-                http_timeout=60,  # Shorter timeout than normal as it's dev
+                http_timeout=timeout,
                 ws_protocols=getattr(settings, 'CHANNELS_WS_PROTOCOLS', None),
             ).run()
             self.logger.debug("Daphne exited")
