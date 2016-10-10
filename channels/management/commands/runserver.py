@@ -30,6 +30,7 @@ class Command(RunserverCommand):
     def handle(self, *args, **options):
         self.verbosity = options.get("verbosity", 1)
         self.logger = setup_logger('django.channels', self.verbosity)
+        self.http_timeout = options.get("http_timeout", 60)
         super(Command, self).handle(*args, **options)
 
     def inner_run(self, *args, **options):
@@ -75,7 +76,6 @@ class Command(RunserverCommand):
         # Launch server in 'main' thread. Signals are disabled as it's still
         # actually a subthread under the autoreloader.
         self.logger.debug("Daphne running, listening on %s:%s", self.addr, self.port)
-        timeout = options.get("http_timeout", 60) # Shorter default timeout than normal as it's dev
         try:
             Server(
                 channel_layer=self.channel_layer,
@@ -83,7 +83,7 @@ class Command(RunserverCommand):
                 port=int(self.port),
                 signal_handlers=not options['use_reloader'],
                 action_logger=self.log_action,
-                http_timeout=timeout,
+                http_timeout=self.http_timeout,
                 ws_protocols=getattr(settings, 'CHANNELS_WS_PROTOCOLS', None),
             ).run()
             self.logger.debug("Daphne exited")
