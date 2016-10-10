@@ -24,7 +24,7 @@ class Command(RunserverCommand):
             help='Tells Django not to run a worker thread; you\'ll need to run one separately.')
         parser.add_argument('--noasgi', action='store_false', dest='use_asgi', default=True,
             help='Run the old WSGI-based runserver rather than the ASGI-based one')
-        parser.add_argument('--http_timeout', action='store', dest='http_timeout', type=int,
+        parser.add_argument('--http_timeout', action='store', dest='http_timeout', type=int, default=60,
             help='Specify the daphane http_timeout interval in seconds (default: 60)')
 
     def handle(self, *args, **options):
