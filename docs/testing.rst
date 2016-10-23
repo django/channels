@@ -191,8 +191,7 @@ Applying routes
 When you need to testing you consumers without routes in settings or you
 want to testing your consumers in more isolate and atomic way, it will be
 simpler with ``apply_routes`` contextmanager and decorator for your ``ChannelTestCase``.
-It will takes list of routes that you want to use at you tests and overwrite
-existing routes::
+It takes list of routes that you want to use and overwrite existing routes::
 
     from channels.tests import ChannelTestCase, HttpClient, apply_routes
 
@@ -212,10 +211,11 @@ Test Data binding with ``HttpClient``
 As you know data binding in channels works in outbound and inbound ways,
 so that ways tests in different ways and ``HttpClient`` and ``apply_routes``
 will help to do this.
-When you testing outbound consumers you not need to create websocket consumer because
-to getting outbound binding messages you need just create ``Binding`` subclass
-with specified ``group_names`` and join to one of them.
-Lets test ``IntegerValueBinding`` from :doc:`binding <getting started>` with creating::
+When you testing outbound consumers you need just import your ``Binding``
+subclass with specified ``group_names``. At test you can  join to one of them,
+make some changes with target model and check received message.
+Lets test ``IntegerValueBinding`` from :doc:`binding <getting started>`
+with creating::
 
     class TestIntegerValueBinding(ChannelTestCase):
 
