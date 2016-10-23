@@ -250,3 +250,41 @@ want to override; like so::
 You can also use the Django ``method_decorator`` utility to wrap methods that
 have ``message`` as their first positional argument - note that it won't work
 for more high-level methods, like ``WebsocketConsumer.receive``.
+
+
+As route
+--------
+
+Instead of make routes by ``route_class`` you may use ``as_route`` shortcut.
+This function take route filters as kwargs (:doc:`routing <filters>`) and return
+``route_class``. For example::
+
+    from . import consumers
+
+    channel_routing = [
+        consumers.ChatServer.as_route(path=r"^/chat/"),
+    ]
+
+Use ``attrs`` dict keyword for dynamic class attributes. For example you have
+the generic consumer::
+
+    class MyGenericConsumer(WebsocketConsumer):
+        group = 'default'
+        group_prefix = ''
+
+        def connection_groups(self, **kwargs):
+            return ['_'.join(self.group_prefix, self.group)]
+
+You can create new consumes with different ``group`` and  ``group_prefix`` with ``attrs``,
+like so::
+
+    from . import consumers
+
+    channel_routing = [
+        consumers.MyGenericConsumer.as_route(path=r"^/path/1/",
+                                             attrs={'group': 'one', 'group_prefix': 'pre'}),
+        consumers.MyGenericConsumer.as_route(path=r"^/path/2/",
+                                             attrs={'group': 'two', 'group_prefix': 'public'}),
+
+    ]
+
