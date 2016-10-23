@@ -140,7 +140,8 @@ For example::
 
         def receive(self, content, **kwargs):
             self.send({'rooms': self.message.http_session.get("rooms", [])})
-            Channel("rooms_receive").send({'user': self.message.user.id, 'message': content['message']}
+            Channel("rooms_receive").send({'user': self.message.user.id,
+                                           'message': content['message']}
 
 
     # tests.py
@@ -167,7 +168,9 @@ For example::
             client.session['rooms'] = ['test', '1']
             client.session.save()
 
-            client.send_and_consume('websocket.receive', text={'message': 'hey'}, path='/rooms/')
+            client.send_and_consume('websocket.receive',
+                                    text={'message': 'hey'},
+                                    path='/rooms/')
             # test 'response'
             self.assertEqual(client.receive(), {'rooms': ['test', '1']})
 
@@ -267,7 +270,8 @@ For example::
                     'stream': 'intval',
                     'payload': {'action': CREATE, 'data': {'name': 'one', 'value': 1}}
                 })
-                # our Demultiplexer route message to the inbound consumer, so we need to call this consumer
+                # our Demultiplexer route message to the inbound consumer,
+                # so we need to call this consumer
                 client.consume('binding.users')
 
             self.assertEqual(IntegerValue.objects.all().count(), 1)
