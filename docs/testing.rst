@@ -220,6 +220,9 @@ make some changes with target model and check received message.
 Lets test ``IntegerValueBinding`` from :doc:`binding <getting started>`
 with creating::
 
+    from channels.tests import ChannelTestCase, HttpClient
+    from channels.signals import consumer_finished
+
     class TestIntegerValueBinding(ChannelTestCase):
 
         def test_outbound_create(self):
