@@ -108,8 +108,8 @@ do group adds and sends during a test. For example::
             self.assertEqual(result['value'], 42)
 
 
-Client
-------
+Clients
+-------
 
 For more complicated test suites you can use ``Client`` abstraction that
 provides easy way to test full life cycle of messages with a couple of methods:
@@ -217,7 +217,7 @@ will help to do this.
 When you testing outbound consumers you need just import your ``Binding``
 subclass with specified ``group_names``. At test you can  join to one of them,
 make some changes with target model and check received message.
-Lets test ``IntegerValueBinding`` from :doc:`binding <getting started>`
+Lets test ``IntegerValueBinding`` from :doc:`data binding <binding>`
 with creating::
 
     from channels.tests import ChannelTestCase, HttpClient
