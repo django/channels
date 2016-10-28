@@ -256,7 +256,7 @@ As route
 --------
 
 Instead of make routes by ``route_class`` you may use ``as_route`` shortcut.
-This function take route filters (:ref:`filters`) as kwargs and return
+This function takes route filters (:ref:`filters`) as kwargs and return
 ``route_class``. For example::
 
     from . import consumers
@@ -275,7 +275,7 @@ the generic consumer::
         def connection_groups(self, **kwargs):
             return ['_'.join(self.group_prefix, self.group)]
 
-You can create consumes with differents ``group`` and  ``group_prefix`` with ``attrs``,
+You can create consumers with differents ``group`` and  ``group_prefix`` with ``attrs``,
 like so::
 
     from . import consumers
