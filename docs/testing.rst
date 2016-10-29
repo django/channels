@@ -111,8 +111,8 @@ do group adds and sends during a test. For example::
 Clients
 -------
 
-For more complicated test suites you can use ``Client`` abstraction that
-provides easy way to test full life cycle of messages with a couple of methods:
+For more complicated test suites you can use the ``Client`` abstraction that
+provides an easy way to test the full life cycle of messages with a couple of methods:
 ``send`` to sending message with given content to the given channel, ``consume``
 to run appointed consumer for the next message, ``receive`` to getting replies for client.
 Very often you may need to ``send`` and than call a consumer one by one, for this

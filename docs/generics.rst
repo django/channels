@@ -255,8 +255,8 @@ for more high-level methods, like ``WebsocketConsumer.receive``.
 As route
 --------
 
-Instead of make routes by ``route_class`` you may use ``as_route`` shortcut.
-This function takes route filters (:ref:`filters`) as kwargs and return
+Instead of making routes using ``route_class`` you may use the ``as_route`` shortcut.
+This function takes route filters (:ref:`filters`) as kwargs and returns
 ``route_class``. For example::
 
     from . import consumers
@@ -265,7 +265,7 @@ This function takes route filters (:ref:`filters`) as kwargs and return
         consumers.ChatServer.as_route(path=r"^/chat/"),
     ]
 
-Use ``attrs`` dict keyword for dynamic class attributes. For example you have
+Use the ``attrs`` dict keyword for dynamic class attributes. For example you have
 the generic consumer::
 
     class MyGenericConsumer(WebsocketConsumer):
@@ -275,7 +275,7 @@ the generic consumer::
         def connection_groups(self, **kwargs):
             return ['_'.join(self.group_prefix, self.group)]
 
-You can create consumers with differents ``group`` and  ``group_prefix`` with ``attrs``,
+You can create consumers with different ``group`` and  ``group_prefix`` with ``attrs``,
 like so::
 
     from . import consumers
