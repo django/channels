@@ -167,22 +167,26 @@ class Benchmarker(object):
                 num_out_of_order += 1
             else:
                 num_good += 1
-        # Some analysis on latencies
-        latency_mean = statistics.mean(latencies)
-        latency_median = statistics.median(latencies)
-        latency_stdev = statistics.stdev(latencies)
-        latency_95 = self.percentile(latencies, 0.95)
-        latency_99 = self.percentile(latencies, 0.99)
+
+        if latencies:
+            # Some analysis on latencies
+            latency_mean = statistics.mean(latencies)
+            latency_median = statistics.median(latencies)
+            latency_stdev = statistics.stdev(latencies)
+            latency_95 = self.percentile(latencies, 0.95)
+            latency_99 = self.percentile(latencies, 0.99)
+
         # Print results
         print("-------")
         print("Sockets opened: %s" % len(stats))
-        print("Latency stats: Mean %.3fs  Median %.3fs  Stdev %.3f  95%% %.3fs  95%% %.3fs" % (
-            latency_mean,
-            latency_median,
-            latency_stdev,
-            latency_95,
-            latency_99,
-        ))
+        if latencies:
+            print("Latency stats: Mean %.3fs  Median %.3fs  Stdev %.3f  95%% %.3fs  95%% %.3fs" % (
+                latency_mean,
+                latency_median,
+                latency_stdev,
+                latency_95,
+                latency_99,
+            ))
         print("Good sockets: %s (%.2f%%)" % (num_good, (float(num_good) / len(stats))*100))
         print("Incomplete sockets: %s (%.2f%%)" % (num_incomplete, (float(num_incomplete) / len(stats))*100))
         print("Corrupt sockets: %s (%.2f%%)" % (num_corruption, (float(num_corruption) / len(stats))*100))
