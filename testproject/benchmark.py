@@ -70,7 +70,6 @@ class MyClientProtocol(WebSocketClientProtocol):
                 "connect": True,
             }
         else:
-            self.fingerprint = "".join(random.choice("abcdefghijklmnopqrstuvwxyz") for i in range(16))
             stats[self.fingerprint] = {
                 "sent": 0,
                 "received": 0,
