@@ -2,14 +2,13 @@ from __future__ import unicode_literals
 
 import json
 import logging
-import time
 import signal
 import sys
+import time
 
 from django.core.exceptions import ValidationError
 
 from .models import DelayedMessage
-
 
 logger = logging.getLogger('django.channels')
 

@@ -1,19 +1,19 @@
 from __future__ import unicode_literals
 
-from datetime import timedelta
 import json
+from datetime import timedelta
+
+from django.utils import timezone
+
+from channels import DEFAULT_CHANNEL_LAYER, Channel, channel_layers
+from channels.delay.models import DelayedMessage
+from channels.delay.worker import Worker
+from channels.tests import ChannelTestCase
 
 try:
     from unittest import mock
 except ImportError:
     import mock
-
-from django.utils import timezone
-
-from channels import Channel, channel_layers, DEFAULT_CHANNEL_LAYER
-from channels.delay.models import DelayedMessage
-from channels.delay.worker import Worker
-from channels.tests import ChannelTestCase
 
 
 class PatchedWorker(Worker):

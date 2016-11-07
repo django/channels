@@ -1,9 +1,10 @@
-from datetime import timedelta
 import json
+from datetime import timedelta
 
 from django.db import models
 from django.utils import timezone
-from channels import Channel, channel_layers, DEFAULT_CHANNEL_LAYER
+
+from channels import DEFAULT_CHANNEL_LAYER, Channel, channel_layers
 
 
 class DelayedMessageQuerySet(models.QuerySet):
