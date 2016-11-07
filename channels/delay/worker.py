@@ -1,12 +1,14 @@
 from __future__ import unicode_literals
 
-import heapq
+import json
 import logging
 import time
 import signal
 import sys
 
-from .message import Message
+from django.core.exceptions import ValidationError
+
+from .models import DelayedMessage
 
 
 logger = logging.getLogger('django.channels')
@@ -24,7 +26,6 @@ class Worker(object):
         self.signal_handlers = signal_handlers
         self.termed = False
         self.in_job = False
-        self.delayed_messages = []
 
     def install_signal_handler(self):
         signal.signal(signal.SIGTERM, self.sigterm_handler)
@@ -53,45 +54,31 @@ class Worker(object):
                 logger.debug("Got message on channels.delay")
 
                 if 'channel' not in content or \
-                   'delay' not in content or \
-                   'content' not in content:
-                    logger.error("Invalid message received, it must contain keys 'channel', 'content', and 'delay'.")
+                   'content' not in content or \
+                        ('delay' not in content and 'interval' not in content):
+                    logger.error("Invalid message received, it must contain keys 'channel', 'content', "
+                                 "and ('delay' or 'interval).")
                     break
 
                 message = DelayedMessage(
-                    content=content,
+                    content=json.dumps(content['content']),
                     channel_name=content['channel'],
-                    channel_layer=self.channel_layer
+                    interval=content.get('interval'),
+                    delay=content.get('delay')
                 )
-                heapq.heappush(self.delayed_messages, (message.due_date, message))
+
+                try:
+                    message.full_clean()
+                except ValidationError as err:
+                    logger.error("Invalid message received: %s:%s", err.error_dict.keys(), err.messages)
+                    break
+                message.save()
             # check for messages to send
-            if not self.delayed_messages:
+            if not DelayedMessage.objects.is_due().count():
                 logger.debug("No delayed messages waiting.")
                 time.sleep(0.01)
                 continue
 
-            due_date, message = heapq.heappop(self.delayed_messages)
-
-            if message.is_due():
-                logger.info("Delayed message due. Sending message to channel %s", message.channel.name)
-                message.send()
-            else:
-                logger.debug("Message is not due.")
-                heapq.heappush(self.delayed_messages, (due_date, message))
-
-
-class DelayedMessage(Message):
-    """
-    Represents a message to be sent after a given delay.
-    """
-
-    def __init__(self, *args, **kwargs):
-        super(DelayedMessage, self).__init__(*args, **kwargs)
-        self.delay = self.content['delay']
-        self.due_date = time.time() + self.delay
-
-    def is_due(self):
-        return self.due_date - time.time() < 0
-
-    def send(self):
-        self.channel.send(self.content['content'], immediately=True)
+            for message in DelayedMessage.objects.is_due().all():
+                logger.info("Delayed message due. Sending message to channel %s", message.channel_name)
+                message.send(channel_layer=self.channel_layer)
