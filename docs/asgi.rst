@@ -1047,3 +1047,4 @@ Protocol Definitions
 
    /asgi/email
    /asgi/udp
+   /asgi/delay
