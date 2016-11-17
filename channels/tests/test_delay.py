@@ -36,7 +36,7 @@ class WorkerTests(ChannelTestCase):
         """
         Tests the worker won't delay an invalid message
         """
-        Channel('channels.delay').send({'test': 'value'}, immediately=True)
+        Channel('asgi.delay').send({'test': 'value'}, immediately=True)
 
         worker = PatchedWorker(channel_layers[DEFAULT_CHANNEL_LAYER])
         worker.termed = 1
@@ -49,9 +49,9 @@ class WorkerTests(ChannelTestCase):
         """
         Tests the message is delayed and dispatched when due
         """
-        Channel('channels.delay').send({
+        Channel('asgi.delay').send({
             'channel': 'test',
-            'delay': 10,
+            'delay': 1000,
             'content': {'test': 'value'}
         }, immediately=True)
 
@@ -62,7 +62,7 @@ class WorkerTests(ChannelTestCase):
 
         self.assertEqual(DelayedMessage.objects.count(), 1)
 
-        with mock.patch('django.utils.timezone.now', return_value=timezone.now() + timedelta(seconds=10)):
+        with mock.patch('django.utils.timezone.now', return_value=timezone.now() + timedelta(milliseconds=1001)):
             worker.termed = 1
             worker.run()
 
@@ -71,40 +71,6 @@ class WorkerTests(ChannelTestCase):
         message = self.get_next_message('test', require=True)
         self.assertEqual(message.content, {'test': 'value'})
 
-    def test_interval_message(self):
-        """
-        Tests the message is sent repeatidly on an interval
-        """
-
-        Channel('channels.delay').send({
-            'channel': 'test',
-            'interval': 10,
-            'content': {'test': 'value'}
-        }, immediately=True)
-
-        worker = PatchedWorker(channel_layers[DEFAULT_CHANNEL_LAYER])
-        worker.termed = 1
-
-        worker.run()
-
-        self.assertEqual(DelayedMessage.objects.count(), 1)
-
-        with mock.patch('django.utils.timezone.now', return_value=timezone.now() + timedelta(seconds=10)):
-            worker.termed = 1
-            worker.run()
-
-        message = self.get_next_message('test', require=True)
-        self.assertEqual(message.content, {'test': 'value'})
-
-        self.assertEqual(DelayedMessage.objects.count(), 1)
-
-        # second time around
-        with mock.patch('django.utils.timezone.now', return_value=timezone.now() + timedelta(seconds=21)):
-            worker.termed = 1
-            worker.run()
-
-        self.get_next_message('test', require=True)
-
 
 class DelayedMessageTests(ChannelTestCase):
 
@@ -112,7 +78,7 @@ class DelayedMessageTests(ChannelTestCase):
         kwargs = {
             'content': json.dumps({'test': 'data'}),
             'channel_name': 'test',
-            'delay': 10
+            'delay': 1000 * 5
         }
         delayed_message = DelayedMessage(**kwargs)
         delayed_message.save()
@@ -124,7 +90,7 @@ class DelayedMessageTests(ChannelTestCase):
 
         self.assertEqual(DelayedMessage.objects.is_due().count(), 0)
 
-        with mock.patch('django.utils.timezone.now', return_value=message.due_date + timedelta(seconds=10)):
+        with mock.patch('django.utils.timezone.now', return_value=message.due_date + timedelta(milliseconds=1)):
             self.assertEqual(DelayedMessage.objects.is_due().count(), 1)
 
     def test_send(self):
@@ -132,3 +98,5 @@ class DelayedMessageTests(ChannelTestCase):
         message.send(channel_layer=channel_layers[DEFAULT_CHANNEL_LAYER])
 
         self.get_next_message(message.channel_name, require=True)
+
+        self.assertEqual(DelayedMessage.objects.count(), 0)

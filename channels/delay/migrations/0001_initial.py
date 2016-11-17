@@ -17,9 +17,7 @@ class Migration(migrations.Migration):
             name='DelayedMessage',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('due_date', models.DateTimeField()),
-                ('interval', models.IntegerField(null=True)),
-                ('last_sent', models.DateTimeField(null=True)),
+                ('due_date', models.DateTimeField(db_index=True)),
                 ('channel_name', models.CharField(max_length=512)),
                 ('content', models.TextField()),
             ],

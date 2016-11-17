@@ -42,28 +42,27 @@ class Worker(object):
         if self.signal_handlers:
             self.install_signal_handler()
 
-        logger.info("Listening on channels.delay")
+        logger.info("Listening on asgi.delay")
 
         while not self.termed:
             self.in_job = False
-            channel, content = self.channel_layer.receive_many(['channels.delay'])
+            channel, content = self.channel_layer.receive_many(['asgi.delay'])
             self.in_job = True
 
             if channel is not None:
-                logger.debug("Got message on channels.delay")
+                logger.debug("Got message on asgi.delay")
 
                 if 'channel' not in content or \
                    'content' not in content or \
-                        ('delay' not in content and 'interval' not in content):
+                   'delay' not in content:
                     logger.error("Invalid message received, it must contain keys 'channel', 'content', "
-                                 "and ('delay' or 'interval).")
+                                 "and 'delay'.")
                     break
 
                 message = DelayedMessage(
                     content=json.dumps(content['content']),
                     channel_name=content['channel'],
-                    interval=content.get('interval'),
-                    delay=content.get('delay')
+                    delay=content['delay']
                 )
 
                 try:
