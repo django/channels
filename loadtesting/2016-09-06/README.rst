@@ -43,7 +43,7 @@ For the following tests, loadtest was permitted to autothrottle so as to limit e
 
 Gunicorn had a latency of 6 ms; daphne and Redis, 12 ms; daphne and IPC,  35 ms.
 
-.. image:: channels-throughput.PNG
+.. image:: channels-throughput-non-accumulated.png
 
 
 Supervisor Configs
