@@ -1,34 +1,75 @@
 Django Channels
 ===============
 
-.. image:: https://api.travis-ci.org/andrewgodwin/channels.svg
-    :target: https://travis-ci.org/andrewgodwin/channels
-    
+.. image:: https://api.travis-ci.org/django/channels.svg
+    :target: https://travis-ci.org/django/channels
+
 .. image:: https://readthedocs.org/projects/channels/badge/?version=latest
-    :target: http://channels.readthedocs.org/en/latest/?badge=latest
-    
+    :target: https://channels.readthedocs.io/en/latest/?badge=latest
+
 .. image:: https://img.shields.io/pypi/v/channels.svg
     :target: https://pypi.python.org/pypi/channels
 
 .. image:: https://img.shields.io/pypi/l/channels.svg
     :target: https://pypi.python.org/pypi/channels
 
-*(Note: Recent versions of Channels also need recent versions of Daphne,
-asgi_redis and asgiref, so make sure you update all at once)*
-
-This is a work-in-progress code branch of Django implemented as a third-party
-app, which aims to bring some asynchrony to Django and expand the options
-for code beyond the request-response model, in particular enabling WebSocket,
-HTTP2 push, and background task support.
+Channels loads into Django as a pluggable app to bring WebSocket, long-poll HTTP,
+task offloading and other asynchrony support to your code, using familiar Django
+design patterns and a flexible underlying framework that lets you not only
+customize behaviours but also write support for your own protocols and needs.
 
 This is still **beta** software: the API is mostly settled, but might change
-a bit as things develop.
+a bit as things develop. Once we hit ``1.0``, it will be stablized and a
+deprecation policy will come in.
 
 Documentation, installation and getting started instructions are at
-http://channels.readthedocs.org
+https://channels.readthedocs.io
 
 Support can be obtained either here via issues, or in the ``#django-channels``
 channel on Freenode.
 
-You can also install channels from PyPI as the ``channels`` package.
-You'll likely also want ``asgi_redis`` to provide the Redis channel layer.
+You can install channels from PyPI as the ``channels`` package.
+You'll likely also want to ``asgi_redis`` to provide the Redis channel layer.
+See our `installation <https://channels.readthedocs.io/en/latest/installation.html>`_
+and `getting started <https://channels.readthedocs.io/en/latest/getting-started.html>`_ docs for more.
+
+
+Contributing
+------------
+
+To learn more about contributing, please `read our contributing docs <https://channels.readthedocs.io/en/latest/contributing.html>`_.
+
+
+Maintenance and Security
+------------------------
+
+To report security issues, please contact security@djangoproject.com. For GPG
+signatures and more security process information, see
+https://docs.djangoproject.com/en/dev/internals/security/.
+
+To report bugs or request new features, please open a new GitHub issue. For
+larger discussions, please post to the
+`django-developers mailing list <https://groups.google.com/d/forum/django-developers>`_.
+
+Django Core Shepherd: Andrew Godwin <andrew@aeracode.org>
+
+Maintenance team:
+
+* Andrew Godwin <andrew@aeracode.org>
+* Steven Davidson
+* Jeremy Spencer
+
+If you are interested in joining the maintenance team, please
+`read more about contributing <https://channels.readthedocs.io/en/latest/contributing.html>`_
+and get in touch!
+
+
+Other Projects
+--------------
+
+The Channels project is made up of several packages; the others are:
+
+* `Daphne <https://github.com/django/daphne/>`_, the HTTP and Websocket termination server
+* `asgiref <https://github.com/django/asgiref/>`_, the base ASGI library/memory backend
+* `asgi_redis <https://github.com/django/asgi_redis/>`_, the Redis channel backend
+* `asgi_ipc <https://github.com/django/asgi_ipc/>`_, the POSIX IPC channel backend

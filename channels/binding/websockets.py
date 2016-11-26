@@ -3,9 +3,9 @@ import json
 from django.core import serializers
 from django.core.serializers.json import DjangoJSONEncoder
 
-from .base import Binding
 from ..generic.websockets import WebsocketDemultiplexer
 from ..sessions import enforce_ordering
+from .base import Binding
 
 
 class WebsocketBinding(Binding):
@@ -55,10 +55,13 @@ class WebsocketBinding(Binding):
         """
         Serializes model data into JSON-compatible types.
         """
-        if self.fields == ['__all__']:
-            fields = None
+        if self.fields is not None:
+            if self.fields == '__all__' or list(self.fields) == ['__all__']:
+                fields = None
+            else:
+                fields = self.fields
         else:
-            fields = self.fields
+            fields = [f.name for f in instance._meta.get_fields() if f.name not in self.exclude]
         data = serializers.serialize('json', [instance], fields=fields)
         return json.loads(data)[0]['fields']
 
@@ -109,8 +112,15 @@ class WebsocketBinding(Binding):
     def update(self, pk, data):
         instance = self.model.objects.get(pk=pk)
         hydrated = self._hydrate(pk, data)
-        for name in data.keys():
-            setattr(instance, name, getattr(hydrated.object, name))
+
+        if self.fields is not None:
+            for name in data.keys():
+                if name in self.fields or self.fields == ['__all__']:
+                    setattr(instance, name, getattr(hydrated.object, name))
+        else:
+            for name in data.keys():
+                if name not in self.exclude:
+                    setattr(instance, name, getattr(hydrated.object, name))
         instance.save()
 
 

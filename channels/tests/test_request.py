@@ -1,10 +1,11 @@
 from __future__ import unicode_literals
+
 from django.utils import six
 
 from channels import Channel
-from channels.tests import ChannelTestCase
+from channels.exceptions import RequestAborted, RequestTimeout
 from channels.handler import AsgiRequest
-from channels.exceptions import RequestTimeout, RequestAborted
+from channels.tests import ChannelTestCase
 
 
 class RequestTests(ChannelTestCase):
@@ -22,7 +23,7 @@ class RequestTests(ChannelTestCase):
             "http_version": "1.1",
             "method": "GET",
             "path": "/test/",
-        })
+        }, immediately=True)
         request = AsgiRequest(self.get_next_message("test"))
         self.assertEqual(request.path, "/test/")
         self.assertEqual(request.method, "GET")
@@ -31,8 +32,8 @@ class RequestTests(ChannelTestCase):
         self.assertNotIn("REMOTE_ADDR", request.META)
         self.assertNotIn("REMOTE_HOST", request.META)
         self.assertNotIn("REMOTE_PORT", request.META)
-        self.assertNotIn("SERVER_NAME", request.META)
-        self.assertNotIn("SERVER_PORT", request.META)
+        self.assertIn("SERVER_NAME", request.META)
+        self.assertIn("SERVER_PORT", request.META)
         self.assertFalse(request.GET)
         self.assertFalse(request.POST)
         self.assertFalse(request.COOKIES)
@@ -53,7 +54,7 @@ class RequestTests(ChannelTestCase):
             },
             "client": ["10.0.0.1", 1234],
             "server": ["10.0.0.2", 80],
-        })
+        }, immediately=True)
         request = AsgiRequest(self.get_next_message("test"))
         self.assertEqual(request.path, "/test2/")
         self.assertEqual(request.method, "GET")
@@ -63,7 +64,7 @@ class RequestTests(ChannelTestCase):
         self.assertEqual(request.META["REMOTE_HOST"], "10.0.0.1")
         self.assertEqual(request.META["REMOTE_PORT"], 1234)
         self.assertEqual(request.META["SERVER_NAME"], "10.0.0.2")
-        self.assertEqual(request.META["SERVER_PORT"], 80)
+        self.assertEqual(request.META["SERVER_PORT"], "80")
         self.assertEqual(request.GET["x"], "1")
         self.assertEqual(request.GET["y"], "&foo bar+baz")
         self.assertEqual(request.COOKIES["test-time"], "1448995585123")
@@ -86,7 +87,7 @@ class RequestTests(ChannelTestCase):
                 "content-type": b"application/x-www-form-urlencoded",
                 "content-length": b"18",
             },
-        })
+        }, immediately=True)
         request = AsgiRequest(self.get_next_message("test"))
         self.assertEqual(request.path, "/test2/")
         self.assertEqual(request.method, "POST")
@@ -116,14 +117,14 @@ class RequestTests(ChannelTestCase):
                 "content-type": b"application/x-www-form-urlencoded",
                 "content-length": b"21",
             },
-        })
+        }, immediately=True)
         Channel("test-input").send({
             "content": b"re=fou",
             "more_content": True,
-        })
+        }, immediately=True)
         Channel("test-input").send({
             "content": b"r+lights",
-        })
+        }, immediately=True)
         request = AsgiRequest(self.get_next_message("test"))
         self.assertEqual(request.method, "POST")
         self.assertEqual(request.body, b"there_are=four+lights")
@@ -154,14 +155,14 @@ class RequestTests(ChannelTestCase):
                 "content-type": b"multipart/form-data; boundary=BOUNDARY",
                 "content-length": six.text_type(len(body)).encode("ascii"),
             },
-        })
+        }, immediately=True)
         Channel("test-input").send({
             "content": body[:20],
             "more_content": True,
-        })
+        }, immediately=True)
         Channel("test-input").send({
             "content": body[20:],
-        })
+        }, immediately=True)
         request = AsgiRequest(self.get_next_message("test"))
         self.assertEqual(request.method, "POST")
         self.assertEqual(len(request.body), len(body))
@@ -184,7 +185,7 @@ class RequestTests(ChannelTestCase):
                 "host": b"example.com",
                 "content-length": b"11",
             },
-        })
+        }, immediately=True)
         request = AsgiRequest(self.get_next_message("test", require=True))
         self.assertEqual(request.method, "PUT")
         self.assertEqual(request.read(3), b"one")
@@ -206,12 +207,12 @@ class RequestTests(ChannelTestCase):
                 "content-type": b"application/x-www-form-urlencoded",
                 "content-length": b"21",
             },
-        })
+        }, immediately=True)
         # Say there's more content, but never provide it! Muahahaha!
         Channel("test-input").send({
             "content": b"re=fou",
             "more_content": True,
-        })
+        }, immediately=True)
 
         class VeryImpatientRequest(AsgiRequest):
             body_receive_timeout = 0
@@ -235,9 +236,9 @@ class RequestTests(ChannelTestCase):
                 "content-type": b"application/x-www-form-urlencoded",
                 "content-length": b"21",
             },
-        })
+        }, immediately=True)
         Channel("test-input").send({
             "closed": True,
-        })
+        }, immediately=True)
         with self.assertRaises(RequestAborted):
             AsgiRequest(self.get_next_message("test"))

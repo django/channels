@@ -71,15 +71,15 @@ def channel_session(func):
 
 def enforce_ordering(func=None, slight=False):
     """
-    Enforces either slight (order=0 comes first, everything else isn't ordered)
-    or strict (all messages exactly ordered) ordering against a reply_channel.
+    Enforces strict (all messages exactly ordered) ordering against a reply_channel.
 
     Uses sessions to track ordering and socket-specific wait channels for unordered messages.
-
-    You cannot mix slight ordering and strict ordering on a channel; slight
-    ordering does not write to the session after the first message to improve
-    performance.
     """
+    # Slight is deprecated
+    if slight:
+        raise ValueError("Slight ordering is now always on due to Channels changes. Please remove the decorator.")
+
+    # Main decorator
     def decorator(func):
         @channel_session
         @functools.wraps(func)
@@ -93,13 +93,13 @@ def enforce_ordering(func=None, slight=False):
             order = int(message.content['order'])
             # See what the current next order should be
             next_order = message.channel_session.get("__channels_next_order", 0)
-            if order == next_order or (slight and next_order > 0):
+            if order == next_order:
                 # Run consumer
                 func(message, *args, **kwargs)
                 # Mark next message order as available for running
-                if order == 0 or not slight:
-                    message.channel_session["__channels_next_order"] = order + 1
-                    message.channel_session.save()
+                message.channel_session["__channels_next_order"] = order + 1
+                message.channel_session.save()
+                message.channel_session.modified = False
                 # Requeue any pending wait channel messages for this socket connection back onto it's original channel
                 while True:
                     wait_channel = "__wait__.%s" % message.reply_channel.name
@@ -182,4 +182,28 @@ def http_session(func):
         if session is not None and session.modified:
             session.save()
         return result
+    return inner
+
+
+def channel_and_http_session(func):
+    """
+    Enables both the channel_session and http_session.
+
+    Stores the http session key in the channel_session on websocket.connect messages.
+    It will then hydrate the http_session from that same key on subsequent messages.
+    """
+    @http_session
+    @channel_session
+    @functools.wraps(func)
+    def inner(message, *args, **kwargs):
+        # Store the session key in channel_session
+        if message.http_session is not None and settings.SESSION_COOKIE_NAME not in message.channel_session:
+            message.channel_session[settings.SESSION_COOKIE_NAME] = message.http_session.session_key
+        # Hydrate the http_session from session_key
+        elif message.http_session is None and settings.SESSION_COOKIE_NAME in message.channel_session:
+            session_engine = import_module(settings.SESSION_ENGINE)
+            session = session_engine.SessionStore(session_key=message.channel_session[settings.SESSION_COOKIE_NAME])
+            message.http_session = session
+        # Run the consumer
+        return func(message, *args, **kwargs)
     return inner

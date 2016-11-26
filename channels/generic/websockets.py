@@ -1,7 +1,7 @@
-from django.core.serializers.json import json, DjangoJSONEncoder
+from django.core.serializers.json import DjangoJSONEncoder, json
 
-from ..channel import Group, Channel
 from ..auth import channel_session_user_from_http
+from ..channel import Channel, Group
 from ..sessions import enforce_ordering
 from .base import BaseConsumer
 
@@ -23,7 +23,7 @@ class WebsocketConsumer(BaseConsumer):
     # implies channel_session_user
     http_user = False
 
-    # Set one to True if you want the class to enforce ordering for you
+    # Set to True if you want the class to enforce ordering for you
     slight_ordering = False
     strict_ordering = False
 
@@ -47,7 +47,7 @@ class WebsocketConsumer(BaseConsumer):
         if self.strict_ordering:
             return enforce_ordering(handler, slight=False)
         elif self.slight_ordering:
-            return enforce_ordering(handler, slight=True)
+            raise ValueError("Slight ordering is now always on. Please remove `slight_ordering=True`.")
         else:
             return handler
 
@@ -95,7 +95,7 @@ class WebsocketConsumer(BaseConsumer):
         """
         message = {}
         if close:
-            message["close"] = True
+            message["close"] = close
         if text is not None:
             message["text"] = text
         elif bytes is not None:
@@ -108,7 +108,7 @@ class WebsocketConsumer(BaseConsumer):
     def group_send(cls, name, text=None, bytes=None, close=False):
         message = {}
         if close:
-            message["close"] = True
+            message["close"] = close
         if text is not None:
             message["text"] = text
         elif bytes is not None:
@@ -117,11 +117,11 @@ class WebsocketConsumer(BaseConsumer):
             raise ValueError("You must pass text or bytes")
         Group(name).send(message)
 
-    def close(self):
+    def close(self, status=True):
         """
         Closes the WebSocket from the server end
         """
-        self.message.reply_channel.send({"close": True})
+        self.message.reply_channel.send({"close": status})
 
     def raw_disconnect(self, message, **kwargs):
         """
@@ -134,7 +134,7 @@ class WebsocketConsumer(BaseConsumer):
 
     def disconnect(self, message, **kwargs):
         """
-        Called when a WebSocket connection is opened.
+        Called when a WebSocket connection is closed.
         """
         pass
 

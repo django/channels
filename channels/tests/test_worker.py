@@ -1,17 +1,18 @@
 from __future__ import unicode_literals
 
+import threading
+
+from channels import DEFAULT_CHANNEL_LAYER, Channel, route
+from channels.asgi import channel_layers
+from channels.exceptions import ConsumeLater
+from channels.signals import worker_ready
+from channels.tests import ChannelTestCase
+from channels.worker import Worker, WorkerGroup
+
 try:
     from unittest import mock
 except ImportError:
     import mock
-import threading
-
-from channels import Channel, route, DEFAULT_CHANNEL_LAYER
-from channels.asgi import channel_layers
-from channels.tests import ChannelTestCase
-from channels.worker import Worker, WorkerGroup
-from channels.exceptions import ConsumeLater
-from channels.signals import worker_ready
 
 
 class PatchedWorker(Worker):
@@ -68,7 +69,7 @@ class WorkerTests(ChannelTestCase):
             if _consumer._call_count == 1:
                 raise ConsumeLater()
 
-        Channel('test').send({'test': 'test'})
+        Channel('test').send({'test': 'test'}, immediately=True)
         channel_layer = channel_layers[DEFAULT_CHANNEL_LAYER]
         channel_layer.router.add_route(route('test', _consumer))
         old_send = channel_layer.send
@@ -83,7 +84,7 @@ class WorkerTests(ChannelTestCase):
 
     def test_normal_run(self):
         consumer = mock.Mock()
-        Channel('test').send({'test': 'test'})
+        Channel('test').send({'test': 'test'}, immediately=True)
         channel_layer = channel_layers[DEFAULT_CHANNEL_LAYER]
         channel_layer.router.add_route(route('test', consumer))
         old_send = channel_layer.send

@@ -2,10 +2,13 @@ from __future__ import unicode_literals
 
 from django.conf import settings
 from django.test import override_settings
-from channels.message import Message
-from channels.sessions import channel_session, http_session, enforce_ordering, session_for_reply_channel
-from channels.tests import ChannelTestCase
+
 from channels import DEFAULT_CHANNEL_LAYER, channel_layers
+from channels.message import Message
+from channels.sessions import (
+    channel_and_http_session, channel_session, enforce_ordering, http_session, session_for_reply_channel,
+)
+from channels.tests import ChannelTestCase
 
 
 @override_settings(SESSION_ENGINE="django.contrib.sessions.backends.cache")
@@ -105,65 +108,42 @@ class SessionTests(ChannelTestCase):
         session2 = session_for_reply_channel("test-reply")
         self.assertEqual(session2["species"], "horse")
 
-    def test_enforce_ordering_slight(self):
+    def test_channel_and_http_session(self):
         """
-        Tests that slight mode of enforce_ordering works
+        Tests that channel_and_http_session decorator stores the http session key and hydrates it when expected
         """
-        # Construct messages to send
-        message0 = Message(
-            {"reply_channel": "test-reply-a", "order": 0},
-            "websocket.connect",
-            channel_layers[DEFAULT_CHANNEL_LAYER]
-        )
-        message1 = Message(
-            {"reply_channel": "test-reply-a", "order": 1},
-            "websocket.receive",
-            channel_layers[DEFAULT_CHANNEL_LAYER]
-        )
-        message2 = Message(
-            {"reply_channel": "test-reply-a", "order": 2},
-            "websocket.receive",
-            channel_layers[DEFAULT_CHANNEL_LAYER]
-        )
+        # Make a session to try against
+        session = session_for_reply_channel("test-reply-session")
+        # Construct message to send
+        message = Message({
+            "reply_channel": "test-reply-session",
+            "http_version": "1.1",
+            "method": "GET",
+            "path": "/test2/",
+            "headers": {
+                "host": b"example.com",
+                "cookie": ("%s=%s" % (settings.SESSION_COOKIE_NAME, session.session_key)).encode("ascii"),
+            },
+        }, None, None)
 
-        # Run them in an acceptable slight order
-        @enforce_ordering(slight=True)
+        @channel_and_http_session
         def inner(message):
             pass
 
-        inner(message0)
-        inner(message2)
-        inner(message1)
+        inner(message)
 
-        # Ensure wait channel is empty
-        wait_channel = "__wait__.%s" % "test-reply-a"
-        next_message = self.get_next_message(wait_channel)
-        self.assertEqual(next_message, None)
+        # It should store the session key
+        self.assertEqual(message.channel_session[settings.SESSION_COOKIE_NAME], session.session_key)
 
-    def test_enforce_ordering_slight_fail(self):
-        """
-        Tests that slight mode of enforce_ordering fails on bad ordering
-        """
-        # Construct messages to send
-        message2 = Message(
-            {"reply_channel": "test-reply-e", "order": 2},
-            "websocket.receive",
-            channel_layers[DEFAULT_CHANNEL_LAYER]
-        )
-
-        # Run them in an acceptable strict order
-        @enforce_ordering(slight=True)
-        def inner(message):
-            pass
+        # Construct a new message
+        message2 = Message({"reply_channel": "test-reply-session", "path": "/"}, None, None)
 
         inner(message2)
 
-        # Ensure wait channel is not empty
-        wait_channel = "__wait__.%s" % "test-reply-e"
-        next_message = self.get_next_message(wait_channel)
-        self.assertNotEqual(next_message, None)
+        # It should hydrate the http_session
+        self.assertEqual(message2.http_session.session_key, session.session_key)
 
-    def test_enforce_ordering_strict(self):
+    def test_enforce_ordering(self):
         """
         Tests that strict mode of enforce_ordering works
         """
@@ -198,7 +178,7 @@ class SessionTests(ChannelTestCase):
         next_message = self.get_next_message(wait_channel)
         self.assertEqual(next_message, None)
 
-    def test_enforce_ordering_strict_fail(self):
+    def test_enforce_ordering_fail(self):
         """
         Tests that strict mode of enforce_ordering fails on bad ordering
         """
@@ -237,7 +217,7 @@ class SessionTests(ChannelTestCase):
             channel_layers[DEFAULT_CHANNEL_LAYER]
         )
 
-        @enforce_ordering(slight=True)
+        @enforce_ordering
         def inner(message):
             pass
 

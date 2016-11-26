@@ -5,13 +5,15 @@ import random
 import string
 from functools import wraps
 
-from django.test.testcases import TestCase, TransactionTestCase
-from .. import DEFAULT_CHANNEL_LAYER
-from ..channel import Group
-from ..routing import Router, include
-from ..asgi import channel_layers, ChannelLayerWrapper
-from ..message import Message
 from asgiref.inmemory import ChannelLayer as InMemoryChannelLayer
+from django.test.testcases import TestCase, TransactionTestCase
+
+from .. import DEFAULT_CHANNEL_LAYER
+from ..asgi import ChannelLayerWrapper, channel_layers
+from ..channel import Group
+from ..message import Message
+from ..routing import Router, include
+from ..signals import consumer_finished, consumer_started
 
 
 class ChannelTestCaseMixin(object):
@@ -121,7 +123,11 @@ class Client(object):
             match = self.channel_layer.router.match(message)
             if match:
                 consumer, kwargs = match
-                return consumer(message, **kwargs)
+                try:
+                    consumer_started.send(sender=self.__class__)
+                    return consumer(message, **kwargs)
+                finally:
+                    consumer_finished.send(sender=self.__class__)
             elif fail_on_none:
                 raise AssertionError("Can't find consumer for message %s" % message)
         elif fail_on_none:
@@ -135,7 +141,7 @@ class Client(object):
         return self.consume(channel, fail_on_none=fail_on_none)
 
     def receive(self):
-        """self.get_next_message(self.reply_channel)
+        """
         Get content of next message for reply channel if message exists
         """
         message = self.get_next_message(self.reply_channel)

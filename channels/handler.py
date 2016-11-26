@@ -17,7 +17,7 @@ from django.http import FileResponse, HttpResponse, HttpResponseServerError
 from django.utils import six
 from django.utils.functional import cached_property
 
-from channels.exceptions import ResponseLater as ResponseLaterOuter, RequestTimeout, RequestAborted
+from channels.exceptions import RequestAborted, RequestTimeout, ResponseLater as ResponseLaterOuter
 
 logger = logging.getLogger('django.request')
 
@@ -44,7 +44,7 @@ class AsgiRequest(http.HttpRequest):
         # Path info
         self.path = self.message['path']
         self.script_name = self.message.get('root_path', '')
-        if self.script_name:
+        if self.script_name and self.path.startswith(self.script_name):
             # TODO: Better is-prefix checking, slash handling?
             self.path_info = self.path[len(self.script_name):]
         else:
@@ -55,6 +55,7 @@ class AsgiRequest(http.HttpRequest):
             "REQUEST_METHOD": self.method,
             "QUERY_STRING": self.message.get('query_string', ''),
             "SCRIPT_NAME": self.script_name,
+            "PATH_INFO": self.path_info,
             # Old code will need these for a while
             "wsgi.multithread": True,
             "wsgi.multiprocess": True,
@@ -65,7 +66,10 @@ class AsgiRequest(http.HttpRequest):
             self.META['REMOTE_PORT'] = self.message['client'][1]
         if self.message.get('server', None):
             self.META['SERVER_NAME'] = self.message['server'][0]
-            self.META['SERVER_PORT'] = self.message['server'][1]
+            self.META['SERVER_PORT'] = six.text_type(self.message['server'][1])
+        else:
+            self.META['SERVER_NAME'] = "unknown"
+            self.META['SERVER_PORT'] = "0"
         # Handle old style-headers for a transition period
         if "headers" in self.message and isinstance(self.message['headers'], dict):
             self.message['headers'] = [
@@ -339,7 +343,9 @@ class ViewConsumer(object):
                 # a whole worker if the client just vanishes and leaves the response
                 # channel full.
                 try:
-                    message.reply_channel.send(reply_message)
+                    # Note: Use immediately to prevent streaming responses trying
+                    # cache all data.
+                    message.reply_channel.send(reply_message, immediately=True)
                 except message.channel_layer.ChannelFull:
                     time.sleep(0.05)
                 else:

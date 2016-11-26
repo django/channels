@@ -36,7 +36,7 @@ I have to change how I run Django?
 No, all the new stuff is entirely optional. If you want it, however, you'll
 change from running Django under a WSGI server, to running:
 
-* An ASGI server, probably `Daphne <http://github.com/andrewgodwin/daphne/>`_
+* An ASGI server, probably `Daphne <http://github.com/django/daphne/>`_
 * Django worker servers, using ``manage.py runworker``
 * Something to route ASGI requests over, like Redis.
 
@@ -94,9 +94,17 @@ affect the overall deployed site.
 What version of Django does it work with?
 -----------------------------------------
 
-You can install Channels as a library for Django 1.8 and 1.9, and it (should be)
-part of Django 1.10. It has a few extra dependencies, but these will all
-be installed if you use ``pip``.
+You can install Channels as a library for Django >= 1.8. It has a few
+extra dependencies, but these will all be installed if you use ``pip``.
+
+
+Official project
+----------------
+
+Channels is not in the Django core as initially planned, but it's
+an official Django project since September 2016. More information about Channels
+being adopted as an official project are available on the
+`Django blog <https://www.djangoproject.com/weblog/2016/sep/09/channels-adopted-official-django-project/>`_.
 
 
 What do I read next?

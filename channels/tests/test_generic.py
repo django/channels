@@ -1,10 +1,10 @@
 from __future__ import unicode_literals
 
 from django.test import override_settings
+
 from channels import route_class
 from channels.generic import BaseConsumer, websockets
-from channels.tests import ChannelTestCase
-from channels.tests import apply_routes, Client
+from channels.tests import ChannelTestCase, Client, apply_routes
 
 
 @override_settings(SESSION_ENGINE="django.contrib.sessions.backends.cache")
@@ -70,7 +70,7 @@ class GenericTests(ChannelTestCase):
 
     def test_websockets_decorators(self):
         class WebsocketConsumer(websockets.WebsocketConsumer):
-            slight_ordering = True
+            strict_ordering = True
 
             def connect(self, message, **kwargs):
                 self.order = message['order']
@@ -92,7 +92,7 @@ class GenericTests(ChannelTestCase):
                 self.send(text=message.get('order'))
 
         routes = [
-            WebsocketConsumer.as_route(attrs={'slight_ordering': True}, path='^/path$'),
+            WebsocketConsumer.as_route(attrs={"strict_ordering": True}, path='^/path$'),
             WebsocketConsumer.as_route(path='^/path/2$'),
         ]
 

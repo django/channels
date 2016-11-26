@@ -11,7 +11,7 @@ patterns and caveats.
 First Consumers
 ---------------
 
-When you run Django out of the box, it will be set up in the default layout -
+When you first run Django with Channels installed, it will be set up in the default layout -
 where all HTTP requests (on the ``http.request`` channel) are routed to the
 Django view layer - nothing will be different to how things worked in the past
 with a WSGI-based Django, and your views and static file serving (from
@@ -105,7 +105,7 @@ for ``http.request`` - and make this WebSocket consumer instead::
 
     def ws_message(message):
         # ASGI WebSocket packet-received and send-packet message types
-        # both have a "text" key for their textual data. 
+        # both have a "text" key for their textual data.
         message.reply_channel.send({
             "text": message.content['text'],
         })
@@ -128,9 +128,11 @@ When it gets that message, it takes the ``reply_channel`` attribute from it, whi
 is the unique response channel for that client, and sends the same content
 back to the client using its ``send()`` method.
 
-Let's test it! Run ``runserver``, open a browser and put the following into the
-JavaScript console to open a WebSocket and send some data down it (you might
-need to change the socket address if you're using a development VM or similar)::
+Let's test it! Run ``runserver``, open a browser, navigate to a page on the server
+(you can't use any page's console because of origin restrictions), and put the
+following into the JavaScript console to open a WebSocket and send some data
+down it (you might need to change the socket address if you're using a
+development VM or similar)::
 
     // Note that the path doesn't matter for routing; any WebSocket
     // connection gets bumped over to WebSocket consumers
@@ -141,6 +143,8 @@ need to change the socket address if you're using a development VM or similar)::
     socket.onopen = function() {
         socket.send("hello world");
     }
+    // Call onopen directly if socket is already open
+    if (socket.readyState == WebSocket.OPEN) socket.onopen();
 
 You should see an alert come back immediately saying "hello world" - your
 message has round-tripped through the server and come back to trigger the alert.
@@ -161,6 +165,7 @@ disconnect, like this::
 
     # Connected to websocket.connect
     def ws_add(message):
+        message.reply_channel.send({"accept": True})
         Group("chat").add(message.reply_channel)
 
     # Connected to websocket.disconnect
@@ -199,6 +204,7 @@ get the message. Here's all the code::
 
     # Connected to websocket.connect
     def ws_add(message):
+        message.reply_channel.send({"accept": True})
         Group("chat").add(message.reply_channel)
 
     # Connected to websocket.receive
@@ -235,6 +241,8 @@ code in the developer console as before::
     socket.onopen = function() {
         socket.send("hello world");
     }
+    // Call onopen directly if socket is already open
+    if (socket.readyState == WebSocket.OPEN) socket.onopen();
 
 You should see an alert come back immediately saying "hello world" - but this
 time, you can open another tab and do the same there, and both tabs will
@@ -357,6 +365,8 @@ name in the path of your WebSocket request (we'll ignore auth for now - that's n
     # Connected to websocket.connect
     @channel_session
     def ws_connect(message):
+        # Accept connection
+        message.reply_channel.send({"accept": True})
         # Work out room name from path (ignore slashes)
         room = message.content['path'].strip("/")
         # Save room in session and add us to the group
@@ -456,6 +466,8 @@ chat to people with the same first letter of their username::
     # Connected to websocket.connect
     @channel_session_user_from_http
     def ws_add(message):
+        # Accept connection
+        message.reply_channel.send({"accept": True})
         # Add them to the right group
         Group("chat-%s" % message.user.username[0]).add(message.reply_channel)
 
@@ -506,7 +518,7 @@ routing our chat from above::
     ]
 
     chat_routing = [
-        route("websocket.connect", chat_connect, path=r"^/(?P<room>[a-zA-Z0-9_]+)/$),
+        route("websocket.connect", chat_connect, path=r"^/(?P<room>[a-zA-Z0-9_]+)/$"),
         route("websocket.disconnect", chat_disconnect),
     ]
 
@@ -595,7 +607,7 @@ have a ChatMessage model with ``message`` and ``room`` fields::
     def ws_message(message):
         # Stick the message onto the processing queue
         Channel("chat-messages").send({
-            "room": channel_session['room'],
+            "room": message.channel_session['room'],
             "message": message['text'],
         })
 

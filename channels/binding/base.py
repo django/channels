@@ -1,13 +1,11 @@
 from __future__ import unicode_literals
 
 import six
-
 from django.apps import apps
-from django.db.models.signals import post_save, post_delete, pre_save, pre_delete
+from django.db.models.signals import post_delete, post_save, pre_delete, pre_save
 
-from ..channel import Group
 from ..auth import channel_session, channel_session_user
-
+from ..channel import Group
 
 CREATE = 'create'
 UPDATE = 'update'
@@ -67,6 +65,7 @@ class Binding(object):
     # if you want to really send all fields, use fields = ['__all__']
 
     fields = None
+    exclude = None
 
     # Decorators
     channel_session_user = True
@@ -95,9 +94,9 @@ class Binding(object):
                 return []
             else:
                 raise ValueError("You must set the model attribute on Binding %r!" % cls)
-        # If fields is not defined, raise an error
-        if cls.fields is None:
-            raise ValueError("You must set the fields attribute on Binding %r!" % cls)
+        # If neither fields nor exclude are not defined, raise an error
+        if cls.fields is None and cls.exclude is None:
+            raise ValueError("You must set the fields or exclude attribute on Binding %r!" % cls)
         # Optionally resolve model strings
         if isinstance(cls.model, six.string_types):
             cls.model = apps.get_model(cls.model)

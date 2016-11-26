@@ -172,8 +172,8 @@ Note that this subclass still can't intercept ``Group.send()`` calls to make
 them into JSON automatically, but it does provide ``self.group_send(name, content)``
 that will do this for you if you call it explicitly.
 
-``self.close()`` is also provided to easily close the WebSocket from the server
-end once you are done with it.
+``self.close()`` is also provided to easily close the WebSocket from the
+server end with an optional status code once you are done with it.
 
 .. _multiplexing:
 
@@ -224,6 +224,16 @@ This will run the appropriate decorator around your handler methods, and provide
 the one passed in to your handler as an argument as well as ``self.message``,
 as they point to the same instance.
 
+And if you just want to use the user from the django session, add ``http_user``::
+
+    class MyConsumer(WebsocketConsumer):
+
+        http_user = True
+
+This will give you ``message.user``, which will be the same as ``request.user``
+would be on a regular View.
+
+
 Applying Decorators
 -------------------
 
@@ -240,3 +250,40 @@ want to override; like so::
 You can also use the Django ``method_decorator`` utility to wrap methods that
 have ``message`` as their first positional argument - note that it won't work
 for more high-level methods, like ``WebsocketConsumer.receive``.
+
+
+As route
+--------
+
+Instead of making routes using ``route_class`` you may use the ``as_route`` shortcut.
+This function takes route filters (:ref:`filters`) as kwargs and returns
+``route_class``. For example::
+
+    from . import consumers
+
+    channel_routing = [
+        consumers.ChatServer.as_route(path=r"^/chat/"),
+    ]
+
+Use the ``attrs`` dict keyword for dynamic class attributes. For example you have
+the generic consumer::
+
+    class MyGenericConsumer(WebsocketConsumer):
+        group = 'default'
+        group_prefix = ''
+
+        def connection_groups(self, **kwargs):
+            return ['_'.join(self.group_prefix, self.group)]
+
+You can create consumers with different ``group`` and  ``group_prefix`` with ``attrs``,
+like so::
+
+    from . import consumers
+
+    channel_routing = [
+        consumers.MyGenericConsumer.as_route(path=r"^/path/1/",
+                                             attrs={'group': 'one', 'group_prefix': 'pre'}),
+        consumers.MyGenericConsumer.as_route(path=r"^/path/2/",
+                                             attrs={'group': 'two', 'group_prefix': 'public'}),
+    ]
+
