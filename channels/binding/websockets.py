@@ -42,16 +42,16 @@ class WebsocketBinding(Binding):
     def encode(cls, stream, payload):
         return WebsocketDemultiplexer.encode(stream, payload)
 
-    def serialize(self, instance, action):
+    def serialize(self, instance, action, **kwargs):
         payload = {
             "action": action,
             "pk": instance.pk,
-            "data": self.serialize_data(instance),
+            "data": self.serialize_data(instance, **kwargs),
             "model": self.model_label,
         }
         return payload
 
-    def serialize_data(self, instance):
+    def serialize_data(self, instance, **kwargs):
         """
         Serializes model data into JSON-compatible types.
         """
@@ -155,8 +155,8 @@ class WebsocketBindingWithMembers(WebsocketBinding):
 
     encoder = DjangoJSONEncoder()
 
-    def serialize_data(self, instance):
-        data = super(WebsocketBindingWithMembers, self).serialize_data(instance)
+    def serialize_data(self, instance, **kwargs):
+        data = super(WebsocketBindingWithMembers, self).serialize_data(instance, **kwargs)
         member_data = {}
         for m in self.send_members:
             member = instance
