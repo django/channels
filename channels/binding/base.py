@@ -193,6 +193,7 @@ class Binding(object):
         """
         Should return a serialized version of the instance to send over the
         wire (e.g. {"pk": 12, "value": 42, "string": "some string"})
+        Kwargs are passed from the models save and delete methods.
         """
         raise NotImplementedError()
 
