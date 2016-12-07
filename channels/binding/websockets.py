@@ -62,6 +62,9 @@ class WebsocketBinding(Binding):
                 fields = self.fields
         else:
             fields = [f.name for f in instance._meta.get_fields() if f.name not in self.exclude]
+        update_fields = kwargs.get("update_fields", None)
+        if update_fields is not None:
+            fields = list(set(fields).intersection(update_fields))
         data = serializers.serialize('json', [instance], fields=fields)
         return json.loads(data)[0]['fields']
 
