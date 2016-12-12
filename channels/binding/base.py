@@ -70,6 +70,9 @@ class Binding(object):
     # Decorators
     channel_session_user = True
     channel_session = False
+    
+    # the kwargs the triggering signal (e.g. post_save) was emitted with
+    signal_kwargs = None
 
     @classmethod
     def register(cls):
@@ -171,7 +174,8 @@ class Binding(object):
         """
         if not group_names:
             return  # no need to serialize, bail.
-        payload = self.serialize(instance, action, **kwargs)
+        self.signal_kwargs = kwargs
+        payload = self.serialize(instance, action)
         if payload == {}:
             return  # nothing to send, bail.
 
@@ -189,7 +193,7 @@ class Binding(object):
         """
         raise NotImplementedError()
 
-    def serialize(self, instance, action, **kwargs):
+    def serialize(self, instance, action):
         """
         Should return a serialized version of the instance to send over the
         wire (e.g. {"pk": 12, "value": 42, "string": "some string"})
