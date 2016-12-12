@@ -70,7 +70,7 @@ class Binding(object):
     # Decorators
     channel_session_user = True
     channel_session = False
-    
+
     # the kwargs the triggering signal (e.g. post_save) was emitted with
     signal_kwargs = None
 
