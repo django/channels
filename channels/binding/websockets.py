@@ -42,7 +42,7 @@ class WebsocketBinding(Binding):
     def encode(cls, stream, payload):
         return WebsocketDemultiplexer.encode(stream, payload)
 
-    def serialize(self, instance, action, **kwargs):
+    def serialize(self, instance, action):
         payload = {
             "action": action,
             "pk": instance.pk,
@@ -51,7 +51,7 @@ class WebsocketBinding(Binding):
         }
         return payload
 
-    def serialize_data(self, instance, **kwargs):
+    def serialize_data(self, instance):
         """
         Serializes model data into JSON-compatible types.
         """
@@ -62,9 +62,10 @@ class WebsocketBinding(Binding):
                 fields = self.fields
         else:
             fields = [f.name for f in instance._meta.get_fields() if f.name not in self.exclude]
-        update_fields = kwargs.get("update_fields", None)
-        if update_fields is not None:
-            fields = list(set(fields).intersection(update_fields))
+        if self.signal_kwargs is not None:
+            update_fields = self.signal_kwargs.get("update_fields", None)
+            if update_fields is not None:
+                fields = list(set(fields).intersection(update_fields))
         data = serializers.serialize('json', [instance], fields=fields)
         return json.loads(data)[0]['fields']
 
