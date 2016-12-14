@@ -125,4 +125,4 @@ class HttpClient(Client):
 
 def _encoded_cookies(cookies):
     """Encode dict of cookies to ascii string"""
-    return ('&'.join('{0}={1}'.format(k, v) for k, v in cookies.items())).encode("ascii")
+    return ('; '.join('{0}={1}'.format(k, v) for k, v in cookies.items())).encode("ascii")
