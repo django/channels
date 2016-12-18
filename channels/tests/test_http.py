@@ -9,7 +9,9 @@ from channels.tests import ChannelTestCase
 class HttpClientTests(ChannelTestCase):
     def test_cookies(self):
         client = HttpClient()
-        client.set_cookie('foo', 'b;ar')
+        client.set_cookie('foo', 'not-bar')
+        client.set_cookie('foo', 'bar')
+        client.set_cookie('qux', 'qu;x')
 
         # Django's interpretation of the serialized cookie.
         cookie_dict = parse_cookie(client.headers['cookie'].decode('ascii'))
@@ -18,6 +20,7 @@ class HttpClientTests(ChannelTestCase):
                          {k: unquote(v)
                           for k, v in cookie_dict.items()})
 
-        self.assertEqual({'foo': 'b%3Bar',
+        self.assertEqual({'foo': 'bar',
+                          'qux': 'qu%3Bx',
                           'sessionid': client.get_cookies()['sessionid']},
                          cookie_dict)
