@@ -1,7 +1,6 @@
 from __future__ import unicode_literals
 
 from django.http.cookie import parse_cookie
-from six.moves.urllib.parse import unquote
 
 from channels.tests.http import HttpClient
 from channels.tests import ChannelTestCase
