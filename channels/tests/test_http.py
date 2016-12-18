@@ -17,10 +17,9 @@ class HttpClientTests(ChannelTestCase):
         cookie_dict = parse_cookie(client.headers['cookie'].decode('ascii'))
 
         self.assertEqual(client.get_cookies(),
-                         {k: unquote(v)
-                          for k, v in cookie_dict.items()})
+                         cookie_dict)
 
         self.assertEqual({'foo': 'bar',
-                          'qux': 'qu%3Bx',
+                          'qux': 'qu;x',
                           'sessionid': client.get_cookies()['sessionid']},
                          cookie_dict)
