@@ -5,7 +5,6 @@ import six
 from django.apps import apps
 from django.conf import settings
 
-from django.utils.six.moves import http_cookies
 from django.http.cookie import SimpleCookie
 
 from ..sessions import session_for_reply_channel

@@ -5,6 +5,7 @@ from django.http.cookie import parse_cookie
 from channels.tests.http import HttpClient
 from channels.tests import ChannelTestCase
 
+
 class HttpClientTests(ChannelTestCase):
     def test_cookies(self):
         client = HttpClient()
