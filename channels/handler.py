@@ -19,7 +19,7 @@ except ImportError:
     # Django < 1.10
     from django.core.urlresolvers import set_script_prefix
 
-    from django.http import FileResponse, HttpResponse, HttpResponseServerError
+from django.http import FileResponse, HttpResponse, HttpResponseServerError
 from django.utils import six
 from django.utils.functional import cached_property
 
