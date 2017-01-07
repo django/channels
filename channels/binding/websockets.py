@@ -89,7 +89,8 @@ class WebsocketBinding(Binding):
         action = message['action']
         pk = message.get('pk', None)
         data = message.get('data', None)
-        return action, pk, data
+        cb_id = message.get('cb_id', None)
+        return action, pk, data, cb_id
 
     def _hydrate(self, pk, data):
         """
@@ -106,10 +107,20 @@ class WebsocketBinding(Binding):
         # TODO: Avoid the JSON roundtrip by using encoder directly?
         return list(serializers.deserialize("json", json.dumps(s_data)))[0]
 
-    def create(self, data):
-        self._hydrate(None, data).save()
+    def send_reply(self, cb_id, status, details=None):
+        if cb_id is not None:
+            text = {"cb_id": cb_id, "status": status}
+            if details is not None:
+                text["details"] = details
+            self.message.reply_channel.send(
+                {"text": json.dumps(text, cls=DjangoJSONEncoder)}
+            )
 
-    def update(self, pk, data):
+    def create(self, data, cb_id):
+        self._hydrate(None, data).save()
+        self.send_reply(cb_id, "success")
+
+    def update(self, pk, data, cb_id):
         instance = self.model.objects.get(pk=pk)
         hydrated = self._hydrate(pk, data)
 
@@ -122,6 +133,11 @@ class WebsocketBinding(Binding):
                 if name not in self.exclude:
                     setattr(instance, name, getattr(hydrated.object, name))
         instance.save()
+        self.send_reply(cb_id, "success")
+
+    def delete(self, pk, cb_id):
+        super(WebsocketBinding, self).delete(self, pk, cb_id)
+        self.send_reply(cb_id, "success")
 
 
 class WebsocketBindingWithMembers(WebsocketBinding):
