@@ -1,3 +1,7 @@
+from __future__ import unicode_literals
+import six
+
+
 class ConsumeLater(Exception):
     """
     Exception that says that the current message should be re-queued back
@@ -37,6 +41,18 @@ class DenyConnection(Exception):
     to deny the connection.
     """
     pass
+
+
+class CloseWebsocketError(Exception):
+    """
+    Exception for close initialize close websocket connection event with given code
+    """
+
+    def __init__(self, code=None):
+        if code is not None and not isinstance(code, six.integer_types) \
+                and code != 1000 and not (3000 <= code <= 4999):
+            raise ValueError("invalid close code {} (must be 1000 or from [3000, 4999])".format(code))
+        self.code = code
 
 
 class SendNotAvailableOnDemultiplexer(Exception):
