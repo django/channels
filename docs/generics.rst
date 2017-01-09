@@ -181,16 +181,7 @@ WebSocket Multiplexing
 ----------------------
 
 Channels provides a standard way to multiplex different data streams over
-a single WebSocket, called a ``Demultiplexer``. You use it like this::
-
-    from channels.generic.websockets import WebsocketDemultiplexer
-
-    class Demultiplexer(WebsocketDemultiplexer):
-
-        mapping = {
-            "intval": "binding.intval",
-            "stats": "internal.stats",
-        }
+a single WebSocket, called a ``Demultiplexer``.
 
 It expects JSON-formatted WebSocket frames with two keys, ``stream`` and
 ``payload``, and will match the ``stream`` against the mapping to find a
@@ -198,11 +189,41 @@ channel name. It will then forward the message onto that channel while
 preserving ``reply_channel``, so you can hook consumers up to them directly
 in the ``routing.py`` file, and use authentication decorators as you wish.
 
-You cannot use class-based consumers this way as the messages are no
-longer in WebSocket format, though. If you need to do operations on
-``connect`` or ``disconnect``, override those methods on the ``Demultiplexer``
-itself (you can also provide a ``connection_groups`` method, as it's just
-based on the JSON WebSocket generic consumer).
+
+Example using class-based consumer::
+
+    from channels.generic.websockets import WebsocketDemultiplexer, JsonWebsocketConsumer
+
+    class EchoConsumer(websockets.JsonWebsocketConsumer):
+        def connect(self, message, multiplexer=None, **kwargs):
+            # Send data with the multiplexer
+            multiplexer.send({"status": "I just connected!"})
+
+        def disconnect(self, message, multiplexer=None, **kwargs):
+            print("Stream %s is closed" % multiplexer.stream)
+
+        def receive(self, content, multiplexer=None, **kwargs):
+            # Simple echo
+            multiplexer.send({"original_message": content})
+
+
+    class AnotherConsumer(websockets.JsonWebsocketConsumer):
+        def receive(self, content, multiplexer=None, **kwargs):
+            # Some other actions here
+            pass
+
+
+    class Demultiplexer(WebsocketDemultiplexer):
+
+        # Wire your JSON consumers here: {stream_name : consumer}
+        consumers = {
+            "echo": EchoConsumer,
+            "other": AnotherConsumer,
+        }
+
+
+The ``multiplexer`` allows the consumer class to be independant of the stream name.
+It holds the stream name and the demultiplexer on the attributes ``stream`` and ``demultiplexer``.
 
 The :doc:`data binding <binding>` code will also send out messages to clients
 in the same format, and you can encode things in this format yourself by

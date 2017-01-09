@@ -69,7 +69,8 @@ Start off like this::
         stream = "intval"
         fields = ["name", "value"]
 
-        def group_names(self, instance, action):
+        @classmethod
+        def group_names(cls, instance):
             return ["intval-updates"]
 
         def has_permission(self, user, action, pk):
@@ -85,9 +86,11 @@ always provide:
   acts as a blacklist of fields.
 
 * ``group_names`` returns a list of groups to send outbound updates to based
-  on the model and action. For example, you could dispatch posts on different
+  on the instance. For example, you could dispatch posts on different
   liveblogs to groups that included the parent blog ID in the name; here, we
-  just use a fixed group name.
+  just use a fixed group name. Based on how ``group_names`` changes as the
+  instance changes, Channels will work out if clients need ``create``,
+  ``update`` or ``delete`` messages (or if the change is hidden from them).
 
 * ``has_permission`` returns if an inbound binding update is allowed to actually
   be carried out on the model. We've been very unsafe and made it always return
@@ -106,23 +109,25 @@ connect. The WebSocket binding classes use the standard :ref:`multiplexing`,
 so you just need to use that::
 
     from channels.generic.websockets import WebsocketDemultiplexer
+    from .binding import IntegerValueBinding
 
     class Demultiplexer(WebsocketDemultiplexer):
 
-        mapping = {
-            "intval": "binding.intval",
+        consumers = {
+            "intval": IntegerValueBinding.consumer,
         }
 
         def connection_groups(self):
             return ["intval-updates"]
 
-As well as the standard stream-to-channel mapping, you also need to set
+As well as the standard stream-to-consumer mapping, you also need to set
 ``connection_groups``, a list of groups to put people in when they connect.
 This should match the logic of ``group_names`` on your binding - we've used
-our fixed group name again.
+our fixed group name again. Notice that the binding has a ``.consumer`` attribute;
+this is a standard WebSocket-JSON consumer, that the demultiplexer can pass
+demultiplexed ``websocket.receive`` messages to.
 
-Tie that into your routing, and tie each demultiplexed channel into the
-``.consumer`` attribute of the Binding, and you're ready to go::
+Tie that into your routing, and you're ready to go::
 
     from channels import route_class, route
     from .consumers import Demultiplexer
@@ -130,7 +135,6 @@ Tie that into your routing, and tie each demultiplexed channel into the
 
     channel_routing = [
         route_class(Demultiplexer, path="^/binding/"),
-        route("binding.intval", IntegerValueBinding.consumer),
     ]
 
 

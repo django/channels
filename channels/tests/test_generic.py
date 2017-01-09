@@ -1,8 +1,11 @@
 from __future__ import unicode_literals
 
+import json
+
 from django.test import override_settings
 
 from channels import route_class
+from channels.exceptions import SendNotAvailableOnDemultiplexer
 from channels.generic import BaseConsumer, websockets
 from channels.tests import ChannelTestCase, Client, apply_routes
 
@@ -122,10 +125,96 @@ class GenericTests(ChannelTestCase):
 
         method_mapping = {'mychannel': 'test'}
 
-        with apply_routes([WebsocketConsumer.as_route(
+        with apply_routes([
+            WebsocketConsumer.as_route(
                 {'method_mapping': method_mapping, 'trigger': 'from_as_route'},
-                name='filter')]):
+                name='filter',
+            ),
+        ]):
             client = Client()
 
             client.send_and_consume('mychannel', {'name': 'filter'})
             self.assertEqual(client.receive(), {'trigger': 'from_as_route'})
+
+    def test_websockets_demultiplexer(self):
+
+        class MyWebsocketConsumer(websockets.JsonWebsocketConsumer):
+            def connect(self, message, multiplexer=None, **kwargs):
+                multiplexer.send(kwargs)
+
+            def disconnect(self, message, multiplexer=None, **kwargs):
+                multiplexer.send(kwargs)
+
+            def receive(self, content, multiplexer=None, **kwargs):
+                multiplexer.send(content)
+
+        class Demultiplexer(websockets.WebsocketDemultiplexer):
+
+            consumers = {
+                "mystream": MyWebsocketConsumer
+            }
+
+        with apply_routes([
+            route_class(Demultiplexer, path='/path/(?P<id>\d+)'),
+            route_class(MyWebsocketConsumer),
+        ]):
+            client = Client()
+
+            client.send_and_consume('websocket.connect', {'path': '/path/1'})
+            self.assertEqual(client.receive(), {
+                "text": json.dumps({
+                    "stream": "mystream",
+                    "payload": {"id": "1"},
+                })
+            })
+
+            client.send_and_consume('websocket.receive', {
+                'path': '/path/1',
+                'text': json.dumps({
+                    "stream": "mystream",
+                    "payload": {"text_field": "mytext"}
+                })
+            })
+            self.assertEqual(client.receive(), {
+                "text": json.dumps({
+                    "stream": "mystream",
+                    "payload": {"text_field": "mytext"},
+                })
+            })
+
+            client.send_and_consume('websocket.disconnect', {'path': '/path/1'})
+            self.assertEqual(client.receive(), {
+                "text": json.dumps({
+                    "stream": "mystream",
+                    "payload": {"id": "1"},
+                })
+            })
+
+    def test_websocket_demultiplexer_send(self):
+
+        class MyWebsocketConsumer(websockets.JsonWebsocketConsumer):
+            def receive(self, content, multiplexer=None, **kwargs):
+                self.send(content)
+
+        class Demultiplexer(websockets.WebsocketDemultiplexer):
+
+            consumers = {
+                "mystream": MyWebsocketConsumer
+            }
+
+        with apply_routes([
+            route_class(Demultiplexer, path='/path/(?P<id>\d+)'),
+            route_class(MyWebsocketConsumer),
+        ]):
+            client = Client()
+
+            with self.assertRaises(SendNotAvailableOnDemultiplexer):
+                client.send_and_consume('websocket.receive', {
+                    'path': '/path/1',
+                    'text': json.dumps({
+                        "stream": "mystream",
+                        "payload": {"text_field": "mytext"}
+                    })
+                })
+
+                client.receive()

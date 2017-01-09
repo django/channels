@@ -3,7 +3,7 @@ import json
 from django.core import serializers
 from django.core.serializers.json import DjangoJSONEncoder
 
-from ..generic.websockets import WebsocketDemultiplexer
+from ..generic.websockets import WebsocketMultiplexer
 from ..sessions import enforce_ordering
 from .base import Binding
 
@@ -26,11 +26,9 @@ class WebsocketBinding(Binding):
     """
 
     # Mark as abstract
-
     model = None
 
     # Stream multiplexing name
-
     stream = None
 
     # Decorators
@@ -40,7 +38,7 @@ class WebsocketBinding(Binding):
     # Outbound
     @classmethod
     def encode(cls, stream, payload):
-        return WebsocketDemultiplexer.encode(stream, payload)
+        return WebsocketMultiplexer.encode(stream, payload)
 
     def serialize(self, instance, action):
         payload = {
@@ -80,6 +78,18 @@ class WebsocketBinding(Binding):
             return enforce_ordering(handler, slight=True)
         else:
             return handler
+
+    @classmethod
+    def trigger_inbound(cls, message, **kwargs):
+        """
+        Overrides base trigger_inbound to ignore connect/disconnect.
+        """
+        # Only allow received packets through further.
+        if message.channel.name != "websocket.receive":
+            return
+        # Call superclass, unpacking the payload in the process
+        payload = json.loads(message['text'])
+        super(WebsocketBinding, cls).trigger_inbound(payload, **kwargs)
 
     def deserialize(self, message):
         """
@@ -155,8 +165,8 @@ class WebsocketBindingWithMembers(WebsocketBinding):
 
     encoder = DjangoJSONEncoder()
 
-    def serialize_data(self, instance):
-        data = super(WebsocketBindingWithMembers, self).serialize_data(instance)
+    def serialize_data(self, instance, **kwargs):
+        data = super(WebsocketBindingWithMembers, self).serialize_data(instance, **kwargs)
         member_data = {}
         for m in self.send_members:
             member = instance

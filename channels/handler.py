@@ -12,12 +12,18 @@ from django import http
 from django.conf import settings
 from django.core import signals
 from django.core.handlers import base
-from django.core.urlresolvers import set_script_prefix
+
 from django.http import FileResponse, HttpResponse, HttpResponseServerError
 from django.utils import six
 from django.utils.functional import cached_property
 
 from channels.exceptions import RequestAborted, RequestTimeout, ResponseLater as ResponseLaterOuter
+
+try:
+    from django.urls import set_script_prefix
+except ImportError:
+    # Django < 1.10
+    from django.core.urlresolvers import set_script_prefix
 
 logger = logging.getLogger('django.request')
 
@@ -44,7 +50,7 @@ class AsgiRequest(http.HttpRequest):
         # Path info
         self.path = self.message['path']
         self.script_name = self.message.get('root_path', '')
-        if self.script_name:
+        if self.script_name and self.path.startswith(self.script_name):
             # TODO: Better is-prefix checking, slash handling?
             self.path_info = self.path[len(self.script_name):]
         else:
@@ -182,8 +188,8 @@ class AsgiHandler(base.BaseHandler):
         self.load_middleware()
 
     def __call__(self, message):
-        # Set script prefix from message root_path
-        set_script_prefix(message.get('root_path', ''))
+        # Set script prefix from message root_path, turning None into empty string
+        set_script_prefix(message.get('root_path', '') or '')
         signals.request_started.send(sender=self.__class__, message=message)
         # Run request through view system
         try:
