@@ -1,7 +1,5 @@
 from __future__ import unicode_literals
 
-import json
-
 from django.test import override_settings
 
 from channels import route_class
@@ -191,19 +189,13 @@ class GenericTests(ChannelTestCase):
                 "mystream": MyWebsocketConsumer
             }
 
-        with apply_routes([
-            route_class(Demultiplexer, path='/path/(?P<id>\d+)'),
-            route_class(MyWebsocketConsumer),
-        ]):
-            client = Client()
+        with apply_routes([route_class(Demultiplexer, path='/path/(?P<id>\d+)')]):
+            client = HttpClient()
 
             with self.assertRaises(SendNotAvailableOnDemultiplexer):
-                client.send_and_consume('websocket.receive', {
-                    'path': '/path/1',
-                    'text': json.dumps({
-                        "stream": "mystream",
-                        "payload": {"text_field": "mytext"}
-                    })
+                client.send_and_consume('websocket.receive', path='/path/1', text={
+                    "stream": "mystream",
+                    "payload": {"text_field": "mytext"},
                 })
 
                 client.receive()
