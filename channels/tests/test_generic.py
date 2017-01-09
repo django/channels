@@ -165,8 +165,8 @@ class GenericTests(ChannelTestCase):
             })
 
             client.send_and_consume('websocket.receive', text={
-                    "stream": "mystream",
-                    "payload": {"text_field": "mytext"},
+                "stream": "mystream",
+                "payload": {"text_field": "mytext"},
             }, path='/path/1')
             self.assertEqual(client.receive(), {
                 "stream": "mystream",
