@@ -374,12 +374,12 @@ A channel layer implementing the ``statistics`` extension must also provide:
 
   * ``messages_count``, the number of messages processed since server start
   * ``messages_count_per_second``, the number of messages processed in the last second
-  * ``queue_depth``, the current number of messages waiting
-  * ``message_max_age``, how long the oldest message has been waiting, in seconds
+  * ``messages_pending``, the current number of messages waiting
+  * ``messages_max_age``, how long the oldest message has been waiting, in seconds
   * ``channel_full_count``, the number of times `ChannelFull` exception has been risen since server start
   * ``channel_full_count_per_second``, the number of times `ChannelFull` exception has been risen in the last second
-  
-* Implementation may provide total counts, counts per seconds or both. 
+
+* Implementation may provide total counts, counts per seconds or both.
 
 
 A channel layer implementing the ``flush`` extension must also provide:
