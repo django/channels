@@ -8,7 +8,7 @@ import sys
 import threading
 import time
 
-from .exceptions import ConsumeLater, ChannelSocketException, DenyConnection
+from .exceptions import ChannelSocketException, ConsumeLater, DenyConnection
 from .message import Message
 from .signals import consumer_finished, consumer_started, worker_ready
 from .utils import name_that_thing
