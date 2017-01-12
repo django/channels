@@ -2,6 +2,7 @@ import json
 
 from django.core import serializers
 from django.core.serializers.json import DjangoJSONEncoder
+from django.forms.models import modelform_factory, model_to_dict, ALL_FIELDS
 
 from ..generic.websockets import WebsocketMultiplexer
 from ..sessions import enforce_ordering
@@ -27,6 +28,7 @@ class WebsocketBinding(Binding):
 
     # Mark as abstract
     model = None
+    form_class = None
 
     # Stream multiplexing name
     stream = None
@@ -54,7 +56,7 @@ class WebsocketBinding(Binding):
         Serializes model data into JSON-compatible types.
         """
         if self.fields is not None:
-            if self.fields == '__all__' or list(self.fields) == ['__all__']:
+            if self.fields == ALL_FIELDS or list(self.fields) == [ALL_FIELDS]:
                 fields = None
             else:
                 fields = self.fields
@@ -100,37 +102,48 @@ class WebsocketBinding(Binding):
         data = body.get('data', None)
         return action, pk, data
 
-    def _hydrate(self, pk, data):
+    def get_form_class(self):
         """
-        Given a raw "data" section of an incoming message, returns a
-        DeserializedObject.
+        Return form class for use in inbound data validation
         """
-        s_data = [
-            {
-                "pk": pk,
-                "model": self.model_label,
-                "fields": data,
-            }
-        ]
-        # TODO: Avoid the JSON roundtrip by using encoder directly?
-        return list(serializers.deserialize("json", json.dumps(s_data)))[0]
+        return self.form_class or modelform_factory(self.model, fields=self.fields)
+
+    def get_form(self, data, instance=None):
+        """
+        Create form with received data and determined instance.
+        """
+        return self.get_form_class()(instance=instance, data=data)
+
+    def form_invalid(self, form):
+        """
+        If form is invalid we can send to the client form errors
+        """
+        text = json.dumps({'status': 'error', 'message': form.errors})
+        self.message.reply_channel.send({'text': text})
+
+    def form_valid(self, form):
+        """
+        We save form at valid data
+        """
+        form.save()
 
     def create(self, data):
-        self._hydrate(None, data).save()
+        form = self.get_form(data)
+        if form.is_valid():
+            return self.form_valid(form)
+        return self.form_invalid(form)
 
     def update(self, pk, data):
+        """
+        Partial update for instance.
+        """
         instance = self.model.objects.get(pk=pk)
-        hydrated = self._hydrate(pk, data)
-
-        if self.fields is not None:
-            for name in data.keys():
-                if name in self.fields or self.fields == ['__all__']:
-                    setattr(instance, name, getattr(hydrated.object, name))
-        else:
-            for name in data.keys():
-                if name not in self.exclude:
-                    setattr(instance, name, getattr(hydrated.object, name))
-        instance.save()
+        _data = model_to_dict(instance, self.fields)
+        _data.update(data)
+        form = self.get_form(_data, instance)
+        if form.is_valid():
+            return self.form_valid(form)
+        return self.form_invalid(form)
 
 
 class WebsocketBindingWithMembers(WebsocketBinding):

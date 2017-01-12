@@ -259,11 +259,11 @@ class Binding(object):
         """
         # Check to see if we're allowed
         if self.has_permission(self.user, action, pk):
-            if action == "create":
+            if action == CREATE:
                 self.create(data)
-            elif action == "update":
+            elif action == UPDATE:
                 self.update(pk, data)
-            elif action == "delete":
+            elif action == DELETE:
                 self.delete(pk)
             else:
                 raise ValueError("Bad action %r" % action)

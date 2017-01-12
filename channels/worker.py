@@ -8,7 +8,7 @@ import sys
 import threading
 import time
 
-from .exceptions import ConsumeLater, DenyConnection
+from .exceptions import ConsumeLater, DenyConnection, CloseWebsocketError
 from .message import Message
 from .signals import consumer_finished, consumer_started, worker_ready
 from .utils import name_that_thing
@@ -122,6 +122,10 @@ class Worker(object):
                 if message.channel.name != "websocket.connect":
                     raise ValueError("You cannot DenyConnection from a non-websocket.connect handler.")
                 message.reply_channel.send({"close": True})
+            except CloseWebsocketError as e:
+                if message.reply_channel.name.split('.')[0] != "websocket":
+                    raise ValueError("You cannot raise CloseWebsocketError from a non-websocket handler.")
+                message.reply_channel.send({"close": e.code or True})
             except ConsumeLater:
                 # They want to not handle it yet. Re-inject it with a number-of-tries marker.
                 content['__retries__'] = content.get("__retries__", 0) + 1
