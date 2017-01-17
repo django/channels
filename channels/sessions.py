@@ -42,7 +42,7 @@ def channel_session(func):
     def inner(message, *args, **kwargs):
         # Make sure there's NOT a channel_session already
         if hasattr(message, "channel_session"):
-            try:    
+            try:
                 return func(message, *args, **kwargs)
             finally:
                 # Persist session if needed
