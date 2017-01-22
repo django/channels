@@ -3,10 +3,14 @@ from __future__ import unicode_literals
 import copy
 import random
 import string
+import threading
 from functools import wraps
 
 from asgiref.inmemory import ChannelLayer as InMemoryChannelLayer
-from django.test.testcases import TestCase, TransactionTestCase
+from daphne.server import Server
+from django.test.testcases import TestCase, TransactionTestCase, LiveServerTestCase
+from django.utils.decorators import classproperty
+from twisted.internet import reactor
 
 from .. import DEFAULT_CHANNEL_LAYER
 from ..asgi import ChannelLayerWrapper, channel_layers
@@ -14,6 +18,7 @@ from ..channel import Group
 from ..message import Message
 from ..routing import Router, include
 from ..signals import consumer_finished, consumer_started
+from ..worker import Worker
 
 
 class ChannelTestCaseMixin(object):
@@ -72,12 +77,92 @@ class ChannelTestCaseMixin(object):
         return Message(content, recv_channel, channel_layers[alias])
 
 
+# TODO: Is ready event for this thread.
+#
+# TODO: What we need to do in the case of multiple channel layers?
+class WorkerThread(threading.Thread):
+
+    def run(self):
+
+        worker = Worker(
+            channel_layer=channel_layers[DEFAULT_CHANNEL_LAYER],
+            signal_handlers=False,
+        )
+        worker.ready()
+        worker.run()
+
+    def terminate(self):
+
+        self.termed = True
+
+
+# TODO: `self.connections_override` should be processed same way as in
+# regular LiveServerTestCase.
+class LiveServerThread(threading.Thread):
+
+    def __init__(self, host, possible_ports, static_handler, connections_override=None):
+
+        self.host = host
+        self.possible_ports = possible_ports
+        self.static_handler = static_handler
+        self.connections_override = connections_override
+
+        self.error = None
+        self.is_ready = threading.Event()
+        self.worker = WorkerThread()
+        self.worker.daemon = True
+        super(LiveServerThread, self).__init__()
+
+    def start(self):
+
+        self.worker.start()
+        return super(LiveServerThread, self).start()
+
+    def run(self):
+
+        try:
+            self.server = Server(
+                channel_layer=channel_layers[DEFAULT_CHANNEL_LAYER],
+                # FIXME: process all possible ports, exit after first success.
+                endpoints=['tcp:interface=%s:port=%d' % (self.host, self.possible_ports[0])],
+                signal_handlers=False,
+            )
+            self.port = self.possible_ports[0]
+            self.is_ready.set()
+            self.server.run()
+        except Exception as e:
+            self.error = e
+            self.is_ready.set()
+
+    def terminate(self):
+
+        self.worker.terminate()
+        if hasattr(self, 'server') and reactor.running:
+            reactor.stop()
+
+
 class ChannelTestCase(ChannelTestCaseMixin, TestCase):
     pass
 
 
 class TransactionChannelTestCase(ChannelTestCaseMixin, TransactionTestCase):
     pass
+
+
+class ChannelLiveServerTestCase(ChannelTestCaseMixin, LiveServerTestCase):
+
+    @classproperty
+    def live_server_ws_url(cls):
+        return 'ws://%s:%s' % (cls.server_thread.host, cls.server_thread.port)
+
+    @classmethod
+    def _create_server_thread(cls, host, possible_ports, connections_override):
+        return LiveServerThread(
+            host,
+            possible_ports,
+            cls.static_handler,
+            connections_override=connections_override,
+        )
 
 
 class Client(object):
