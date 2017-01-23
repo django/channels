@@ -9,7 +9,6 @@ from functools import wraps
 from asgiref.inmemory import ChannelLayer as InMemoryChannelLayer
 from daphne.server import Server
 from django.test.testcases import TestCase, TransactionTestCase, LiveServerTestCase
-from django.utils.decorators import classproperty
 from twisted.internet import reactor
 
 from .. import DEFAULT_CHANNEL_LAYER
@@ -194,9 +193,9 @@ class TransactionChannelTestCase(ChannelTestCaseMixin, TransactionTestCase):
 
 class ChannelLiveServerTestCase(ChannelTestCaseMixin, LiveServerTestCase):
 
-    @classproperty
-    def live_server_ws_url(cls):
-        return 'ws://%s:%s' % (cls.server_thread.host, cls.server_thread.port)
+    @property
+    def live_server_ws_url(self):
+        return 'ws://%s:%s' % (self.server_thread.host, self.server_thread.port)
 
     @classmethod
     def _create_server_thread(cls, host, possible_ports, connections_override):
