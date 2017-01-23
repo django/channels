@@ -178,7 +178,7 @@ class Benchmarker(object):
         print("-------")
         print("Sockets opened: %s" % len(stats))
         if latencies:
-            print("Latency stats: Mean %.3fs  Median %.3fs  Stdev %.3f  95%% %.3fs  95%% %.3fs" % (
+            print("Latency stats: Mean %.3fs  Median %.3fs  Stdev %.3f  95%% %.3fs  99%% %.3fs" % (
                 latency_mean,
                 latency_median,
                 latency_stdev,
