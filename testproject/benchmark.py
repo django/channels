@@ -92,9 +92,7 @@ class Benchmarker(object):
         self.rate = rate
         self.spawn = spawn
         self.messages = messages
-        self.factory = WebSocketClientFactory(
-            args.url,
-        )
+        self.factory = WebSocketClientFactory(self.url)
         self.factory.protocol = MyClientProtocol
         self.factory.num_messages = self.messages
         self.factory.message_rate = self.rate
