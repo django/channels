@@ -84,16 +84,17 @@ class WorkerThread(threading.Thread):
 
     def run(self):
 
-        worker = Worker(
+        self.worker = Worker(
             channel_layer=channel_layers[DEFAULT_CHANNEL_LAYER],
             signal_handlers=False,
         )
-        worker.ready()
-        worker.run()
+        self.worker.ready()
+        self.worker.run()
 
     def terminate(self):
 
-        self.termed = True
+        if hasattr(self, 'worker'):
+            self.worker.termed = True
 
 
 # TODO: `self.connections_override` should be processed same way as in
@@ -109,13 +110,13 @@ class LiveServerThread(threading.Thread):
 
         self.error = None
         self.is_ready = threading.Event()
-        self.worker = WorkerThread()
-        self.worker.daemon = True
+        self.worker_thread = WorkerThread()
+        self.worker_thread.daemon = True
         super(LiveServerThread, self).__init__()
 
     def start(self):
 
-        self.worker.start()
+        self.worker_thread.start()
         return super(LiveServerThread, self).start()
 
     def run(self):
@@ -136,7 +137,7 @@ class LiveServerThread(threading.Thread):
 
     def terminate(self):
 
-        self.worker.terminate()
+        self.worker_thread.terminate()
         if hasattr(self, 'server') and reactor.running:
             reactor.stop()
 
