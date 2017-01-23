@@ -84,6 +84,7 @@ class WorkerThread(threading.Thread):
 
     def run(self):
 
+        channel_layers[DEFAULT_CHANNEL_LAYER].router.check_default()
         self.worker = Worker(
             channel_layer=channel_layers[DEFAULT_CHANNEL_LAYER],
             signal_handlers=False,
