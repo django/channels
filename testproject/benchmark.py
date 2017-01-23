@@ -3,9 +3,11 @@ from __future__ import unicode_literals
 import time
 import random
 import statistics
-from autobahn.twisted.websocket import WebSocketClientProtocol, \
-    WebSocketClientFactory
-
+from autobahn.twisted.websocket import (
+    WebSocketClientProtocol,
+    WebSocketClientFactory,
+)
+from twisted.internet import reactor
 
 stats = {}
 
@@ -198,7 +200,6 @@ if __name__ == '__main__':
     import argparse
 
     from twisted.python import log
-    from twisted.internet import reactor
 
 #    log.startLogging(sys.stdout)
 
