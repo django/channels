@@ -112,13 +112,7 @@ class LiveServerThread(threading.Thread):
         self.error = None
         self.is_ready = threading.Event()
         self.worker_thread = WorkerThread()
-        self.worker_thread.daemon = True
         super(LiveServerThread, self).__init__()
-
-    def start(self):
-
-        self.worker_thread.start()
-        return super(LiveServerThread, self).start()
 
     def run(self):
 
@@ -138,9 +132,56 @@ class LiveServerThread(threading.Thread):
 
     def terminate(self):
 
-        self.worker_thread.terminate()
         if hasattr(self, 'server') and reactor.running:
             reactor.stop()
+
+
+class LiveServerPool(object):
+
+    def __init__(self, host, possible_ports, static_handler, connections_override=None):
+
+        self.server_thread = LiveServerThread(
+            host, possible_ports, static_handler, connections_override,
+        )
+        self.host = self.server_thread.host
+        self.is_ready = self.server_thread.is_ready
+        self.worker_thread = WorkerThread()
+
+    @property
+    def port(self):
+
+        return self.server_thread.port
+
+    @property
+    def daemon(self):
+
+        raise RuntimeError('You can use setter only on daemon property')
+
+    @daemon.setter
+    def daemon(self, value):
+
+        self.server_thread.daemon = value
+        self.worker_thread.daemon = value
+
+    def start(self):
+
+        self.server_thread.start()
+        self.worker_thread.start()
+
+    @property
+    def error(self):
+
+        return self.server_thread.error
+
+    def terminate(self):
+
+        self.server_thread.terminate()
+        self.worker_thread.terminate()
+
+    def join(self):
+
+        self.server_thread.join()
+        self.worker_thread.join()
 
 
 class ChannelTestCase(ChannelTestCaseMixin, TestCase):
@@ -159,7 +200,7 @@ class ChannelLiveServerTestCase(ChannelTestCaseMixin, LiveServerTestCase):
 
     @classmethod
     def _create_server_thread(cls, host, possible_ports, connections_override):
-        return LiveServerThread(
+        return LiveServerPool(
             host,
             possible_ports,
             cls.static_handler,
