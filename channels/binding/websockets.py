@@ -1,3 +1,4 @@
+import copy
 import json
 
 from django.core import serializers
@@ -115,12 +116,19 @@ class WebsocketBinding(Binding):
         # TODO: Avoid the JSON roundtrip by using encoder directly?
         return list(serializers.deserialize("json", json.dumps(s_data)))[0]
 
+    def validate(self, data, instance=None):
+        """
+        Validate data and return clean data
+        """
+        data = copy.deepcopy(data)
+        return data
+
     def create(self, data):
-        self._hydrate(None, data).save()
+        self._hydrate(None, self.validate(data)).save()
 
     def update(self, pk, data):
         instance = self.model.objects.get(pk=pk)
-        hydrated = self._hydrate(pk, data)
+        hydrated = self._hydrate(pk, self.validate(data, instance))
 
         if self.fields is not None:
             for name in data.keys():
