@@ -2,11 +2,12 @@ import copy
 import json
 
 from django.core import serializers
+from django.forms.models import model_to_dict
 from django.core.serializers.json import DjangoJSONEncoder
 
 from ..generic.websockets import WebsocketMultiplexer
 from ..sessions import enforce_ordering
-from .base import Binding
+from .base import Binding, UPDATE
 
 
 class WebsocketBinding(Binding):
@@ -54,14 +55,7 @@ class WebsocketBinding(Binding):
         """
         Serializes model data into JSON-compatible types.
         """
-        if self.fields is not None:
-            if self.fields == '__all__' or list(self.fields) == ['__all__']:
-                fields = None
-            else:
-                fields = self.fields
-        else:
-            fields = [f.name for f in instance._meta.get_fields() if f.name not in self.exclude]
-        data = serializers.serialize('json', [instance], fields=fields)
+        data = serializers.serialize('json', [instance], fields=self.get_fields())
         return json.loads(data)[0]['fields']
 
     # Inbound
