@@ -5,9 +5,9 @@ from django.core import serializers
 from django.core.serializers.json import DjangoJSONEncoder
 from django.forms.models import model_to_dict
 
-from .base import Binding, UPDATE
 from ..generic.websockets import WebsocketMultiplexer
 from ..sessions import enforce_ordering
+from .base import UPDATE, Binding
 
 
 class WebsocketBinding(Binding):
