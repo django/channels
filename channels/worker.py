@@ -158,7 +158,13 @@ class WorkerGroup(Worker):
     """
 
     def __init__(self, *args, **kwargs):
-        n_threads = kwargs.pop('n_threads', multiprocessing.cpu_count()) - 1
+        try:
+            default_cpu_count = multiprocessing.cpu_count()
+        except NotImplementedError:
+            # Set a sensible default
+            # 1 isn't sensible, as n_threads would be 0
+            default_cpu_count = 2
+        n_threads = kwargs.pop('n_threads', default_cpu_count) - 1
         super(WorkerGroup, self).__init__(*args, **kwargs)
         kwargs['signal_handlers'] = False
         self.workers = [Worker(*args, **kwargs) for ii in range(n_threads)]

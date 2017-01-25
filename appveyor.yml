@@ -1,0 +1,27 @@
+#
+# Some help for Python on AppVeyor:
+# * https://packaging.python.org/appveyor/
+# * https://ci.appveyor.com/tools/validate-yaml
+
+build: false
+
+environment:
+  matrix:
+      - PYTHON_HOME: "C:/Python35"
+      - PYTHON_HOME: "C:/Python34"
+      - PYTHON_HOME: "C:/Python27"
+
+install:
+  - choco install redis-64
+  - redis-server --service-install
+  - redis-server --service-start
+  - cmd: |
+        set PATH=%PYTHON_HOME%;%PYTHON_HOME%\Scripts;%PATH%
+        python -m pip install --upgrade pip
+        pip install tox
+
+# command to run tests
+test_script:
+  - cmd: python ci/toxmatch.py > tox.env.txt && set /p TOXENV=<tox.env.txt
+  - cmd: python ci/toxmatch.py
+  - cmd: tox -e %TOXENV%
