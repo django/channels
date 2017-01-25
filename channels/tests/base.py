@@ -11,6 +11,7 @@ from django.test.testcases import TestCase, TransactionTestCase
 from .. import DEFAULT_CHANNEL_LAYER
 from ..asgi import ChannelLayerWrapper, channel_layers
 from ..channel import Group
+from ..exceptions import ChannelSocketException
 from ..message import Message
 from ..routing import Router, include
 from ..signals import consumer_finished, consumer_started
@@ -133,6 +134,8 @@ class Client(object):
                 try:
                     consumer_started.send(sender=self.__class__)
                     return consumer(message, **kwargs)
+                except ChannelSocketException as e:
+                    e.run(message)
                 finally:
                     consumer_finished.send(sender=self.__class__)
             elif fail_on_none:
