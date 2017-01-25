@@ -223,14 +223,18 @@ class TestsBinding(ChannelTestCase):
                 'stream': 'users',
                 'payload': {
                     'action': CREATE,
-                    'data': {'username': 'test_inbound', 'email': 'test@user_steam.com'},
+                    'data': {
+                        'username': 'test_inbound',
+                        'email': 'test@usersteam.com',
+                        'password': '123'
+                    },
                 },
             })
 
         self.assertEqual(User.objects.all().count(), 1)
         user = User.objects.all().first()
         self.assertEqual(user.username, 'test_inbound')
-        self.assertEqual(user.email, 'test@user_steam.com')
+        self.assertEqual(user.email, 'test@usersteam.com')
 
         self.assertIsNone(client.receive())
 
