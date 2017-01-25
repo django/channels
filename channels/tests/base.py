@@ -122,7 +122,7 @@ class Client(object):
         content.setdefault('reply_channel', self.reply_channel)
         self.channel_layer.send(to, content)
 
-    def consume(self, channel, fail_on_none=True):
+    def consume(self, channel, fail_on_none=True, raise_channelsocket=True):
         """
         Get next message for channel name and run appointed consumer
         """
@@ -135,6 +135,8 @@ class Client(object):
                     consumer_started.send(sender=self.__class__)
                     return consumer(message, **kwargs)
                 except ChannelSocketException as e:
+                    if raise_channelsocket:
+                        raise e
                     e.run(message)
                 finally:
                     consumer_finished.send(sender=self.__class__)
@@ -143,12 +145,12 @@ class Client(object):
         elif fail_on_none:
             raise AssertionError("No message for channel %s" % channel)
 
-    def send_and_consume(self, channel, content={}, fail_on_none=True):
+    def send_and_consume(self, channel, content={}, fail_on_none=True, raise_channelsocket=True):
         """
         Reproduce full life cycle of the message
         """
         self.send(channel, content)
-        return self.consume(channel, fail_on_none=fail_on_none)
+        return self.consume(channel, fail_on_none=fail_on_none, raise_channelsocket=raise_channelsocket)
 
     def receive(self):
         """

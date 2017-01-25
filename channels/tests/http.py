@@ -87,15 +87,18 @@ class HttpClient(Client):
                 content['text'] = text
         self.channel_layer.send(to, content)
 
-    def send_and_consume(self, channel, content={}, text=None, path='/', fail_on_none=True, check_accept=True):
+    def send_and_consume(self, channel, content={}, text=None, path='/', fail_on_none=True,
+                         check_accept=True, raise_channelsocket=True):
         """
         Reproduce full life cycle of the message
         """
         self.send(channel, content, text, path)
-        return self.consume(channel, fail_on_none=fail_on_none, check_accept=check_accept)
+        return self.consume(channel, fail_on_none=fail_on_none, check_accept=check_accept,
+                            raise_channelsocket=raise_channelsocket)
 
-    def consume(self, channel, fail_on_none=True, check_accept=True):
-        result = super(HttpClient, self).consume(channel, fail_on_none=fail_on_none)
+    def consume(self, channel, fail_on_none=True, check_accept=True, raise_channelsocket=True):
+        result = super(HttpClient, self).consume(channel, fail_on_none=fail_on_none,
+                                                 raise_channelsocket=raise_channelsocket)
         if channel == "websocket.connect" and check_accept:
             received = self.receive(json=False)
             if received != {"accept": True}:
