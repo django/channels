@@ -16,6 +16,9 @@ setup(
         'asgiref>=1.0.0',
         'daphne>=1.0.0',
     ],
+    extras_require={
+        'tests': ['coverage', 'mock', 'tox', 'flake8>=2.0,<3.0', 'isort']
+    },
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: Web Environment',
