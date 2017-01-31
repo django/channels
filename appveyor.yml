@@ -22,6 +22,4 @@ install:
 
 # command to run tests
 test_script:
-  - cmd: python ci/toxmatch.py > tox.env.txt && set /p TOXENV=<tox.env.txt
-  - cmd: python ci/toxmatch.py
-  - cmd: tox -e %TOXENV%
+  - cmd: tox --skip-missing-interpreters
