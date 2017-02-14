@@ -62,6 +62,14 @@ class ScheduleMessageForm(forms.Form):
         ("interval", "interval"),
     )
 
+    CRON_ONLY_FIELDS = {
+        "year", "month", "day", "week", "day_of_week", "hour", "minute",
+        "second",
+    }
+    DATE_ONLY_FIELDS = {"run_date"}
+    INTERVAL_ONLY_FIELDS = {"weeks", "days", "hours", "minutes", "seconds"}
+    CRON_AND_INTERVAL_ONLY_FIELDS = {"start_date", "end_date"}
+
     method = forms.ChoiceField(choices=METHOD_CHOICES)
 
     reply_channel = CharField(
@@ -130,19 +138,35 @@ class ScheduleMessageForm(forms.Form):
     def _validate_cron(self, cleaned_data):
         for field in ("year", "month", "day", "week", "day_of_week", "hour", "minute", "second"):
             if cleaned_data.get(field):
-                return
+                break
+        else:
+            self.add_error(None, forms.ValidationError(
+                "Configuring the cron trigger requires at least on of ['year', "
+                "'month', 'day', 'week', 'day_of_week', 'hour', 'minute', "
+                "'second']."
+            ))
 
-        self.add_error(None, forms.ValidationError(
-            "Configuring the cron trigger requires at least on of ['year', "
-            "'month', 'day', 'week', 'day_of_week', 'hour', 'minute', "
-            "'second']."
-        ))
+        for field in self.DATE_ONLY_FIELDS | self.INTERVAL_ONLY_FIELDS:
+            if cleaned_data[field] is not None:
+                self.add_error(field, forms.ValidationError(
+                    "[%s] is not permitted for cron method" % field
+                ))
 
     def _validate_date(self, cleaned_data):
         if not cleaned_data.get("run_date"):
             self.add_error("run_date", forms.ValidationError(
                 "Configuring the cron trigger requires 'run_date'."
             ))
+
+        date_forbidden_fields = \
+            self.CRON_ONLY_FIELDS | \
+            self.INTERVAL_ONLY_FIELDS | \
+            self.CRON_AND_INTERVAL_ONLY_FIELDS
+        for field in date_forbidden_fields:
+            if cleaned_data[field] is not None:
+                self.add_error(field, forms.ValidationError(
+                    "[%s] is not permitted for date method" % field
+                ))
 
     def _validate_interval(self, cleaned_data):
         for field in ("weeks", "days", "hours", "minutes", "seconds"):
@@ -153,6 +177,12 @@ class ScheduleMessageForm(forms.Form):
             "Configuring the date trigger requires at least on of ['weeks', "
             "'days', 'hours', 'minutes', 'seconds']."
         ))
+
+        for field in self.CRON_ONLY_FIELDS | self.DATE_ONLY_FIELDS:
+            if cleaned_data[field] is not None:
+                self.add_error(field, forms.ValidationError(
+                    "[%s] is not permitted for interval method" % field
+                ))
 
     def _validate_remove_schedule_message(self, cleaned_data):
         id = cleaned_data.get("id")
