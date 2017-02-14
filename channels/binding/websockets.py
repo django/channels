@@ -1,11 +1,13 @@
+import copy
 import json
 
 from django.core import serializers
 from django.core.serializers.json import DjangoJSONEncoder
+from django.forms.models import model_to_dict
 
 from ..generic.websockets import WebsocketMultiplexer
 from ..sessions import enforce_ordering
-from .base import Binding
+from .base import UPDATE, Binding
 
 
 class WebsocketBinding(Binding):
@@ -53,14 +55,7 @@ class WebsocketBinding(Binding):
         """
         Serializes model data into JSON-compatible types.
         """
-        if self.fields is not None:
-            if self.fields == '__all__' or list(self.fields) == ['__all__']:
-                fields = None
-            else:
-                fields = self.fields
-        else:
-            fields = [f.name for f in instance._meta.get_fields() if f.name not in self.exclude]
-        data = serializers.serialize('json', [instance], fields=fields)
+        data = serializers.serialize('json', [instance], fields=self.get_fields())
         return json.loads(data)[0]['fields']
 
     # Inbound
@@ -112,25 +107,26 @@ class WebsocketBinding(Binding):
                 "fields": data,
             }
         ]
-        # TODO: Avoid the JSON roundtrip by using encoder directly?
-        return list(serializers.deserialize("json", json.dumps(s_data)))[0]
+        return list(serializers.deserialize("python", s_data))[0]
+
+    def validate(self, data, instance=None):
+        """
+        Validate data and return clean data
+        """
+        data = copy.deepcopy(data)
+        if self.action == UPDATE:
+            data = {k: v for k, v in data.items() if k in self.get_fields()}
+            _data = model_to_dict(instance, fields=[f.name for f in instance._meta.get_fields()])
+            _data.update(data)
+            data = _data
+        return data
 
     def create(self, data):
-        self._hydrate(None, data).save()
+        self._hydrate(None, self.validate(data)).save()
 
     def update(self, pk, data):
         instance = self.model.objects.get(pk=pk)
-        hydrated = self._hydrate(pk, data)
-
-        if self.fields is not None:
-            for name in data.keys():
-                if name in self.fields or self.fields == ['__all__']:
-                    setattr(instance, name, getattr(hydrated.object, name))
-        else:
-            for name in data.keys():
-                if name not in self.exclude:
-                    setattr(instance, name, getattr(hydrated.object, name))
-        instance.save()
+        self._hydrate(pk, self.validate(data, instance)).save()
 
 
 class WebsocketBindingWithMembers(WebsocketBinding):

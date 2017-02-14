@@ -11,6 +11,8 @@ CREATE = 'create'
 UPDATE = 'update'
 DELETE = 'delete'
 
+ALL_FIELDS = '__all__'
+
 
 class BindingMetaclass(type):
     """
@@ -169,6 +171,15 @@ class Binding(object):
         self.send_messages(instance, old_group_names & new_group_names, UPDATE, **kwargs)
         self.send_messages(instance, new_group_names - old_group_names, CREATE, **kwargs)
 
+    @classmethod
+    def get_fields(cls):
+        if cls.fields and (cls.fields == ALL_FIELDS or list(cls.fields) == [ALL_FIELDS]):
+            return [f.name for f in cls.get_registered_models()[0]._meta.get_fields()]
+        elif cls.exclude:
+            return [f.name for f in cls.get_registered_models()[0]._meta.get_fields() if f.name not in cls.exclude]
+        else:
+            return cls.fields
+
     def send_messages(self, instance, group_names, action, **kwargs):
         """
         Serializes the instance and sends it to all provided group names.
@@ -260,11 +271,11 @@ class Binding(object):
         """
         # Check to see if we're allowed
         if self.has_permission(self.user, action, pk):
-            if action == "create":
+            if action == CREATE:
                 self.create(data)
-            elif action == "update":
+            elif action == UPDATE:
                 self.update(pk, data)
-            elif action == "delete":
+            elif action == DELETE:
                 self.delete(pk)
             else:
                 raise ValueError("Bad action %r" % action)
