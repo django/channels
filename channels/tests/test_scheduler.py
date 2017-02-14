@@ -109,7 +109,7 @@ class WorkerTests(ChannelTestCase):
 
         worker.run()
 
-        worker.scheduler.add_job.assert_called_once()
+        self.assertEqual(worker.scheduler.add_job.call_count, 1)
         args, kwargs = worker.scheduler.add_job.call_args
         self.assertEqual(args[0], worker.send_message)
         self.assertEqual(
