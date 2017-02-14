@@ -63,7 +63,7 @@ If you want to perfom more complicated routing, you'll need to override the
 remember, though, your channel names cannot change during runtime and must
 always be the same for as long as your process runs.
 
-``BaseConsumer`` and all other generic consumers than inherit from it provide
+``BaseConsumer`` and all other generic consumers that inherit from it provide
 two instance variables on the class:
 
 * ``self.message``, the :ref:`Message object <ref-message>` representing the
@@ -88,9 +88,8 @@ The basic WebSocket generic consumer is used like this::
         # (you don't need channel_session_user, this implies it)
         http_user = True
 
-        # Set to True if you want them, else leave out
+        # Set to True if you want it, else leave it out
         strict_ordering = False
-        slight_ordering = False
 
         def connection_groups(self, **kwargs):
             """
@@ -135,9 +134,8 @@ The JSON-enabled consumer looks slightly different::
 
     class MyConsumer(JsonWebsocketConsumer):
 
-        # Set to True if you want them, else leave out
+        # Set to True if you want it, else leave it out
         strict_ordering = False
-        slight_ordering = False
 
         def connection_groups(self, **kwargs):
             """
@@ -196,20 +194,20 @@ Example using class-based consumer::
 
     from channels.generic.websockets import WebsocketDemultiplexer, JsonWebsocketConsumer
 
-    class EchoConsumer(websockets.JsonWebsocketConsumer):
-        def connect(self, message, multiplexer=None, **kwargs):
+    class EchoConsumer(JsonWebsocketConsumer):
+        def connect(self, message, multiplexer, **kwargs):
             # Send data with the multiplexer
             multiplexer.send({"status": "I just connected!"})
 
-        def disconnect(self, message, multiplexer=None, **kwargs):
+        def disconnect(self, message, multiplexer, **kwargs):
             print("Stream %s is closed" % multiplexer.stream)
 
-        def receive(self, content, multiplexer=None, **kwargs):
+        def receive(self, content, multiplexer, **kwargs):
             # Simple echo
             multiplexer.send({"original_message": content})
 
 
-    class AnotherConsumer(websockets.JsonWebsocketConsumer):
+    class AnotherConsumer(JsonWebsocketConsumer):
         def receive(self, content, multiplexer=None, **kwargs):
             # Some other actions here
             pass

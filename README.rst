@@ -18,12 +18,12 @@ task offloading and other asynchrony support to your code, using familiar Django
 design patterns and a flexible underlying framework that lets you not only
 customize behaviours but also write support for your own protocols and needs.
 
-This is still **beta** software: the API is mostly settled, but might change
-a bit as things develop. Once we hit ``1.0``, it will be stablized and a
-deprecation policy will come in.
-
 Documentation, installation and getting started instructions are at
 https://channels.readthedocs.io
+
+Channels is an official Django Project and as such has a deprecation policy.
+Details about what's deprecated or pending deprecation for each release is in
+the `release notes <http://channels.readthedocs.io/en/latest/releases/index.html>`_.
 
 Support can be obtained either here via issues, or in the ``#django-channels``
 channel on Freenode.
@@ -32,6 +32,12 @@ You can install channels from PyPI as the ``channels`` package.
 You'll likely also want to ``asgi_redis`` to provide the Redis channel layer.
 See our `installation <https://channels.readthedocs.io/en/latest/installation.html>`_
 and `getting started <https://channels.readthedocs.io/en/latest/getting-started.html>`_ docs for more.
+
+Dependencies
+------------
+
+All Channels projects currently support Python 2.7, 3.4 and 3.5. `channels` supports all released
+Django versions, namely 1.8-1.10.
 
 
 Contributing
