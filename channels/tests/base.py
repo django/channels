@@ -12,7 +12,7 @@ from django.test.testcases import TestCase, TransactionTestCase
 from .. import DEFAULT_CHANNEL_LAYER
 from ..asgi import ChannelLayerWrapper, channel_layers
 from ..channel import Group
-from ..message import Message
+from ..message import Message, pending_message_store
 from ..routing import Router, include
 from ..signals import consumer_finished, consumer_started
 
@@ -64,6 +64,7 @@ class ChannelTestCaseMixin(object):
 
         If require is true, will fail the test if no message is received.
         """
+        pending_message_store.send_and_flush()
         recv_channel, content = channel_layers[alias].receive_many([channel])
         if recv_channel is None:
             if require:

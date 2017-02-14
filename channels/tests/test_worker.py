@@ -97,6 +97,17 @@ class WorkerTests(ChannelTestCase):
         self.assertEqual(consumer.call_count, 1)
         self.assertEqual(channel_layer.send.call_count, 0)
 
+    def test_a_thing(self):
+        """
+        This test corresponds to the test example in the documentation.
+        make sure, that it works.
+        """
+        # Inject a message onto the channel to use in a consumer
+        Channel("input").send({"value": 33})
+        # Verify there's a result and that it's accurate
+        result = self.get_next_message("input", require=True)
+        self.assertEqual(result['value'], 33)
+
 
 class WorkerGroupTests(ChannelTestCase):
     """
