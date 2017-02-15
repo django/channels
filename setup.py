@@ -17,7 +17,14 @@ setup(
         'daphne>=1.0.0',
     ],
     extras_require={
-        'tests': ['coverage', 'mock', 'tox', 'flake8>=2.0,<3.0', 'isort']
+        'tests': [
+            'coverage',
+            'mock',
+            'tox',
+            'flake8>=2.0,<3.0',
+            'isort',
+            'websocket_client',
+        ]
     },
     classifiers=[
         'Development Status :: 5 - Production/Stable',
