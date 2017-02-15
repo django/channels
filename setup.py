@@ -20,7 +20,6 @@ setup(
         'tests': [
             'coverage',
             'mock ; python_version < "3.0"',
-            'tox',
             'flake8>=2.0,<3.0',
             'isort',
         ]
