@@ -1,7 +1,7 @@
 import websocket
 
 from channels.routing import route
-from channels.tests import ChannelLiveServerTestCase, apply_routes
+from channels.test import ChannelLiveServerTestCase, apply_routes
 
 
 def ping_pong(message):
