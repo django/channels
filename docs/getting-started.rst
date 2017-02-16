@@ -324,9 +324,13 @@ and set up your channel layer like this::
         },
     }
 
-Fire up ``runserver``, and it'll work as before - unexciting, like good
-infrastructure should be. You can also try out the cross-process nature; run
-these two commands in two terminals:
+To get the Redis backend started type ``redis-server``.
+
+You can read more about Redis [here](http://redis.io/topics/quickstart).
+
+Once your Redis server is running, fire up ``runserver``, and it'll work as 
+before - unexciting, like good infrastructure should be. You can also try out 
+the cross-process nature; run these two commands in two terminals:
 
 * ``manage.py runserver --noworker``
 * ``manage.py runworker``
