@@ -189,7 +189,7 @@ class SessionTests(ChannelTestCase):
             channel_layers[DEFAULT_CHANNEL_LAYER]
         )
         message2 = Message(
-            {"reply_channel": "test-reply-c", "order": 2},
+            {"reply_channel": "test-reply-c", "order": 3},
             "websocket.receive",
             channel_layers[DEFAULT_CHANNEL_LAYER]
         )
@@ -205,6 +205,33 @@ class SessionTests(ChannelTestCase):
         # Ensure wait channel is not empty
         wait_channel = "__wait__.%s" % "test-reply-c"
         next_message = self.get_next_message(wait_channel)
+        self.assertNotEqual(next_message, None)
+
+    def test_enforce_ordering_fail_concurrent(self):
+        """
+        Tests that strict mode of enforce_ordering fails on bad ordering
+        """
+        # Construct messages to send
+        message0 = Message(
+            {"reply_channel": "test-reply-c", "order": 0},
+            "websocket.connect",
+            channel_layers[DEFAULT_CHANNEL_LAYER]
+        )
+        message2 = Message(
+            {"reply_channel": "test-reply-c", "order": 2},
+            "websocket.receive",
+            channel_layers[DEFAULT_CHANNEL_LAYER]
+        )
+
+        # Run them in an acceptable strict order
+        @enforce_ordering
+        def inner(message):
+            pass
+
+        inner(message0)
+        inner(message2)
+
+        next_message = self.get_next_message("websocket.receive")
         self.assertNotEqual(next_message, None)
 
     def test_enforce_ordering_fail_no_order(self):
