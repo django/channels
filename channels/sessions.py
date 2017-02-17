@@ -123,10 +123,14 @@ def enforce_ordering(func=None, slight=False):
                         break
             else:
                 # Since out of order, enqueue message temporarily to wait channel for this socket connection
-                wait_channel = "__wait__.%s" % message.reply_channel.name
-                message.content["original_channel"] = message.channel.name
+                # If this message is going to be next, requeue it immediately
+                if order == next_order + 1:
+                    channel = message.channel.name
+                else:
+                    channel = "__wait__.%s" % message.reply_channel.name
+                    message.content["original_channel"] = message.channel.name
                 try:
-                    message.channel_layer.send(wait_channel, message.content)
+                    message.channel_layer.send(channel, message.content)
                 except message.channel_layer.ChannelFull:
                     raise message.channel_layer.ChannelFull(
                         "Cannot add unordered message to already " +
