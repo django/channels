@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 
+import json
+
 from django.test import override_settings
 
 from channels import route_class
@@ -199,3 +201,29 @@ class GenericTests(ChannelTestCase):
                 })
 
                 client.receive()
+
+    def test_websocket_custom_json_serialization(self):
+
+        def my_json_loader(text):
+            obj = json.loads(text)
+            return dict((key.upper(), obj[key]) for key in obj)
+
+        def my_json_printer(content):
+            lowered = dict((key.lower(), content[key]) for key in content)
+            return json.dumps(lowered)
+
+        class WebsocketConsumer(websockets.JsonWebsocketConsumer):
+            json_decoder = staticmethod(my_json_loader)
+            json_encoder = staticmethod(my_json_printer)
+
+            def receive(self, content, multiplexer=None, **kwargs):
+                self.content_received = content
+                self.send({"RESPONSE": "HI"})
+
+        with apply_routes([route_class(WebsocketConsumer, path='/path')]):
+            client = HttpClient()
+
+            consumer = client.send_and_consume('websocket.receive', path='/path', text={"key": "value"})
+            self.assertEqual(consumer.content_received, {"KEY": "value"})
+
+            self.assertEqual(client.receive(), {"response": "HI"})

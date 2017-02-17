@@ -137,6 +137,10 @@ The JSON-enabled consumer looks slightly different::
         # Set to True if you want it, else leave it out
         strict_ordering = False
 
+        # Optionally configure your own custom json encoder and decoder
+        # json_encoder = staticmethod(my_custom_json_encoder_func)
+        # json_decoder = staticmethod(my_custom_json_decoder_func)
+
         def connection_groups(self, **kwargs):
             """
             Called to return the list of groups to automatically add/remove
