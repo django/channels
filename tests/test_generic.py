@@ -243,12 +243,6 @@ class GenericTests(ChannelTestCase):
             def connect(self, message, multiplexer=None, **kwargs):
                 multiplexer.send({"THIS_SHOULD_BE_LOWERCASED": "1"})
 
-            def disconnect(self, message, multiplexer=None, **kwargs):
-                multiplexer.send(kwargs)
-
-            def receive(self, content, multiplexer=None, **kwargs):
-                multiplexer.send(content)
-
         class MyMultiplexer(websockets.WebsocketMultiplexer):
             @classmethod
             def encode_json(cls, content):
