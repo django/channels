@@ -204,21 +204,26 @@ class GenericTests(ChannelTestCase):
 
     def test_websocket_custom_json_serialization(self):
 
-        def my_json_loader(text):
-            obj = json.loads(text)
-            return dict((key.upper(), obj[key]) for key in obj)
-
-        def my_json_printer(content):
-            lowered = dict((key.lower(), content[key]) for key in content)
-            return json.dumps(lowered)
-
         class WebsocketConsumer(websockets.JsonWebsocketConsumer):
-            json_decoder = staticmethod(my_json_loader)
-            json_encoder = staticmethod(my_json_printer)
+            @classmethod
+            def decode_json(cls, text):
+                obj = json.loads(text)
+                return dict((key.upper(), obj[key]) for key in obj)
+
+            @classmethod
+            def encode_json(cls, content):
+                lowered = dict((key.lower(), content[key]) for key in content)
+                return json.dumps(lowered)
 
             def receive(self, content, multiplexer=None, **kwargs):
                 self.content_received = content
                 self.send({"RESPONSE": "HI"})
+
+        class MyMultiplexer(websockets.WebsocketMultiplexer):
+            @classmethod
+            def encode_json(cls, content):
+                lowered = dict((key.lower(), content[key]) for key in content)
+                return json.dumps(lowered)
 
         with apply_routes([route_class(WebsocketConsumer, path='/path')]):
             client = HttpClient()
@@ -227,3 +232,44 @@ class GenericTests(ChannelTestCase):
             self.assertEqual(consumer.content_received, {"KEY": "value"})
 
             self.assertEqual(client.receive(), {"response": "HI"})
+
+            client.join_group('test_group')
+            WebsocketConsumer.group_send('test_group', {"KEY": "VALUE"})
+            self.assertEqual(client.receive(), {"key": "VALUE"})
+
+    def test_websockets_demultiplexer_custom_multiplexer(self):
+
+        class MyWebsocketConsumer(websockets.JsonWebsocketConsumer):
+            def connect(self, message, multiplexer=None, **kwargs):
+                multiplexer.send({"THIS_SHOULD_BE_LOWERCASED": "1"})
+
+            def disconnect(self, message, multiplexer=None, **kwargs):
+                multiplexer.send(kwargs)
+
+            def receive(self, content, multiplexer=None, **kwargs):
+                multiplexer.send(content)
+
+        class MyMultiplexer(websockets.WebsocketMultiplexer):
+            @classmethod
+            def encode_json(cls, content):
+                lowered = {
+                    "stream": content["stream"],
+                    "payload": dict((key.lower(), content["payload"][key]) for key in content["payload"])
+                }
+                return json.dumps(lowered)
+
+        class Demultiplexer(websockets.WebsocketDemultiplexer):
+            multiplexer_class = MyMultiplexer
+
+            consumers = {
+                "mystream": MyWebsocketConsumer
+            }
+
+        with apply_routes([route_class(Demultiplexer, path='/path/(?P<ID>\d+)')]):
+            client = HttpClient()
+
+            client.send_and_consume('websocket.connect', path='/path/1')
+            self.assertEqual(client.receive(), {
+                "stream": "mystream",
+                "payload": {"this_should_be_lowercased": "1"},
+            })
