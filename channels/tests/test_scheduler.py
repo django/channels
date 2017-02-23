@@ -5,6 +5,7 @@ from datetime import timedelta
 from django.utils import timezone
 
 from channels import DEFAULT_CHANNEL_LAYER, Channel, channel_layers
+from channels.scheduler.models import CronMessage
 from channels.scheduler.worker import Worker
 from channels.tests import ChannelTestCase
 
@@ -28,94 +29,33 @@ class PatchedWorker(Worker):
     termed = property(get_termed, set_termed)
 
 
-@mock.patch('channels.scheduler.worker.BackgroundScheduler')
 class WorkerTests(ChannelTestCase):
 
-    def test_assert_invalid_message_is_not_scheduled(self, _):
+    def test_cron_message(self):
         """
-        Tests the worker won't schedule an invalid message
+        Tests the message is scheduled and dispatched when due
         """
-        Channel('asgi.schedule').send({'test': 'value'}, immediately=True)
+        now = timezone.now()
+        message = CronMessage(
+            content='{"test": "value"}',
+            cron_schedule="{} {} * * *".format(now.minute, (now.hour+1)%23),
+            channel_name="test_channel",
+        )
+        message.save()
 
         worker = PatchedWorker(channel_layers[DEFAULT_CHANNEL_LAYER])
         worker.termed = 1
 
         worker.run()
 
-        worker.scheduler.add_job.assert_not_called()
+        message = self.get_next_message('test_channel')
+        self.assertIsNone(message)
 
-    def test_assert_schedule_add_job_date_all_arguments_are_passed(self, _):
-        """
-        Tests that all possible arguments are passed to apscheduler add_job()
-        """
-        message = {
-            'method': 'add',
-            'reply_channel': 'test',
-            'content': {'test': 'value'},
-            'id': 'unique_identifier',
-            'trigger': 'date',
-            'run_date': timezone.now(),
-        }
-        self._assert_schedule_add_job_all_arguments_are_passed(message)
+        with mock.patch(
+                'django.utils.timezone.now',
+                return_value=timezone.now() + timedelta(hours=(now.hour+1)%23)):
+            worker.termed = 1
+            worker.run()
 
-    def test_assert_schedule_add_job_cron_all_arguments_are_passed(self, _):
-        """
-        Tests that all possible arguments are passed to apscheduler add_job()
-        """
-        message = {
-            'method': 'add',
-            'reply_channel': 'test',
-            'content': {'test': 'value'},
-            'id': 'unique_identifier',
-            'trigger': 'cron',
-            'year': '1',
-            'month': '2',
-            'day': '3',
-            'week': '4',
-            'day_of_week': '5',
-            'hour': '6',
-            'minute': '7',
-            'second': '8',
-            'start_date': timezone.now() + timedelta(minutes=1),
-            'end_date': timezone.now() + timedelta(minutes=2),
-        }
-        self._assert_schedule_add_job_all_arguments_are_passed(message)
-
-    def test_assert_schedule_add_job_interval_all_arguments_are_passed(self, _):
-        """
-        Tests that all possible arguments are passed to apscheduler add_job()
-        """
-        message = {
-            'method': 'add',
-            'reply_channel': 'test',
-            'content': {'test': 'value'},
-            'id': 'unique_identifier',
-            'trigger': 'interval',
-            'weeks': 9,
-            'days': 10,
-            'hours': 11,
-            'minutes': 12,
-            'seconds': 13,
-            'start_date': timezone.now() + timedelta(minutes=1),
-            'end_date': timezone.now() + timedelta(minutes=2),
-        }
-        self._assert_schedule_add_job_all_arguments_are_passed(message)
-
-    def _assert_schedule_add_job_all_arguments_are_passed(self, message):
-        Channel('asgi.schedule').send(message, immediately=True)
-
-        worker = PatchedWorker(channel_layers[DEFAULT_CHANNEL_LAYER])
-        worker.termed = 1
-
-        worker.run()
-
-        self.assertEqual(worker.scheduler.add_job.call_count, 1)
-        args, kwargs = worker.scheduler.add_job.call_args
-        self.assertEqual(args[0], worker.send_message)
-        self.assertEqual(
-            kwargs['args'],
-            [DEFAULT_CHANNEL_LAYER, message.pop('reply_channel'), message.pop('content')])
-
-        message.pop('method')
-        for key, value in message.items():
-            self.assertEqual(value, kwargs[key])
+        message = self.get_next_message('test_channel', require=True)
+        self.assertEqual(message.content, {'test': 'value'})

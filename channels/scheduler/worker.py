@@ -5,14 +5,9 @@ import signal
 import sys
 import time
 
-from apscheduler.jobstores.base import ConflictingIdError
-from apscheduler.schedulers.background import BackgroundScheduler
-from django.conf import settings
+from django.db import transaction
 
-from channels import Channel
-
-from .django_jobstore import DjangoJobStore
-from .forms import ScheduleMessageForm
+from .models import CronMessage
 
 logger = logging.getLogger('django.channels')
 
@@ -31,12 +26,6 @@ class Worker(object):
         self.termed = False
         self.in_job = False
 
-        jobstores = {
-            'default': DjangoJobStore(),
-        }
-        self.scheduler = BackgroundScheduler(
-            jobstores=jobstores, timezone=settings.TIME_ZONE)
-
     def install_signal_handler(self):
         signal.signal(signal.SIGTERM, self.sigterm_handler)
         signal.signal(signal.SIGINT, self.sigterm_handler)
@@ -49,61 +38,31 @@ class Worker(object):
             logger.info("Shutdown signal received while idle, terminating immediately")
             sys.exit(0)
 
-    @staticmethod
-    def send_message(channel_layer_alias, reply_channel, content):
-        """
-        Callable for apscheduler
-
-        Needs to be a staticmethod as callables for apscheduler need to be
-        globally accessible.
-        """
-        Channel(reply_channel, alias=channel_layer_alias).send(
-            content, immediately=True)
-
     def run(self):
         if self.signal_handlers:
             self.install_signal_handler()
 
-        self.scheduler.start()
-
-        logger.info("Listening on asgi.schedule")
-
         while not self.termed:
-            self.in_job = False
-            channel, content = self.channel_layer.receive(['asgi.schedule'], block=False)
             self.in_job = True
 
-            if channel is not None:
-                logger.debug("Got message on asgi.schedule")
-
-                message = ScheduleMessageForm(content)
-
-                if message.is_valid() is False:
-                    logger.error(
-                        "Invalid message received: %s",
-                        message.errors,
-                    )
-                    continue
-
-                message_data = message.cleaned_data
-                method = message_data.pop("method")
-                if method == 'add':
-                    args = [self.channel_layer.alias, message_data.pop("reply_channel"), message_data.pop("content")]
-                    kwargs = dict(
-                        (key, value) for key, value in message_data.items() if value is not None
-                    )
-                    kwargs['args'] = args
-
-                    try:
-                        self.scheduler.add_job(self.send_message, **kwargs)
-                    except ConflictingIdError as error:
-                        logger.error(error)
-                        continue
-                elif method == 'remove':
-                    self.scheduler.remove_job(message_data.get("id"))
-
+            # First update message.next_run_time in a transaction to enforce at
+            # most once semantics
+            try:
+                with transaction.atomic():
+                    messages = CronMessage.objects.select_for_update().due()
+                    for message in messages:
+                        # Advances message.next_run_time, as next_run_time lies in
+                        # the past for due messages
+                        message.save()
+            except Exception as error:
+                logger.warn(
+                    "Unable to set advance next_run_time for due messages, got "
+                    "%s", error)
             else:
-                # Sleep for a short interval so we don't idle hot.
-                time.sleep(0.1)
+                for message in messages:
+                    message.send(channel_layer=self.channel_layer)
 
-        self.scheduler.shutdown()
+            self.in_job = False
+
+            # Sleep for a short interval so we don't idle hot.
+            time.sleep(0.1)
