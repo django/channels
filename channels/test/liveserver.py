@@ -8,17 +8,18 @@ from django.test.utils import modify_settings, override_settings
 
 from .. import DEFAULT_CHANNEL_LAYER
 from ..asgi import channel_layers
-from ..worker import Worker
-
+from ..worker import Worker, WorkerGroup
 
 # TODO: What we need to do in the case of multiple channel layers?
 
 
 class WorkerProcess(multiprocessing.Process):
 
-    def __init__(self, is_ready, overridden_settings, modified_settings):
+    def __init__(self, is_ready, n_threads, overridden_settings,
+                 modified_settings):
 
         self.is_ready = is_ready
+        self.n_threads = n_threads
         self.overridden_settings = overridden_settings
         self.modified_settings = modified_settings
         super(WorkerProcess, self).__init__()
@@ -38,9 +39,15 @@ class WorkerProcess(multiprocessing.Process):
                 modified.enable()
 
             channel_layers[DEFAULT_CHANNEL_LAYER].router.check_default()
-            self.worker = Worker(
-                channel_layer=channel_layers[DEFAULT_CHANNEL_LAYER],
-            )
+            if self.n_threads == 1:
+                self.worker = Worker(
+                    channel_layer=channel_layers[DEFAULT_CHANNEL_LAYER],
+                )
+            else:
+                self.worker = WorkerGroup(
+                    channel_layer=channel_layers[DEFAULT_CHANNEL_LAYER],
+                    n_threads=self.n_threads,
+                )
             self.worker.ready()
             self.is_ready.set()
             self.worker.run()
@@ -117,6 +124,8 @@ class LiveServerStub(object):
 
 class ChannelLiveServerTestCase(LiveServerTestCase):
 
+    worker_threads = 1
+
     @property
     def live_server_url(self):
 
@@ -154,6 +163,7 @@ class ChannelLiveServerTestCase(LiveServerTestCase):
         worker_ready = multiprocessing.Event()
         self._worker_process = WorkerProcess(
             worker_ready,
+            self.worker_threads,
             self._overridden_settings,
             self._modified_settings,
         )
