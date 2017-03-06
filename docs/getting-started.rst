@@ -324,6 +324,12 @@ and set up your channel layer like this::
         },
     }
 
+You'll also need to install the Redis server - there are downloads available
+for Mac OS and Windows, and it's in pretty much every linux distribution's
+package manager. For example, on Ubuntu, you can just::
+
+    sudo apt-get install redis-server
+
 Fire up ``runserver``, and it'll work as before - unexciting, like good
 infrastructure should be. You can also try out the cross-process nature; run
 these two commands in two terminals:
@@ -439,10 +445,10 @@ both authentication and getting the underlying Django session (which is what
 Django authentication relies on).
 
 Channels can use Django sessions either from cookies (if you're running your
-websocket server on the same port as your main site, using something like Daphne),
+websocket server on the same domain as your main site, using something like Daphne),
 or from a ``session_key`` GET parameter, which works if you want to keep
 running your HTTP requests through a WSGI server and offload WebSockets to a
-second server process on another port.
+second server process on another domain.
 
 You get access to a user's normal Django session using the ``http_session``
 decorator - that gives you a ``message.http_session`` attribute that behaves
@@ -492,7 +498,7 @@ chat to people with the same first letter of their username::
 
 If you're just using ``runserver`` (and so Daphne), you can just connect
 and your cookies should transfer your auth over. If you were running WebSockets
-on a separate port, you'd have to remember to provide the
+on a separate domain, you'd have to remember to provide the
 Django session ID as part of the URL, like this::
 
     socket = new WebSocket("ws://127.0.0.1:9000/?session_key=abcdefg");
