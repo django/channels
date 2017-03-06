@@ -1,27 +1,42 @@
 import multiprocessing
 import threading
 
+import django
 from daphne.server import Server
 from django.test.testcases import LiveServerTestCase
+from django.test.utils import modify_settings, override_settings
 
 from .. import DEFAULT_CHANNEL_LAYER
 from ..asgi import channel_layers
 from ..worker import Worker
+
 
 # TODO: What we need to do in the case of multiple channel layers?
 
 
 class WorkerProcess(multiprocessing.Process):
 
-    def __init__(self, is_ready):
+    def __init__(self, is_ready, overridden_settings, modified_settings):
 
         self.is_ready = is_ready
+        self.overridden_settings = overridden_settings
+        self.modified_settings = modified_settings
         super(WorkerProcess, self).__init__()
         self.daemon = True
 
     def run(self):
 
         try:
+            django.setup(**{'set_prefix': False}
+                         if django.VERSION[1] > 9 else {})
+
+            if self.overridden_settings:
+                overridden = override_settings(**self.overridden_settings)
+                overridden.enable()
+            if self.modified_settings:
+                modified = modify_settings(self.modified_settings)
+                modified.enable()
+
             channel_layers[DEFAULT_CHANNEL_LAYER].router.check_default()
             self.worker = Worker(
                 channel_layer=channel_layers[DEFAULT_CHANNEL_LAYER],
@@ -36,18 +51,31 @@ class WorkerProcess(multiprocessing.Process):
 
 class LiveServerProcess(multiprocessing.Process):
 
-    def __init__(self, host, possible_ports, port_storage, is_ready):
+    def __init__(self, host, possible_ports, port_storage, is_ready,
+                 overridden_settings, modified_settings):
 
         self.host = host
         self.possible_ports = possible_ports
         self.port_storage = port_storage
         self.is_ready = is_ready
+        self.overridden_settings = overridden_settings
+        self.modified_settings = modified_settings
         super(LiveServerProcess, self).__init__()
         self.daemon = True
 
     def run(self):
 
         try:
+            django.setup(**{'set_prefix': False}
+                         if django.VERSION[1] > 9 else {})
+
+            if self.overridden_settings:
+                overridden = override_settings(**self.overridden_settings)
+                overridden.enable()
+            if self.modified_settings:
+                modified = modify_settings(self.modified_settings)
+                modified.enable()
+
             self.server = Server(
                 channel_layer=channel_layers[DEFAULT_CHANNEL_LAYER],
                 # FIXME: process all possible ports, exit after first success.
@@ -117,12 +145,18 @@ class ChannelLiveServerTestCase(LiveServerTestCase):
             self.server_thread.possible_ports,
             self._port_storage,
             server_ready,
+            self._overridden_settings,
+            self._modified_settings,
         )
         self._server_process.start()
         server_ready.wait()
 
         worker_ready = multiprocessing.Event()
-        self._worker_process = WorkerProcess(worker_ready)
+        self._worker_process = WorkerProcess(
+            worker_ready,
+            self._overridden_settings,
+            self._modified_settings,
+        )
         self._worker_process.start()
         worker_ready.wait()
 
