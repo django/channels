@@ -207,21 +207,19 @@ class apply_routes(object):
 
     def __call__(self, test_func):
         if isinstance(test_func, type):
-            old_setup = test_func.setUpClass
-            old_teardown = test_func.tearDownClass
+            old_setup = test_func.setUp
+            old_teardown = test_func.tearDown
 
-            @classmethod
-            def new_setup(cls):
+            def new_setup(this):
                 self.enter()
-                old_setup()
+                old_setup(this)
 
-            @classmethod
-            def new_teardown(cls):
+            def new_teardown(this):
                 self.exit()
-                old_teardown()
+                old_teardown(this)
 
-            test_func.setUpClass = new_setup
-            test_func.tearDownClass = new_teardown
+            test_func.setUp = new_setup
+            test_func.tearDown = new_teardown
             return test_func
         else:
             @wraps(test_func)

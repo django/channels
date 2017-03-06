@@ -22,9 +22,7 @@ setup(
             'mock ; python_version < "3.0"',
             'flake8>=2.0,<3.0',
             'isort',
-            'websocket_client',
-            'asgi_ipc',
-        ]
+        ],
     },
     classifiers=[
         'Development Status :: 5 - Production/Stable',

@@ -25,10 +25,6 @@ CHANNEL_LAYERS = {
         'BACKEND': 'tests.test_management.FakeChannelLayer',
         'ROUTING': [],
     },
-    'ipc': {
-        'BACKEND': 'asgi_ipc.IPCChannelLayer',
-        'ROUTING': [],
-    },
 }
 
 MIDDLEWARE_CLASSES = []
