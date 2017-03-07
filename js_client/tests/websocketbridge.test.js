@@ -1,4 +1,4 @@
-import { WebSocket, Server, SocketIO } from 'mock-socket';
+import { WebSocket, Server } from 'mock-socket';
 import { WebSocketBridge } from '../src/';
 
 
