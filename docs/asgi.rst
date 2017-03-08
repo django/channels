@@ -9,7 +9,7 @@ Abstract
 ========
 
 This document proposes a standard interface between network protocol
-servers (particularly webservers) and Python applications, intended
+servers (particularly web servers) and Python applications, intended
 to allow handling of multiple common protocol styles (including HTTP, HTTP2,
 and WebSocket).
 
@@ -22,7 +22,7 @@ Rationale
 =========
 
 The WSGI specification has worked well since it was introduced, and
-allowed for great flexibility in Python framework and webserver choice.
+allowed for great flexibility in Python framework and web server choice.
 However, its design is irrevocably tied to the HTTP-style
 request/response cycle, and more and more protocols are becoming a
 standard part of web programming that do not follow this pattern
