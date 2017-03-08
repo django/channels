@@ -558,7 +558,7 @@ Keys:
   is mounted at; same as ``SCRIPT_NAME`` in WSGI. Optional, defaults
   to ``""``.
 
-* ``headers``: A list of ``[name, value]`` pairs, where ``name`` is the
+* ``headers``: A list of ``[name, value]`` lists, where ``name`` is the
   byte string header name, and ``value`` is the byte string
   header value. Order of header values must be preserved from the original HTTP
   request; order of header names is not important. Duplicates are possible and
@@ -624,7 +624,7 @@ Keys:
 
 * ``status``: Integer HTTP status code.
 
-* ``headers``: A list of ``[name, value]`` pairs, where ``name`` is the
+* ``headers``: A list of ``[name, value]`` lists, where ``name`` is the
   byte string header name, and ``value`` is the byte string
   header value. Order must be preserved in the HTTP response. Header names
   must be lowercased.
