@@ -478,8 +478,9 @@ Message Formats
 
 These describe the standardized message formats for the protocols this
 specification supports. All messages are ``dicts`` at the top level,
-and all keys are required unless otherwise specified (with a default to
-use if the key is missing). Keys are unicode strings.
+and all keys are required unless explicitly marked as optional. If a key is
+marked optional, a default value is specified, which is to be assumed if
+the key is missing. Keys are unicode strings.
 
 The one common key across all protocols is ``reply_channel``, a way to indicate
 the client-specific channel to send responses to. Protocols are generally
