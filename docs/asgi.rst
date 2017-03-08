@@ -560,8 +560,9 @@ Keys:
 
 * ``headers``: A list of ``[name, value]`` pairs, where ``name`` is the
   byte string header name, and ``value`` is the byte string
-  header value. Order should be preserved from the original HTTP request;
-  duplicates are possible and must be preserved in the message as received.
+  header value. Order of header values must be preserved from the original HTTP
+  request; order of header names is not important. Duplicates are possible and
+  must be preserved in the message as received.
   Header names must be lowercased.
 
 * ``body``: Body of the request, as a byte string. Optional, defaults to ``""``.
@@ -625,7 +626,7 @@ Keys:
 
 * ``headers``: A list of ``[name, value]`` pairs, where ``name`` is the
   byte string header name, and ``value`` is the byte string
-  header value. Order should be preserved in the HTTP response. Header names
+  header value. Order must be preserved in the HTTP response. Header names
   must be lowercased.
 
 * ``content``: Byte string of HTTP body content.
