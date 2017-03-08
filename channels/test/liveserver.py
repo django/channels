@@ -13,8 +13,6 @@ from .. import DEFAULT_CHANNEL_LAYER
 from ..asgi import channel_layers
 from ..worker import Worker, WorkerGroup
 
-# TODO: What we need to do in the case of multiple channel layers?
-
 
 class WorkerProcess(multiprocessing.Process):
 
@@ -121,6 +119,10 @@ class ChannelLiveServerTestCase(TransactionTestCase):
 
     def _pre_setup(self):
 
+        if len(channel_layers.configs) > 1:
+            raise ImproperlyConfigured(
+                'ChannelLiveServerTestCase does not support multiple CHANNEL_LAYERS at this time'
+            )
         super(ChannelLiveServerTestCase, self)._pre_setup()
         self._port_storage = multiprocessing.Value('i')
 
