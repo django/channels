@@ -1,10 +1,13 @@
 import multiprocessing
-import threading
+import os
+import sys
 
 import django
 from daphne.server import Server
-from django.test.testcases import LiveServerTestCase
+from django.core.exceptions import ImproperlyConfigured
+from django.test.testcases import TransactionTestCase
 from django.test.utils import modify_settings, override_settings
+from django.utils import six
 
 from .. import DEFAULT_CHANNEL_LAYER
 from ..asgi import channel_layers
@@ -58,7 +61,7 @@ class WorkerProcess(multiprocessing.Process):
             raise
 
 
-class LiveServerProcess(multiprocessing.Process):
+class DaphneProcess(multiprocessing.Process):
 
     def __init__(self, host, possible_ports, port_storage, is_ready,
                  overridden_settings, modified_settings):
@@ -69,7 +72,7 @@ class LiveServerProcess(multiprocessing.Process):
         self.is_ready = is_ready
         self.overridden_settings = overridden_settings
         self.modified_settings = modified_settings
-        super(LiveServerProcess, self).__init__()
+        super(DaphneProcess, self).__init__()
         self.daemon = True
 
     def run(self):
@@ -100,30 +103,7 @@ class LiveServerProcess(multiprocessing.Process):
             raise
 
 
-class LiveServerStub(object):
-
-    def __init__(self, host, possible_ports):
-
-        self.host = host
-        self.possible_ports = possible_ports
-        self.is_ready = threading.Event()
-
-    def start(self):
-
-        self.is_ready.set()
-
-    error = None
-
-    def terminate(self):
-
-        pass
-
-    def join(self):
-
-        pass
-
-
-class ChannelLiveServerTestCase(LiveServerTestCase):
+class ChannelLiveServerTestCase(TransactionTestCase):
 
     worker_threads = 1
 
@@ -139,20 +119,40 @@ class ChannelLiveServerTestCase(LiveServerTestCase):
         return 'ws://%s:%s' % (self._server_process.host,
                                self._port_storage.value)
 
-    @classmethod
-    def _create_server_thread(cls, host, possible_ports, connections_override):
-
-        return LiveServerStub(host, possible_ports)
-
     def _pre_setup(self):
 
         super(ChannelLiveServerTestCase, self)._pre_setup()
         self._port_storage = multiprocessing.Value('i')
 
+        # NOTE: Copypasted from Django's LiveServerTestCase.
+        specified_address = os.environ.get(
+            'DJANGO_LIVE_TEST_SERVER_ADDRESS',
+            'localhost:8081',
+        )
+        possible_ports = []
+        try:
+            host, port_ranges = specified_address.split(':')
+            for port_range in port_ranges.split(','):
+                extremes = list(map(int, port_range.split('-')))
+                assert len(extremes) in [1, 2]
+                if len(extremes) == 1:
+                    possible_ports.append(extremes[0])
+                else:
+                    for port in range(extremes[0], extremes[1] + 1):
+                        possible_ports.append(port)
+        except Exception:
+            msg = 'Invalid address ("%s") for live server.' % specified_address
+            six.reraise(
+                ImproperlyConfigured,
+                ImproperlyConfigured(msg),
+                sys.exc_info()[2],
+            )
+        # NOTE: End of copypasta.
+
         server_ready = multiprocessing.Event()
-        self._server_process = LiveServerProcess(
-            self.server_thread.host,
-            self.server_thread.possible_ports,
+        self._server_process = DaphneProcess(
+            host,
+            possible_ports,
             self._port_storage,
             server_ready,
             self._overridden_settings,
