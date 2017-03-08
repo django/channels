@@ -123,6 +123,9 @@ class ChannelLiveServerTestCase(TransactionTestCase):
             raise ImproperlyConfigured(
                 'ChannelLiveServerTestCase does not support multiple CHANNEL_LAYERS at this time'
             )
+        channel_layer = channel_layers[DEFAULT_CHANNEL_LAYER]
+        if 'flush' in channel_layer.extensions:
+            channel_layer.flush()
         super(ChannelLiveServerTestCase, self)._pre_setup()
         self._port_storage = multiprocessing.Value('i')
 
