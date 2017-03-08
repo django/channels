@@ -42,10 +42,12 @@ class WorkerProcess(multiprocessing.Process):
             if self.n_threads == 1:
                 self.worker = Worker(
                     channel_layer=channel_layers[DEFAULT_CHANNEL_LAYER],
+                    signal_handlers=False,
                 )
             else:
                 self.worker = WorkerGroup(
                     channel_layer=channel_layers[DEFAULT_CHANNEL_LAYER],
+                    signal_handlers=False,
                     n_threads=self.n_threads,
                 )
             self.worker.ready()
@@ -83,13 +85,12 @@ class LiveServerProcess(multiprocessing.Process):
                 modified = modify_settings(self.modified_settings)
                 modified.enable()
 
+            # FIXME: process all possible ports, exit after first success.
+            host, port = self.host, self.possible_ports[0]
             self.server = Server(
                 channel_layer=channel_layers[DEFAULT_CHANNEL_LAYER],
-                # FIXME: process all possible ports, exit after first success.
-                endpoints=[
-                    'tcp:interface=%s:port=%d' % (self.host,
-                                                  self.possible_ports[0])
-                ],
+                endpoints=['tcp:interface=%s:port=%d' % (host, port)],
+                signal_handlers=False,
             )
             self.port_storage.value = self.possible_ports[0]
             self.is_ready.set()
