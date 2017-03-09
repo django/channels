@@ -2,6 +2,10 @@
   "name": "django-channels",
   "version": "0.0.1",
   "description": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/django/channels.git"
+  },
   "main": "lib/index.js",
   "scripts": {
     "transpile": "rm -rf lib && babel src --out-dir lib",
