@@ -103,6 +103,8 @@ class DaphneProcess(multiprocessing.Process):
 
 class ChannelLiveServerTestCase(TransactionTestCase):
 
+    ProtocolServerProcess = DaphneProcess
+    WorkerProcess = WorkerProcess
     worker_threads = 1
 
     @property
@@ -155,7 +157,7 @@ class ChannelLiveServerTestCase(TransactionTestCase):
         # NOTE: End of copypasta.
 
         server_ready = multiprocessing.Event()
-        self._server_process = DaphneProcess(
+        self._server_process = self.ProtocolServerProcess(
             host,
             possible_ports,
             self._port_storage,
@@ -167,7 +169,7 @@ class ChannelLiveServerTestCase(TransactionTestCase):
         server_ready.wait()
 
         worker_ready = multiprocessing.Event()
-        self._worker_process = WorkerProcess(
+        self._worker_process = self.WorkerProcess(
             worker_ready,
             self.worker_threads,
             self._overridden_settings,
