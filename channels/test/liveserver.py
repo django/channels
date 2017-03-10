@@ -113,6 +113,12 @@ class DaphneProcess(multiprocessing.Process):
 
 
 class ChannelLiveServerTestCase(TransactionTestCase):
+    """
+    Does basically the same as TransactionTestCase but also launches a
+    live Daphne server and Channels worker in a separate processes so
+    that the tests may use another testing framework, such as Selenium
+    for example, instead of the built-in dummy client.
+    """
 
     ProtocolServerProcess = DaphneProcess
     WorkerProcess = WorkerProcess
