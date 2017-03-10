@@ -10,8 +10,17 @@ from django.test.utils import modify_settings, override_settings
 from django.utils import six
 
 from .. import DEFAULT_CHANNEL_LAYER
-from ..asgi import channel_layers
+from ..asgi import ChannelLayerManager
 from ..worker import Worker, WorkerGroup
+
+# NOTE: We use ChannelLayerManager to prevent layer instance sharing
+# between forked process.  Some layers implementations create
+# connections inside the __init__ method.  After forking child
+# processes can lose the ability to use this connection and typically
+# stuck on some network operation.  To prevent this we use new
+# ChannelLayerManager each time we want to initiate default layer.
+# This gives us guaranty that new layer instance will be created and
+# new connection will be established.
 
 
 class WorkerProcess(multiprocessing.Process):
@@ -39,6 +48,7 @@ class WorkerProcess(multiprocessing.Process):
                 modified = modify_settings(self.modified_settings)
                 modified.enable()
 
+            channel_layers = ChannelLayerManager()
             channel_layers[DEFAULT_CHANNEL_LAYER].router.check_default()
             if self.n_threads == 1:
                 self.worker = Worker(
@@ -86,6 +96,7 @@ class DaphneProcess(multiprocessing.Process):
                 modified = modify_settings(self.modified_settings)
                 modified.enable()
 
+            channel_layers = ChannelLayerManager()
             # FIXME: process all possible ports, exit after first success.
             host, port = self.host, self.possible_ports[0]
             self.server = Server(
@@ -121,6 +132,7 @@ class ChannelLiveServerTestCase(TransactionTestCase):
 
     def _pre_setup(self):
 
+        channel_layers = ChannelLayerManager()
         if len(channel_layers.configs) > 1:
             raise ImproperlyConfigured(
                 'ChannelLiveServerTestCase does not support multiple CHANNEL_LAYERS at this time'
