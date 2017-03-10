@@ -67,6 +67,7 @@ def channel_session(func):
         message.channel_session = session
         # Run the consumer
         try:
+            session.save()
             return func(message, *args, **kwargs)
         finally:
             # Persist session if needed
