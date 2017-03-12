@@ -298,9 +298,9 @@ to use a different layer too.
 Live Server Test Case
 ---------------------
 
-You can use integration testing frameworks like Selenium or Splinter
-to check your application against real layer installation.  Use
-``ChannelLiveServerTestCase`` for this purpose.
+You can use browser automation libraries like Selenium or Splinter to
+check your application against real layer installation.  Use
+``ChannelLiveServerTestCase`` for your acceptance tests.
 
 .. code:: python
 
@@ -317,8 +317,8 @@ to check your application against real layer installation.  Use
                 # the rest of your integration test...
 
 In the test above Daphne and Channels worker processes were fired up.
-This processes runs your real project against test database and
-default channel layer you mention in the settings.  If channel layer
+These processes run your project against the test database and the
+default channel layer you spacify in the settings.  If channel layer
 support ``flush`` extension, initial cleanup will be done.  So do not
 run this code against your production environment.  When channels
 infrastructure is ready default web browser will be also started.  You
