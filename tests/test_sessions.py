@@ -67,6 +67,21 @@ class SessionTests(ChannelTestCase):
         session2 = session_for_reply_channel("test-reply")
         self.assertEqual(session2["num_ponies"], -1)
 
+    def test_channel_session_third_arg(self):
+        """
+        Tests the channel_session decorator with message as 3rd argument
+        """
+        # Construct message to send
+        message = Message({"reply_channel": "test-reply"}, None, None)
+
+        # Run through a simple fake consumer that assigns to it
+        @channel_session
+        def inner(a, b, message):
+            message.channel_session["num_ponies"] = -1
+
+        with self.assertRaisesMessage(ValueError, 'channel_session called without Message instance'):
+            inner(None, None, message)
+
     def test_channel_session_double(self):
         """
         Tests the channel_session decorator detects being wrapped in itself
@@ -106,6 +121,22 @@ class SessionTests(ChannelTestCase):
         session2 = session_for_reply_channel("test-reply")
         self.assertEqual(session2["num_ponies"], -1)
 
+    def test_channel_session_double_third_arg(self):
+        """
+        Tests the channel_session decorator detects being wrapped in itself
+        and doesn't blow up.
+        """
+        # Construct message to send
+        message = Message({"reply_channel": "test-reply"}, None, None)
+
+        # Run through a simple fake consumer that should trigger the error
+        @channel_session
+        @channel_session
+        def inner(a, b, message):
+            message.channel_session["num_ponies"] = -1
+        with self.assertRaisesMessage(ValueError, 'channel_session called without Message instance'):
+            inner(None, None, message)
+
     def test_channel_session_no_reply(self):
         """
         Tests the channel_session decorator detects no reply channel
@@ -138,6 +169,22 @@ class SessionTests(ChannelTestCase):
 
         with self.assertRaises(ValueError):
             Consumer().inner(message)
+
+    def test_channel_session_no_reply_third_arg(self):
+        """
+        Tests the channel_session decorator detects no reply channel
+        """
+        # Construct message to send
+        message = Message({}, None, None)
+
+        # Run through a simple fake consumer that should trigger the error
+        @channel_session
+        @channel_session
+        def inner(a, b, message):
+            message.channel_session["num_ponies"] = -1
+
+        with self.assertRaisesMessage(ValueError, 'channel_session called without Message instance'):
+            inner(None, None, message)
 
     def test_http_session(self):
         """

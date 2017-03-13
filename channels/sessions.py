@@ -42,7 +42,7 @@ def channel_session(func):
     @functools.wraps(func)
     def inner(*args, **kwargs):
         message = None
-        for arg in args:
+        for arg in args[:2]:
             if isinstance(arg, Message):
                 message = arg
                 break
