@@ -38,9 +38,10 @@ class WorkerProcess(multiprocessing.Process):
     def run(self):
 
         try:
-            django.setup(**{'set_prefix': False}
-                         if django.VERSION >= (1, 10) else {})
-
+            if django.VERSION >= (1, 10):
+                django.setup(set_prefix=False)
+            else:
+                django.setup()
             if self.overridden_settings:
                 overridden = override_settings(**self.overridden_settings)
                 overridden.enable()
@@ -86,9 +87,10 @@ class DaphneProcess(multiprocessing.Process):
     def run(self):
 
         try:
-            django.setup(**{'set_prefix': False}
-                         if django.VERSION >= (1, 10) else {})
-
+            if django.VERSION >= (1, 10):
+                django.setup(set_prefix=False)
+            else:
+                django.setup()
             if self.overridden_settings:
                 overridden = override_settings(**self.overridden_settings)
                 overridden.enable()
