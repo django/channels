@@ -1,7 +1,9 @@
 # Settings for channels specifically
 from testproject.settings.base import *
 
-INSTALLED_APPS += ('channels',)
+INSTALLED_APPS += (
+    'channels',
+)
 
 CHANNEL_LAYERS = {
     'default': {
