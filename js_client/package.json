@@ -18,7 +18,6 @@
   "files": [
     "lib/index.js"
   ],
-  "author": "Flavio Curella",
   "license": "BSD-3-Clause",
   "dependencies": {
     "reconnecting-websocket": "^3.0.3"
