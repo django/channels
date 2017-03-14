@@ -111,7 +111,7 @@ class DaphneProcess(multiprocessing.Process):
 
     def resolve_port(self):
 
-        port = self.server.ports[0].result.getHost().port
+        port = self.server.listeners[0].result.getHost().port
         self.port_storage.value = port
         self.is_ready.set()
 
