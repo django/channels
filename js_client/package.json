@@ -1,6 +1,6 @@
 {
   "name": "django-channels",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "",
   "repository": {
     "type": "git",
@@ -19,7 +19,7 @@
     "lib/index.js"
   ],
   "author": "Flavio Curella",
-  "license": "MIT",
+  "license": "BSD-3-Clause",
   "dependencies": {
     "reconnecting-websocket": "^3.0.3"
   },
