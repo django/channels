@@ -1,6 +1,6 @@
 from django.core.serializers.json import DjangoJSONEncoder, json
 
-from ..auth import channel_session_user_from_http, channel_and_http_session_user_from_http
+from ..auth import channel_and_http_session_user_from_http, channel_session_user_from_http
 from ..channel import Group
 from ..exceptions import SendNotAvailableOnDemultiplexer
 from ..sessions import enforce_ordering

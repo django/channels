@@ -2,7 +2,7 @@ import functools
 
 from django.contrib import auth
 
-from .sessions import channel_session, http_session, channel_and_http_session
+from .sessions import channel_and_http_session, channel_session, http_session
 
 
 def transfer_user(from_session, to_session):
