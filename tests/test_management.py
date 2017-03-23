@@ -50,7 +50,11 @@ class RunWorkerTests(TestCase):
         """
         Test that the StaticFilesConsumer is used in debug mode.
         """
-        with self.settings(DEBUG=True, STATIC_URL='/static/', INSTALLED_APPS=['channels', 'django.contrib.staticfiles']):
+        with self.settings(
+            DEBUG=True,
+            STATIC_URL='/static/',
+            INSTALLED_APPS=['channels', 'django.contrib.staticfiles'],
+        ):
             # Use 'fake_channel' that bypasses the 'inmemory' check
             call_command('runworker', '--layer', 'fake_channel')
             mock_worker.assert_called_with(
