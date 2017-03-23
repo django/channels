@@ -8,6 +8,7 @@ from django.test import TestCase, mock
 from six import StringIO
 
 from channels.asgi import channel_layers, ChannelLayerWrapper
+from channels.binding.base import BindingMetaclass
 from channels.handler import ViewConsumer
 from channels.management.commands import runserver
 from channels.staticfiles import StaticFilesConsumer
@@ -27,6 +28,7 @@ class RunWorkerTests(TestCase):
         import channels.log
         self.stream = StringIO()
         channels.log.handler = logging.StreamHandler(self.stream)
+        BindingMetaclass.binding_classes = []
         self._old_layer = channel_layers.set(
             'fake_channel',
             ChannelLayerWrapper(
