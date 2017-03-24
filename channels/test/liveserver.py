@@ -123,18 +123,27 @@ class ChannelLiveServerTestCase(TransactionTestCase):
 
     def _pre_setup(self):
 
+        for conn in connections.all():
+            if conn.vendor == 'sqlite' and \
+               conn.is_in_memory_db(conn.settings_dict['NAME']):
+                raise ImproperlyConfigured(
+                    'ChannelLiveServerTestCase can not be used with in memory databases'
+                )
+
         channel_layers = ChannelLayerManager()
         if len(channel_layers.configs) > 1:
             raise ImproperlyConfigured(
                 'ChannelLiveServerTestCase does not support multiple CHANNEL_LAYERS at this time'
             )
+
         channel_layer = channel_layers[DEFAULT_CHANNEL_LAYER]
         if 'flush' in channel_layer.extensions:
             channel_layer.flush()
+
         super(ChannelLiveServerTestCase, self)._pre_setup()
-        self._port_storage = multiprocessing.Value('i')
 
         server_ready = multiprocessing.Event()
+        self._port_storage = multiprocessing.Value('i')
         self._server_process = self.ProtocolServerProcess(
             self.host,
             self._port_storage,
