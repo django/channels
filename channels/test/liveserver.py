@@ -44,9 +44,13 @@ class ProcessSetupMixin(object):
         for alias, db in self.databases.items():
             backend = load_backend(db['ENGINE'])
             conn = backend.DatabaseWrapper(db, alias)
-            connections[alias].creation.set_as_test_mirror(
-                conn.settings_dict,
-            )
+            if django.VERSION >= (1, 9):
+                connections[alias].creation.set_as_test_mirror(
+                    conn.settings_dict,
+                )
+            else:
+                test_db_name = conn.settings_dict['NAME']
+                connections[alias].settings_dict['NAME'] = test_db_name
 
     def override_settings(self):
 
