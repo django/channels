@@ -3,6 +3,8 @@ import multiprocessing
 import django
 from daphne.server import Server
 from django.core.exceptions import ImproperlyConfigured
+from django.db import connections
+from django.db.utils import load_backend
 from django.test.testcases import TransactionTestCase
 from django.test.utils import modify_settings, override_settings
 from twisted.internet import reactor
@@ -24,29 +26,20 @@ from ..worker import Worker, WorkerGroup
 class WorkerProcess(multiprocessing.Process):
 
     def __init__(self, is_ready, n_threads, overridden_settings,
-                 modified_settings):
+                 modified_settings, databases):
 
         self.is_ready = is_ready
         self.n_threads = n_threads
         self.overridden_settings = overridden_settings
         self.modified_settings = modified_settings
+        self.databases = databases
         super(WorkerProcess, self).__init__()
         self.daemon = True
 
     def run(self):
 
         try:
-            if django.VERSION >= (1, 10):
-                django.setup(set_prefix=False)
-            else:
-                django.setup()
-            if self.overridden_settings:
-                overridden = override_settings(**self.overridden_settings)
-                overridden.enable()
-            if self.modified_settings:
-                modified = modify_settings(self.modified_settings)
-                modified.enable()
-
+            common_setup(self)
             channel_layers = ChannelLayerManager()
             channel_layers[DEFAULT_CHANNEL_LAYER].router.check_default()
             if self.n_threads == 1:
@@ -71,32 +64,21 @@ class WorkerProcess(multiprocessing.Process):
 class DaphneProcess(multiprocessing.Process):
 
     def __init__(self, host, port_storage, is_ready, overridden_settings,
-                 modified_settings):
+                 modified_settings, databases):
 
         self.host = host
         self.port_storage = port_storage
         self.is_ready = is_ready
         self.overridden_settings = overridden_settings
         self.modified_settings = modified_settings
+        self.databases = databases
         super(DaphneProcess, self).__init__()
         self.daemon = True
 
     def run(self):
 
         try:
-            if django.VERSION >= (1, 10):
-                django.setup(set_prefix=False)
-            else:
-                django.setup()
-
-            if self.overridden_settings:
-                overridden = override_settings(**self.overridden_settings)
-                overridden.enable()
-
-            if self.modified_settings:
-                modified = modify_settings(self.modified_settings)
-                modified.enable()
-
+            common_setup(self)
             channel_layers = ChannelLayerManager()
             self.server = Server(
                 channel_layer=channel_layers[DEFAULT_CHANNEL_LAYER],
@@ -159,6 +141,7 @@ class ChannelLiveServerTestCase(TransactionTestCase):
             server_ready,
             self._overridden_settings,
             self._modified_settings,
+            connections.databases,
         )
         self._server_process.start()
         server_ready.wait()
@@ -169,6 +152,7 @@ class ChannelLiveServerTestCase(TransactionTestCase):
             self.worker_threads,
             self._overridden_settings,
             self._modified_settings,
+            connections.databases,
         )
         self._worker_process.start()
         worker_ready.wait()
@@ -180,3 +164,27 @@ class ChannelLiveServerTestCase(TransactionTestCase):
         self._worker_process.terminate()
         self._worker_process.join()
         super(ChannelLiveServerTestCase, self)._post_teardown()
+
+
+def common_setup(process):
+    """Common bootstrap steps for subprocess."""
+
+    if django.VERSION >= (1, 10):
+        django.setup(set_prefix=False)
+    else:
+        django.setup()
+
+    for alias, db in process.databases.items():
+        backend = load_backend(db['ENGINE'])
+        conn = backend.DatabaseWrapper(db, alias)
+        connections[alias].creation.set_as_test_mirror(
+            conn.settings_dict,
+        )
+
+    if process.overridden_settings:
+        overridden = override_settings(**process.overridden_settings)
+        overridden.enable()
+
+    if process.modified_settings:
+        modified = modify_settings(process.modified_settings)
+        modified.enable()
