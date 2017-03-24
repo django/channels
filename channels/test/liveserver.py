@@ -23,7 +23,43 @@ from ..worker import Worker, WorkerGroup
 # new connection will be established.
 
 
-class WorkerProcess(multiprocessing.Process):
+class ProcessSetupMixin(object):
+    """Common initialization steps for test subprocess."""
+
+    def common_setup(self):
+
+        self.setup_django()
+        self.setup_databases()
+        self.override_settings()
+
+    def setup_django(self):
+
+        if django.VERSION >= (1, 10):
+            django.setup(set_prefix=False)
+        else:
+            django.setup()
+
+    def setup_databases(self):
+
+        for alias, db in self.databases.items():
+            backend = load_backend(db['ENGINE'])
+            conn = backend.DatabaseWrapper(db, alias)
+            connections[alias].creation.set_as_test_mirror(
+                conn.settings_dict,
+            )
+
+    def override_settings(self):
+
+        if self.overridden_settings:
+            overridden = override_settings(**self.overridden_settings)
+            overridden.enable()
+
+        if self.modified_settings:
+            modified = modify_settings(self.modified_settings)
+            modified.enable()
+
+
+class WorkerProcess(ProcessSetupMixin, multiprocessing.Process):
 
     def __init__(self, is_ready, n_threads, overridden_settings,
                  modified_settings, databases):
@@ -39,7 +75,7 @@ class WorkerProcess(multiprocessing.Process):
     def run(self):
 
         try:
-            common_setup(self)
+            self.common_setup()
             channel_layers = ChannelLayerManager()
             channel_layers[DEFAULT_CHANNEL_LAYER].router.check_default()
             if self.n_threads == 1:
@@ -61,7 +97,7 @@ class WorkerProcess(multiprocessing.Process):
             raise
 
 
-class DaphneProcess(multiprocessing.Process):
+class DaphneProcess(ProcessSetupMixin, multiprocessing.Process):
 
     def __init__(self, host, port_storage, is_ready, overridden_settings,
                  modified_settings, databases):
@@ -78,7 +114,7 @@ class DaphneProcess(multiprocessing.Process):
     def run(self):
 
         try:
-            common_setup(self)
+            self.common_setup()
             channel_layers = ChannelLayerManager()
             self.server = Server(
                 channel_layer=channel_layers[DEFAULT_CHANNEL_LAYER],
@@ -173,27 +209,3 @@ class ChannelLiveServerTestCase(TransactionTestCase):
         self._worker_process.terminate()
         self._worker_process.join()
         super(ChannelLiveServerTestCase, self)._post_teardown()
-
-
-def common_setup(process):
-    """Common bootstrap steps for subprocess."""
-
-    if django.VERSION >= (1, 10):
-        django.setup(set_prefix=False)
-    else:
-        django.setup()
-
-    for alias, db in process.databases.items():
-        backend = load_backend(db['ENGINE'])
-        conn = backend.DatabaseWrapper(db, alias)
-        connections[alias].creation.set_as_test_mirror(
-            conn.settings_dict,
-        )
-
-    if process.overridden_settings:
-        overridden = override_settings(**process.overridden_settings)
-        overridden.enable()
-
-    if process.modified_settings:
-        modified = modify_settings(process.modified_settings)
-        modified.enable()
