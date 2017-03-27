@@ -11,6 +11,7 @@ from twisted.internet import reactor
 
 from .. import DEFAULT_CHANNEL_LAYER
 from ..asgi import ChannelLayerManager
+from ..staticfiles import StaticFilesConsumer
 from ..worker import Worker, WorkerGroup
 
 # NOTE: We use ChannelLayerManager to prevent layer instance sharing
@@ -81,7 +82,9 @@ class WorkerProcess(ProcessSetupMixin, multiprocessing.Process):
         try:
             self.common_setup()
             channel_layers = ChannelLayerManager()
-            channel_layers[DEFAULT_CHANNEL_LAYER].router.check_default()
+            channel_layers[DEFAULT_CHANNEL_LAYER].router.check_default(
+                http_consumer=StaticFilesConsumer(),
+            )
             if self.n_threads == 1:
                 self.worker = Worker(
                     channel_layer=channel_layers[DEFAULT_CHANNEL_LAYER],
