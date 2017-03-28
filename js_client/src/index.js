@@ -1,8 +1,6 @@
 import ReconnectingWebSocket from 'reconnecting-websocket';
 
 
-const noop = (...args) => {};
-
 /**
  * Bridge between Channels and plain javascript.
  *
@@ -15,12 +13,15 @@ const noop = (...args) => {};
  */
 export class WebSocketBridge {
   constructor(options) {
-    this._socket = null;
+    /**
+     * The underlaying `ReconnectingWebSocket` instance.
+     * 
+     * @type {ReconnectingWebSocket}
+     */
+    this.socket = null;
     this.streams = {};
     this.default_cb = null;
-    this.options = Object.assign({}, {
-      onopen: noop,
-    }, options);
+    this.options = {...options};
   }
 
   /**
@@ -36,14 +37,20 @@ export class WebSocketBridge {
    */
   connect(url, protocols, options) {
     let _url;
+    // Use wss:// if running on https://
+    const scheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const base_url = `${scheme}://${window.location.host}`;
     if (url === undefined) {
-      // Use wss:// if running on https://
-      const scheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
-      _url = `${scheme}://${window.location.host}/ws`;
+      _url = base_url;
     } else {
-      _url = url;
+      // Support relative URLs
+      if (url[0] == '/') {
+        _url = `${base_url}${url}`;
+      } else {
+        _url = url;
+      }
     }
-    this._socket = new ReconnectingWebSocket(_url, protocols, options);
+    this.socket = new ReconnectingWebSocket(_url, protocols, options);
   }
 
   /**
@@ -61,7 +68,7 @@ export class WebSocketBridge {
    */
   listen(cb) {
     this.default_cb = cb;
-    this._socket.onmessage = (event) => {
+    this.socket.onmessage = (event) => {
       const msg = JSON.parse(event.data);
       let action;
       let stream;
@@ -77,8 +84,6 @@ export class WebSocketBridge {
         this.default_cb ? this.default_cb(action, stream) : null;
       }
     };
-
-    this._socket.onopen = this.options.onopen;
   }
 
   /**
@@ -113,7 +118,7 @@ export class WebSocketBridge {
    * webSocketBridge.send({prop1: 'value1', prop2: 'value1'});
    */
   send(msg) {
-    this._socket.send(JSON.stringify(msg));
+    this.socket.send(JSON.stringify(msg));
   }
 
   /**
@@ -131,7 +136,7 @@ export class WebSocketBridge {
           stream,
           payload: action
         }
-        this._socket.send(JSON.stringify(msg));
+        this.socket.send(JSON.stringify(msg));
       }
     }
   }

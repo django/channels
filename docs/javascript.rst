@@ -23,22 +23,19 @@ specific integration on top of it.
 To process messages::
 
     const webSocketBridge = new channels.WebSocketBridge();
-    webSocketBridge.connect();
+    webSocketBridge.connect('/ws/');
     webSocketBridge.listen(function(action, stream) {
       console.log(action, stream);
     });
 
 To send messages, use the `send` method::
 
-    ```
     webSocketBridge.send({prop1: 'value1', prop2: 'value1'});
-
-    ```
 
 To demultiplex specific streams::
 
     webSocketBridge.connect();
-    webSocketBridge.listen();
+    webSocketBridge.listen('/ws/');
     webSocketBridge.demultiplex('mystream', function(action, stream) {
       console.log(action, stream);
     });
@@ -49,6 +46,13 @@ To demultiplex specific streams::
 To send a message to a specific stream::
 
     webSocketBridge.stream('mystream').send({prop1: 'value1', prop2: 'value1'})
+
+The `WebSocketBridge` instance exposes the underlaying `ReconnectingWebSocket` as the `socket` property. You can use this property to add any custom behavior. For example::
+
+    webSocketBridge.socket.addEventListener('open', function() {
+        console.log("Connected to WebSocket");
+    })
+
 
 The library is also available as a npm module, under the name
 `django-channels <https://www.npmjs.com/package/django-channels>`_

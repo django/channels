@@ -128,7 +128,7 @@ Send after any server pushes, and before any response chunks. If ``ChannelFull``
 is encountered, wait and try again later, optionally giving up after a
 predetermined timeout.
 
-Channel: ``http.response!``
+Channel: Defined by server, suggested ``http.response.RANDOMPART!CLIENTID``
 
 Keys:
 
@@ -154,7 +154,7 @@ Response Chunk
 Must be sent after an initial Response. If ``ChannelFull``
 is encountered, wait and try again later.
 
-Channel: ``http.response!``
+Channel: Defined by server, suggested ``http.response.RANDOMPART!CLIENTID``
 
 Keys:
 
@@ -194,7 +194,7 @@ If the remote peer does not support server push, either because it's not a
 HTTP/2 peer or because SETTINGS_ENABLE_PUSH is set to 0, the server must do
 nothing in response to this message.
 
-Channel: ``http.response!``
+Channel: Defined by server, suggested ``http.response.RANDOMPART!CLIENTID``
 
 Keys:
 
@@ -354,11 +354,16 @@ and try again.
 If received while the connection is waiting for acceptance after a ``connect``
 message:
 
+* If ``accept`` is ``True``, accept the connection (and send any data provided).
+* If ``accept`` is ``False``, reject the connection and do nothing else.
+  If ``bytes`` or ``text`` were also present they must be ignored.
 * If ``bytes`` or ``text`` is present, accept the connection and send the data.
-* If ``accept`` is ``True``, accept the connection and do nothing else.
 * If ``close`` is ``True`` or a positive integer, reject the connection. If
   ``bytes`` or ``text`` is also set, it should accept the connection, send the
-  frame, then immediately close the connection.
+  frame, then immediately close the connection. Note that any close code integer
+  sent is ignored, as connections are rejected with HTTP's ``403 Forbidden``,
+  unless data is also sent, in which case a full WebSocket close is done with
+  the provided code.
 
 If received while the connection is established:
 
@@ -367,7 +372,7 @@ If received while the connection is established:
   any send.
 * ``accept`` is ignored.
 
-Channel: ``websocket.send!``
+Channel: Defined by server, suggested ``websocket.send.RANDOMPART!CLIENTID``
 
 Keys:
 
