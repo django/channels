@@ -18,9 +18,6 @@ Major Changes
   work but will trigger a deprecation warning, and ``channels.tests`` will be
   removed completely in version 1.3.
 
-* Add ``ChannelLiveServerTestCase`` for integration testing.  It is
-  possible to run Selenium with JavaScript which operates WebSockets.
-
 Minor Changes & Bugfixes
 ------------------------
 
