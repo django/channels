@@ -24,7 +24,7 @@ from ..worker import Worker, WorkerGroup
 # new connection will be established.
 
 
-class ProcessSetupMixin(object):
+class ProcessSetup(multiprocessing.Process):
     """Common initialization steps for test subprocess."""
 
     def common_setup(self):
@@ -64,7 +64,7 @@ class ProcessSetupMixin(object):
             modified.enable()
 
 
-class WorkerProcess(ProcessSetupMixin, multiprocessing.Process):
+class WorkerProcess(ProcessSetup):
 
     def __init__(self, is_ready, n_threads, overridden_settings,
                  modified_settings, databases):
@@ -104,7 +104,7 @@ class WorkerProcess(ProcessSetupMixin, multiprocessing.Process):
             raise
 
 
-class DaphneProcess(ProcessSetupMixin, multiprocessing.Process):
+class DaphneProcess(ProcessSetup):
 
     def __init__(self, host, port_storage, is_ready, overridden_settings,
                  modified_settings, databases):
