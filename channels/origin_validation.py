@@ -11,8 +11,6 @@ except ImportError:
     from urlparse import urlparse
 
 
-
-
 class BaseOriginValidator(object):
     """
     Base class-based decorator for origin validation.

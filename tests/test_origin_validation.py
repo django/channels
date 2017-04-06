@@ -23,7 +23,7 @@ class OriginValidationTestCase(ChannelTestCase):
         self.assertTrue(connect(message))
 
     @override_settings(ALLOWED_HOSTS=['example.com'])
-    def test_valid_origin(self):
+    def test_invalid_origin(self):
         content = {
             'headers': [[b'origin', b'http://example.org']]
         }
