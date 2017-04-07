@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 from django.test import override_settings
 from channels.exceptions import DenyConnection
-from channels.origin_validation import allowed_hosts_only
+from channels.security.websockets import allowed_hosts_only
 from channels.message import Message
 from channels.test import ChannelTestCase
 

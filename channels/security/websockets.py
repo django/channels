@@ -3,7 +3,7 @@ from functools import update_wrapper
 from django.conf import settings
 from django.http.request import validate_host
 
-from .exceptions import DenyConnection
+from ..exceptions import DenyConnection
 
 try:
     from urllib.parse import urlparse
