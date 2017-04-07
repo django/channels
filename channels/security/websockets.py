@@ -13,14 +13,15 @@ except ImportError:
 
 class BaseOriginValidator(object):
     """
-    Base class-based decorator for origin validation.
+    Base class-based decorator for origin validation of WebSocket connect
+    messages.
 
     This base class handles parsing of the origin header. When the origin header
-    is missing, empty or contains non-ascii characters, the connection is
-    refused.
+    is missing, empty or contains non-ascii characters, it raises a
+    DenyConnection exception to reject the connection.
 
-    Sub-classes must overwrite the method validate_origin to return False when
-    the origin is invalid.
+    Subclasses must overwrite the method validate_origin(self, message, origin)
+    to return True when a message should be accepted, False otherwise.
     """
 
     def __init__(self, func):
@@ -44,6 +45,12 @@ class BaseOriginValidator(object):
         raise KeyError('No header named "{}"'.format(name))
 
     def get_origin(self, message):
+        """
+        Returns the origin of a WebSocket connect message.
+
+        Raises DenyConnection for messages with missing or non-ascii Origin
+        header.
+        """
         try:
             header = self.get_header(message, b'origin')[0]
         except (IndexError, KeyError):
@@ -55,13 +62,18 @@ class BaseOriginValidator(object):
         return origin
 
     def validate_origin(self, message, origin):
+        """
+        Validates the origin of a WebSocket connect message.
+
+        Must be overwritten by subclasses.
+        """
         raise NotImplemented('You must overwrite this method.')
 
 
 class AllowedHostsOnlyOriginValidator(BaseOriginValidator):
     """
     Class-based decorator for websocket consumers that checks that
-    the origin is allowed according to the setting ALLOWED_HOSTS.
+    the origin is allowed according to the ALLOWED_HOSTS settings.
     """
 
     def validate_origin(self, message, origin):
