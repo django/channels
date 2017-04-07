@@ -536,8 +536,8 @@ request in the HTTP header named ``Origin``, but validating that header is left
 to the server.
 
 You can use the decorator ``channels.security.websockets.allowed_hosts_only``
-on a ``websocket.connect`` consumer to ensure that only requests originating
-from a host listed in the ``ALLOWED_HOSTS`` setting can connect to it::
+on a ``websocket.connect`` consumer to only allow requests originating
+from hosts listed in the ``ALLOWED_HOSTS`` setting::
 
     # In consumers.py
     from channels import Channel, Group
@@ -559,8 +559,8 @@ The name ``allowed_hosts_only`` is an alias for the class-based decorator
 ``AllowedHostsOnlyOriginValidator``, which inherits from
 ``BaseOriginValidator``. If you have custom requirements for origin validation,
 create a subclass and overwrite the method
-``validate_origin(self, message, origin)``. It must raise a ``DenyConnection``
-exception for messages from an invalid origin.
+``validate_origin(self, message, origin)``. It must return True when a message
+should be accepted, False otherwise.
 
 
 Routing
