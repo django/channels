@@ -111,7 +111,6 @@ def requeue_messages(message):
         else:
             break
 
-    Uses sessions to track ordering and socket-specific wait channels for unordered messages.
 
 def enforce_ordering(func=None, slight=False):
     """
@@ -137,31 +136,17 @@ def enforce_ordering(func=None, slight=False):
             order = int(message.content['order'])
             # See what the current next order should be
             next_order = message.channel_session.get("__channels_next_order", 0)
-            if order == next_order or (slight and next_order > 0):
+            if order == next_order:
                 # Run consumer
                 func(message, *args, **kwargs)
                 # Mark next message order as available for running
-                if order == 0 or not slight:
-                    message.channel_session["__channels_next_order"] = order + 1
-                    message.channel_session.save()
-                # Requeue any pending wait channel messages for this socket connection back onto it's original channel
-                while True:
-                    wait_channel = "__wait__.%s" % message.reply_channel.name
-                    channel, content = message.channel_layer.receive_many([wait_channel], block=False)
-                    if channel:
-                        original_channel = content.pop("original_channel")
-                        try:
-                            message.channel_layer.send(original_channel, content)
-                        except message.channel_layer.ChannelFull:
-                            raise message.channel_layer.ChannelFull(
-                                "Cannot requeue pending __wait__ channel message " +
-                                "back on to already full channel %s" % original_channel
-                            )
-                    else:
-                        break
+                message.channel_session["__channels_next_order"] = order + 1
+                message.channel_session.save()
+                message.channel_session.modified = False
+                requeue_messages(message)
             else:
                 # Since out of order, enqueue message temporarily to wait channel for this socket connection
-                wait_channel = "__wait__.%s" % message.reply_channel.name
+                wait_channel = wait_channel_name(message.reply_channel.name)
                 message.content["original_channel"] = message.channel.name
                 try:
                     message.channel_layer.send(wait_channel, message.content)
@@ -170,6 +155,11 @@ def enforce_ordering(func=None, slight=False):
                         "Cannot add unordered message to already " +
                         "full __wait__ channel for socket %s" % message.reply_channel.name
                     )
+                # Next order may have changed while this message was being processed
+                # Requeue messages if this has happened
+                if order == message.channel_session.load().get("__channels_next_order", 0):
+                    requeue_messages(message)
+
         return inner
     if func is not None:
         return decorator(func)
