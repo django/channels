@@ -73,7 +73,7 @@ class WorkerTests(ChannelTestCase):
 
     def test_channel_full(self):
         """
-        Tests that when channel capacity is hit when processing due messages, 
+        Tests that when channel capacity is hit when processing due messages,
         message is requeued instead of dropped
         """
         for i in range(10):
@@ -105,6 +105,7 @@ class WorkerTests(ChannelTestCase):
             worker.run()
 
         self.assertEqual(DelayedMessage.objects.count(), 1)
+
 
 class DelayedMessageTests(ChannelTestCase):
 
