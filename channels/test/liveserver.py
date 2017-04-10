@@ -166,9 +166,8 @@ class ChannelLiveServerTestCase(TransactionTestCase):
 
     def _pre_setup(self):
 
-        for conn in connections.all():
-            if conn.vendor == 'sqlite' and \
-               conn.is_in_memory_db(conn.settings_dict['NAME']):
+        for connection in connections.all():
+            if self._is_in_memory_db(connection):
                 raise ImproperlyConfigured(
                     'ChannelLiveServerTestCase can not be used with in memory databases'
                 )
@@ -216,3 +215,14 @@ class ChannelLiveServerTestCase(TransactionTestCase):
         self._worker_process.terminate()
         self._worker_process.join()
         super(ChannelLiveServerTestCase, self)._post_teardown()
+
+    def _is_in_memory_db(self, connection):
+        """Check if DatabaseWrapper holds in memory database."""
+
+        if connection.vendor == 'sqlite':
+            if django.VERSION >= (1, 11):
+                return connection.is_in_memory_db()
+            else:
+                return connection.is_in_memory_db(
+                    connection.settings_dict['NAME'],
+                )
