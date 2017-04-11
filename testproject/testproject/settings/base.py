@@ -29,3 +29,5 @@ DATABASES = {
         },
     },
 }
+
+ALLOWED_HOSTS = ['*']
