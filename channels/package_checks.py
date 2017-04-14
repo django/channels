@@ -3,6 +3,7 @@ from distutils.version import StrictVersion
 
 
 required_versions = {
+    "asgi_rabbitmq": "0.4.0",
     "asgi_redis": "1.2.0",
     "asgi_ipc": "1.3.0",
 }
