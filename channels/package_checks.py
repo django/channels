@@ -21,7 +21,7 @@ def check_all():
         try:
             module = importlib.import_module(package)
         except ImportError:
-            return
+            continue
         else:
             if StrictVersion(version) > StrictVersion(module.__version__):
                 raise RuntimeError("Your version of %s is too old - it must be at least %s" % (
