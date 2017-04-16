@@ -13,8 +13,8 @@ setup(
     include_package_data=True,
     install_requires=[
         'Django>=1.8',
-        'asgiref>=1.0.1',
-        'daphne>=1.0.0',
+        'asgiref~=1.1',
+        'daphne>=1.2.0',
     ],
     extras_require={
         'tests': [
@@ -22,7 +22,7 @@ setup(
             'mock ; python_version < "3.0"',
             'flake8>=2.0,<3.0',
             'isort',
-        ]
+        ],
     },
     classifiers=[
         'Development Status :: 5 - Production/Stable',
