@@ -13,14 +13,14 @@ from .base import Client
 json_module = json  # alias for using at functions with json kwarg
 
 
-class HttpClient(Client):
+class WSClient(Client):
     """
     Channel http/ws client abstraction that provides easy methods for testing full life cycle of message in channels
     with determined reply channel, auth opportunity, cookies, headers and so on
     """
 
     def __init__(self, **kwargs):
-        super(HttpClient, self).__init__(**kwargs)
+        super(WSClient, self).__init__(**kwargs)
         self._session = None
         self._headers = {}
         self._cookies = {}
@@ -66,7 +66,7 @@ class HttpClient(Client):
         """
         Return text content of a message for client channel and decoding it if json kwarg is set
         """
-        content = super(HttpClient, self).receive()
+        content = super(WSClient, self).receive()
         if content and json and 'text' in content and isinstance(content['text'], six.string_types):
             return json_module.loads(content['text'])
         return content.get('text', content) if content else None
@@ -97,7 +97,7 @@ class HttpClient(Client):
         return self.consume(channel, fail_on_none=fail_on_none, check_accept=check_accept)
 
     def consume(self, channel, fail_on_none=True, check_accept=True):
-        result = super(HttpClient, self).consume(channel, fail_on_none=fail_on_none)
+        result = super(WSClient, self).consume(channel, fail_on_none=fail_on_none)
         if channel == "websocket.connect" and check_accept:
             received = self.receive(json=False)
             if received != {"accept": True}:
