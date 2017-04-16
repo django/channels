@@ -76,18 +76,22 @@ class HttpClient(Client):
         Send a message to a channel.
         Adds reply_channel name and channel_session to the message.
         """
+        self.channel_layer.send(to, self._get_content(content, text, path))
+        self._session_cookie = False
+
+    def _get_content(self, content={}, text=None, path='/'):
         content = copy.deepcopy(content)
         content.setdefault('reply_channel', self.reply_channel)
         content.setdefault('path', path)
         content.setdefault('headers', self.headers)
         text = text or content.get('text', None)
+
         if text is not None:
             if not isinstance(text, six.string_types):
                 content['text'] = json.dumps(text)
             else:
                 content['text'] = text
-        self.channel_layer.send(to, content)
-        self._session_cookie = False
+        return content
 
     def send_and_consume(self, channel, content={}, text=None, path='/', fail_on_none=True, check_accept=True):
         """
