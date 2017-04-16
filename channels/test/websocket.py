@@ -144,4 +144,3 @@ def _encoded_cookies(cookies):
         cookie_encoder[k] = v
 
     return cookie_encoder.output(header='', sep=';').encode("ascii")
-
