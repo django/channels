@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 from django.http.cookie import parse_cookie
 
 from channels import route
+from channels.exceptions import ChannelSocketException
 from channels.handler import AsgiRequest
 from channels.test import ChannelTestCase, HttpClient, apply_routes
 from channels.sessions import enforce_ordering
@@ -104,3 +105,21 @@ class HttpClientTests(ChannelTestCase):
 
             client.send_and_consume('websocket.receive', path=path)
             self.assertDictEqual(client.receive(), {})
+
+    def test_channel_socket_exception(self):
+
+        class MyChannelSocketException(ChannelSocketException):
+
+            def run(self, message):
+                message.reply_channel.send({'text': 'error'})
+
+        def consumer(message):
+            raise MyChannelSocketException
+
+        client = HttpClient()
+        with apply_routes(route('websocket.receive', consumer)):
+            client.send_and_consume('websocket.receive')
+
+            self.assertEqual(client.receive(json=False), 'error')
+
+
