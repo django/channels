@@ -104,4 +104,3 @@ class HttpClientTests(ChannelTestCase):
 
             client.send_and_consume('websocket.receive', path=path)
             self.assertDictEqual(client.receive(), {})
-
