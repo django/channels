@@ -2,11 +2,10 @@ from __future__ import unicode_literals
 
 from django.http.cookie import parse_cookie
 
-from channels.test import ChannelTestCase, WSClient
 from channels import route
 from channels.exceptions import ChannelSocketException
 from channels.handler import AsgiRequest
-from channels.test import ChannelTestCase, HttpClient, apply_routes
+from channels.test import ChannelTestCase, WSClient, apply_routes
 from channels.sessions import enforce_ordering
 
 
@@ -29,7 +28,7 @@ class WSClientTests(ChannelTestCase):
                          cookie_dict)
 
     def test_simple_content(self):
-        client = HttpClient()
+        client = WSClient()
         content = client._get_content(text={'key': 'value'}, path='/my/path')
 
         self.assertEqual(content['text'], '{"key": "value"}')
@@ -38,7 +37,7 @@ class WSClientTests(ChannelTestCase):
         self.assertTrue('headers' in content)
 
     def test_path_in_content(self):
-        client = HttpClient()
+        client = WSClient()
         content = client._get_content(content={'path': '/my_path'}, text={'path': 'hi'}, path='/my/path')
 
         self.assertEqual(content['text'], '{"path": "hi"}')
@@ -47,7 +46,7 @@ class WSClientTests(ChannelTestCase):
         self.assertTrue('headers' in content)
 
     def test_session_in_headers(self):
-        client = HttpClient()
+        client = WSClient()
         content = client._get_content()
         self.assertTrue('path' in content)
         self.assertEqual(content['path'], '/')
@@ -57,7 +56,7 @@ class WSClientTests(ChannelTestCase):
         self.assertTrue(b'sessionid' in content['headers']['cookie'])
 
     def test_ordering_in_content(self):
-        client = HttpClient(ordered=True)
+        client = WSClient(ordered=True)
         content = client._get_content()
         self.assertTrue('order' in content)
         self.assertEqual(content['order'], 0)
@@ -68,7 +67,7 @@ class WSClientTests(ChannelTestCase):
 
     def test_ordering(self):
 
-        client = HttpClient(ordered=True)
+        client = WSClient(ordered=True)
 
         @enforce_ordering
         def consumer(message):
@@ -84,7 +83,7 @@ class WSClientTests(ChannelTestCase):
             self.assertEqual(client.receive(), 3)
 
     def test_get_params(self):
-        client = HttpClient()
+        client = WSClient()
         content = client._get_content(path='/my/path?test=1&token=2')
         self.assertTrue('path' in content)
         self.assertTrue('query_string' in content)
@@ -92,7 +91,7 @@ class WSClientTests(ChannelTestCase):
         self.assertEqual(content['query_string'], 'test=1&token=2')
 
     def test_get_params_with_consumer(self):
-        client = HttpClient(ordered=True)
+        client = WSClient(ordered=True)
 
         def consumer(message):
             message.content['method'] = 'FAKE'
@@ -117,7 +116,7 @@ class WSClientTests(ChannelTestCase):
         def consumer(message):
             raise MyChannelSocketException
 
-        client = HttpClient()
+        client = WSClient()
         with apply_routes(route('websocket.receive', consumer)):
             client.send_and_consume('websocket.receive')
 
