@@ -121,5 +121,3 @@ class HttpClientTests(ChannelTestCase):
             client.send_and_consume('websocket.receive')
 
             self.assertEqual(client.receive(json=False), 'error')
-
-

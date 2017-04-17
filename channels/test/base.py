@@ -11,8 +11,8 @@ from django.test.testcases import TestCase, TransactionTestCase
 
 from .. import DEFAULT_CHANNEL_LAYER
 from ..asgi import ChannelLayerWrapper, channel_layers
-from ..exceptions import ChannelSocketException
 from ..channel import Group
+from ..exceptions import ChannelSocketException
 from ..message import Message
 from ..routing import Router, include
 from ..signals import consumer_finished, consumer_started
