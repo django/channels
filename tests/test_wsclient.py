@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 from django.http.cookie import parse_cookie
 
+from channels.test import ChannelTestCase, WSClient
 from channels import route
 from channels.exceptions import ChannelSocketException
 from channels.handler import AsgiRequest
@@ -9,9 +10,9 @@ from channels.test import ChannelTestCase, HttpClient, apply_routes
 from channels.sessions import enforce_ordering
 
 
-class HttpClientTests(ChannelTestCase):
+class WSClientTests(ChannelTestCase):
     def test_cookies(self):
-        client = HttpClient()
+        client = WSClient()
         client.set_cookie('foo', 'not-bar')
         client.set_cookie('foo', 'bar')
         client.set_cookie('qux', 'qu;x')
