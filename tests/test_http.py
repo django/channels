@@ -2,7 +2,9 @@ from __future__ import unicode_literals
 
 from django.http.cookie import parse_cookie
 
-from channels.test import ChannelTestCase, HttpClient
+from channels import route
+from channels.test import ChannelTestCase, HttpClient, apply_routes
+from channels.sessions import enforce_ordering
 
 
 class HttpClientTests(ChannelTestCase):
@@ -51,4 +53,29 @@ class HttpClientTests(ChannelTestCase):
         self.assertTrue('cookie' in content['headers'])
         self.assertTrue('sessionid' in content['headers']['cookie'])
 
+    def test_ordering_in_content(self):
+        client = HttpClient(ordered=True)
+        content = client._get_content()
+        self.assertTrue('order' in content)
+        self.assertEqual(content['order'], 0)
+        client.order = 2
+        content = client._get_content()
+        self.assertTrue('order' in content)
+        self.assertEqual(content['order'], 2)
 
+    def test_ordering(self):
+
+        client = HttpClient(ordered=True)
+
+        @enforce_ordering
+        def consumer(message):
+            message.reply_channel.send({'text': message['text']})
+
+        with apply_routes(route('websocket.receive', consumer)):
+            client.send_and_consume('websocket.receive', text='1')  # order = 0
+            client.send_and_consume('websocket.receive', text='2')  # order = 1
+            client.send_and_consume('websocket.receive', text='3')  # order = 2
+
+            self.assertEqual(client.receive(), 1)
+            self.assertEqual(client.receive(), 2)
+            self.assertEqual(client.receive(), 3)
