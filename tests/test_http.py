@@ -52,7 +52,7 @@ class HttpClientTests(ChannelTestCase):
 
         self.assertTrue('headers' in content)
         self.assertTrue('cookie' in content['headers'])
-        self.assertTrue('sessionid' in content['headers']['cookie'])
+        self.assertTrue(b'sessionid' in content['headers']['cookie'])
 
     def test_ordering_in_content(self):
         client = HttpClient(ordered=True)
