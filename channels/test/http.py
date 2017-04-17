@@ -78,13 +78,22 @@ class HttpClient(Client):
         Send a message to a channel.
         Adds reply_channel name and channel_session to the message.
         """
+        if to != 'websocket.connect' and '?' in path:
+            path = path.split('?')[0]
         self.channel_layer.send(to, self._get_content(content, text, path))
         self._session_cookie = False
 
     def _get_content(self, content={}, text=None, path='/'):
         content = copy.deepcopy(content)
         content.setdefault('reply_channel', self.reply_channel)
-        content.setdefault('path', path)
+
+        if '?' in path:
+            path, query_string = path.split('?')
+            content.setdefault('path', path)
+            content.setdefault('query_string', query_string)
+        else:
+            content.setdefault('path', path)
+
         content.setdefault('headers', self.headers)
 
         if self._ordered:

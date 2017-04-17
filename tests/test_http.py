@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 from django.http.cookie import parse_cookie
 
 from channels import route
+from channels.handler import AsgiRequest
 from channels.test import ChannelTestCase, HttpClient, apply_routes
 from channels.sessions import enforce_ordering
 
@@ -79,3 +80,28 @@ class HttpClientTests(ChannelTestCase):
             self.assertEqual(client.receive(), 1)
             self.assertEqual(client.receive(), 2)
             self.assertEqual(client.receive(), 3)
+
+    def test_get_params(self):
+        client = HttpClient()
+        content = client._get_content(path='/my/path?test=1&token=2')
+        self.assertTrue('path' in content)
+        self.assertTrue('query_string' in content)
+        self.assertEqual(content['path'], '/my/path')
+        self.assertEqual(content['query_string'], 'test=1&token=2')
+
+    def test_get_params_with_consumer(self):
+        client = HttpClient(ordered=True)
+
+        def consumer(message):
+            message.content['method'] = 'FAKE'
+            message.reply_channel.send({'text': dict(AsgiRequest(message).GET)})
+
+        with apply_routes([route('websocket.receive', consumer, path=r'^/test'),
+                           route('websocket.connect', consumer, path=r'^/test')]):
+            path = '/test?key1=val1&key2=val2&key1=val3'
+            client.send_and_consume('websocket.connect', path=path, check_accept=False)
+            self.assertDictEqual(client.receive(), {'key2': ['val2'], 'key1': ['val1', 'val3']})
+
+            client.send_and_consume('websocket.receive', path=path)
+            self.assertDictEqual(client.receive(), {})
+
