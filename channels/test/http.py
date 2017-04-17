@@ -20,6 +20,8 @@ class HttpClient(Client):
     """
 
     def __init__(self, **kwargs):
+        self._ordered = kwargs.pop('ordered', False)
+        self.order = 0
         super(HttpClient, self).__init__(**kwargs)
         self._session = None
         self._headers = {}
@@ -84,6 +86,13 @@ class HttpClient(Client):
         content.setdefault('reply_channel', self.reply_channel)
         content.setdefault('path', path)
         content.setdefault('headers', self.headers)
+
+        if self._ordered:
+            if 'order' in content:
+                raise ValueError('Do not use "order" manually with "ordered=True"')
+            content['order'] = self.order
+            self.order += 1
+
         text = text or content.get('text', None)
 
         if text is not None:
