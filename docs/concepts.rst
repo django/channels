@@ -37,7 +37,7 @@ listening to that channel.
 By *at-most-once* we say that either one consumer gets the message or nobody
 does (if the channel implementation crashes, let's say). The
 alternative is *at-least-once*, where normally one consumer gets the message
-but when things crash it's sent to more than one, which is not the trade-off
+but when things crash it's sent to more than once, which is not the trade-off
 we want.
 
 There are a couple of other limitations - messages must be made of
