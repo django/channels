@@ -170,6 +170,45 @@ class ChannelLiveServerTestCase(TransactionTestCase):
 
         return 'ws://%s:%s' % (self.host, self._port_storage.value)
 
+    def start_server_process(self):
+
+        server_ready = multiprocessing.Event()
+        self._port_storage = multiprocessing.Value('i')
+        self._server_process = self.ProtocolServerProcess(
+            self.host,
+            self._port_storage,
+            server_ready,
+            self._overridden_settings,
+            self._modified_settings,
+            connections.databases,
+        )
+        self._server_process.start()
+        server_ready.wait()
+
+    def stop_server_process(self):
+
+        self._server_process.terminate()
+        self._server_process.join()
+
+    def start_worker_process(self):
+
+        worker_ready = multiprocessing.Event()
+        self._worker_process = self.WorkerProcess(
+            worker_ready,
+            self.worker_threads,
+            self._overridden_settings,
+            self._modified_settings,
+            connections.databases,
+            self.serve_static,
+        )
+        self._worker_process.start()
+        worker_ready.wait()
+
+    def stop_worker_process(self):
+
+        self._worker_process.terminate()
+        self._worker_process.join()
+
     def _pre_setup(self):
 
         for connection in connections.all():
@@ -190,37 +229,14 @@ class ChannelLiveServerTestCase(TransactionTestCase):
 
         super(ChannelLiveServerTestCase, self)._pre_setup()
 
-        server_ready = multiprocessing.Event()
-        self._port_storage = multiprocessing.Value('i')
-        self._server_process = self.ProtocolServerProcess(
-            self.host,
-            self._port_storage,
-            server_ready,
-            self._overridden_settings,
-            self._modified_settings,
-            connections.databases,
-        )
-        self._server_process.start()
-        server_ready.wait()
-
-        worker_ready = multiprocessing.Event()
-        self._worker_process = self.WorkerProcess(
-            worker_ready,
-            self.worker_threads,
-            self._overridden_settings,
-            self._modified_settings,
-            connections.databases,
-            self.serve_static,
-        )
-        self._worker_process.start()
-        worker_ready.wait()
+        self.start_server_process()
+        self.start_worker_process()
 
     def _post_teardown(self):
 
-        self._server_process.terminate()
-        self._server_process.join()
-        self._worker_process.terminate()
-        self._worker_process.join()
+        self.stop_server_process()
+        self.stop_worker_process()
+
         super(ChannelLiveServerTestCase, self)._post_teardown()
 
     def _is_in_memory_db(self, connection):
