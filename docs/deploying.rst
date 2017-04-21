@@ -177,6 +177,20 @@ Then, you can run Daphne and supply the channel layer as the argument::
 
     daphne my_project.asgi:channel_layer
 
+If you are using django-configurations your asgy.py may need some more tweaks,
+here is an example::
+
+    import os
+    from channels.asgi import get_channel_layer
+    from configurations import importer  # <- configurations settings loader
+
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "my_project.settings")
+    os.environ.setdefault("DJANGO_CONFIGURATION", "Dev")  # <- specify a default configuration class
+    
+    importer.install()  # <- loads configuration to global settings module
+
+    channel_layer = get_channel_layer()
+
 Like ``runworker``, you should place this inside an init system or something
 like supervisord to ensure it is re-run if it exits unexpectedly.
 
