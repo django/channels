@@ -136,7 +136,7 @@ Keys:
 * ``headers``: A list of ``[name, value]`` lists, where ``name`` is the
   byte string header name, and ``value`` is the byte string
   header value. Order must be preserved in the HTTP response. Header names
-  must be lowercased.
+  must be lowercased. Optional, defaults to an empty list.
 
 * ``content``: Byte string of HTTP body content.
   Optional, defaults to empty string.
