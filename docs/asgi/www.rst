@@ -49,8 +49,7 @@ Channel: ``http.request``
 
 Keys:
 
-* ``reply_channel``: Channel name for responses and server pushes, starting with
-  ``http.response!``
+* ``reply_channel``: Channel name for responses and server pushes.
 
 * ``http_version``: Unicode string, one of ``1.0``, ``1.1`` or ``2``.
 
