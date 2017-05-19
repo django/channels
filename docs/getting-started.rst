@@ -51,7 +51,7 @@ define our ``default`` channel layer and what its routing is set to.
 
 Channel routing is a bit like URL routing, and so it's structured similarly -
 you point the setting at a dict mapping channels to consumer callables.
-Here's what that looks like code-block:: javascript
+Here's what that looks like::
 
     # In settings.py
     CHANNEL_LAYERS = {
@@ -110,7 +110,7 @@ for ``http.request`` - and make this WebSocket consumer instead::
             "text": message.content['text'],
         })
 
-Hook it up to the ``websocket.receive`` channel like this::
+Hook it up to the ``websocket.receive`` channel like this code-block:: javascript
 
     # In routing.py
     from channels.routing import route
