@@ -110,7 +110,7 @@ for ``http.request`` - and make this WebSocket consumer instead::
             "text": message.content['text'],
         })
 
-Hook it up to the ``websocket.receive`` channel like this code-block:: javascript
+Hook it up to the ``websocket.receive`` channel like this::
 
     # In routing.py
     from channels.routing import route
