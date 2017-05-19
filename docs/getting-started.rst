@@ -51,7 +51,7 @@ define our ``default`` channel layer and what its routing is set to.
 
 Channel routing is a bit like URL routing, and so it's structured similarly -
 you point the setting at a dict mapping channels to consumer callables.
-Here's what that looks like::
+Here's what that looks like code-block:: javascript
 
     # In settings.py
     CHANNEL_LAYERS = {
