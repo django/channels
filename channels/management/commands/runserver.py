@@ -1,6 +1,7 @@
 import datetime
 import sys
 import threading
+import logging
 
 from daphne.server import Server, build_endpoint_description_strings
 from django.apps import apps
@@ -100,11 +101,13 @@ class Command(RunserverCommand):
         """
         Logs various different kinds of requests to the console.
         """
-        # All start with timestamp
-        msg = "[%s] " % datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")
+        # Sets default level to INFO
+        level = logging.INFO
+        msg = ""
+
         # HTTP requests
         if protocol == "http" and action == "complete":
-            msg += "HTTP %(method)s %(path)s %(status)s [%(time_taken).2f, %(client)s]\n" % details
+            msg += "HTTP %(method)s %(path)s %(status)s [%(time_taken).2f, %(client)s]" % details
             # Utilize terminal colors, if available
             if 200 <= details['status'] < 300:
                 # Put 2XX first, since it should be the common case
@@ -117,22 +120,26 @@ class Command(RunserverCommand):
                 msg = self.style.HTTP_REDIRECT(msg)
             elif details['status'] == 404:
                 msg = self.style.HTTP_NOT_FOUND(msg)
+                level = logging.WARN
             elif 400 <= details['status'] < 500:
                 msg = self.style.HTTP_BAD_REQUEST(msg)
+                level = logging.WARN
             else:
                 # Any 5XX, or any other response
                 msg = self.style.HTTP_SERVER_ERROR(msg)
+                level = logging.ERROR
         # Websocket requests
         elif protocol == "websocket" and action == "connected":
-            msg += "WebSocket CONNECT %(path)s [%(client)s]\n" % details
+            msg += "WebSocket CONNECT %(path)s [%(client)s]" % details
         elif protocol == "websocket" and action == "disconnected":
-            msg += "WebSocket DISCONNECT %(path)s [%(client)s]\n" % details
+            msg += "WebSocket DISCONNECT %(path)s [%(client)s]" % details
         elif protocol == "websocket" and action == "connecting":
-            msg += "WebSocket HANDSHAKING %(path)s [%(client)s]\n" % details
+            msg += "WebSocket HANDSHAKING %(path)s [%(client)s]" % details
         elif protocol == "websocket" and action == "rejected":
-            msg += "WebSocket REJECT %(path)s [%(client)s]\n" % details
+            msg += "WebSocket REJECT %(path)s [%(client)s]" % details
+            level = logging.WARN
 
-        sys.stderr.write(msg)
+        self.logger.log(level, msg)
 
     def get_consumer(self, *args, **options):
         """
