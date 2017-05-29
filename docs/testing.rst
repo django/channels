@@ -50,6 +50,8 @@ and post the square of it to the ``"result"`` channel::
 
     from channels import Channel
     from channels.tests import ChannelTestCase
+    
+    from myapp.consumers import my_consumer
 
     class MyTests(ChannelTestCase):
         def test_a_thing(self):
