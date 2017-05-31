@@ -2,7 +2,6 @@ from __future__ import unicode_literals
 
 import json
 
-from channels import Group
 from channels.test import ChannelTestCase
 from channels.shortcuts import JSON_Dict
 
@@ -32,7 +31,7 @@ class JSONDictTests(ChannelTestCase):
         self.assertEqual(d.get_key('test'), 1)
         self.assertEqual(d.get_key('another'), False)
         with self.assertRaises(KeyError):
-            tmp = d['test']
+            d['test']
 
     def test_update(self):
         '''
