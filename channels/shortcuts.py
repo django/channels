@@ -33,7 +33,7 @@ class JSON_Dict(dict):
 
     def update(self, *args, **kwargs):
         __doc__ = self._data.update.__doc__
-        [__doc__] # Silence test complaint about __doc__ being assigned but not used.
+        [__doc__]  # Silence test complaint about __doc__ being assigned but not used.
         self._data.update(*args, **kwargs)
         self._update_text()
 
@@ -52,7 +52,7 @@ class JSON_Dict(dict):
             raise ValueError("The key name 'text' is reserved.")
         del self._data[key]
         self._update_text()
-    
+
     def __repr__(self):
         return 'JSON_Dict({})'.format(repr(self._data))
 
