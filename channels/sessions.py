@@ -137,7 +137,7 @@ def enforce_ordering(func=None, slight=False):
             # See what the current next order should be
             next_order = message.channel_session.get("__channels_next_order", 0)
             # If order is 0 no messages exist before and we could be demultiplexing
-            # more than one message with order == 0
+            # more than one connect event with order == 0
             if order == 0 and next_order > 0:
                 order = next_order
             if order == next_order:
