@@ -291,3 +291,41 @@ class GenericTests(ChannelTestCase):
                 "stream": "mystream",
                 "payload": {"this_should_be_lowercased": "1"},
             })
+
+    def test_websockets_demultiplexer_strict_ordering(self):
+
+        class MyWebsocketConsumer1(websockets.JsonWebsocketConsumer):
+            strict_ordering = True
+
+            def connect(self, message, multiplexer=None, **kwargs):
+                multiplexer.send({"foo1": "bar1"})
+
+        class MyWebsocketConsumer2(websockets.JsonWebsocketConsumer):
+            strict_ordering = True
+
+            def connect(self, message, multiplexer=None, **kwargs):
+                multiplexer.send({"foo2": "bar2"})
+
+        class Demultiplexer(websockets.WebsocketDemultiplexer):
+            consumers = {
+                "mystream1": MyWebsocketConsumer1,
+                "mystream2": MyWebsocketConsumer2,
+            }
+
+        with apply_routes([route_class(Demultiplexer, path='/path/(?P<ID>\d+)')]):
+            client = WSClient(ordered=True)
+
+            client.send_and_consume('websocket.connect', path='/path/1')
+
+            rec1 = client.receive()
+            rec2 = client.receive()
+
+            self.assertIsNotNone(rec1)
+            self.assertIsNotNone(rec2)
+
+            responses = {}
+            responses[rec1['stream']] = rec1['payload']
+            responses[rec2['stream']] = rec2['payload']
+
+            self.assertEqual(responses['mystream1'], {"foo1": "bar1"})
+            self.assertEqual(responses['mystream2'], {"foo2": "bar2"})
