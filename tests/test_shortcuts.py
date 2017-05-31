@@ -48,4 +48,4 @@ class JSONDictTests(ChannelTestCase):
         '''
         d = JSON_Dict(test=1, another=False)
         del d['test']
-        self.assertEqual(json.loads(d['text']), json.loads('{"another": false'))
+        self.assertEqual(json.loads(d['text']), json.loads('{"another": false}'))
