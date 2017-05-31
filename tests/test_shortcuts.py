@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import json
 
 from channels import Group
+from channels.test import ChannelTestCase
 from channels.shortcuts import JSON_Dict
 
 
