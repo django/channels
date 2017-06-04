@@ -26,7 +26,8 @@ class Command(RunserverCommand):
             help='Run the old WSGI-based runserver rather than the ASGI-based one')
         parser.add_argument('--http_timeout', action='store', dest='http_timeout', type=int, default=60,
             help='Specify the daphne http_timeout interval in seconds (default: 60)')
-        parser.add_argument('--websocket_handshake_timeout', action='store', dest='websocket_handshake_timeout', type=int, default=5,
+        parser.add_argument('--websocket_handshake_timeout', action='store', dest='websocket_handshake_timeout',
+            type=int, default=5,
             help='Specify the daphne websocket_handshake_timeout interval in seconds (default: 5)')
 
     def handle(self, *args, **options):
