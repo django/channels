@@ -1,31 +1,59 @@
 import logging
+import logging.config
 
-handler = logging.StreamHandler()
+from django.utils.log import DEFAULT_LOGGING
+from django.utils.module_loading import import_string
 
 
-def setup_logger(name, verbosity=1):
+def configure_logging(logging_config, logging_settings):
     """
     Basic logger for runserver etc.
     """
 
-    formatter = logging.Formatter(
-        fmt='%(asctime)s - %(levelname)s - %(module)s - %(message)s')
+    DEFAULT_LOGGING['formatters'].update({
+        'django.channels.server': {
+            '()': 'django.utils.log.ServerFormatter',
+            'format': '%(asctime)s - %(levelname)s - %(module)s - %(message)s',
+        }
+    })
 
-    handler.setFormatter(formatter)
+    DEFAULT_LOGGING['handlers'].update({
+        'django.channels.server': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'django.channels.server',
+        }
+    })
 
-    # Set up main logger
-    logger = logging.getLogger(name)
-    logger.setLevel(logging.INFO)
-    logger.addHandler(handler)
-    if verbosity > 1:
-        logger.setLevel(logging.DEBUG)
+    DEFAULT_LOGGING['loggers'].update({
+        'django.channels.server': {
+            'handlers': ['django.channels.server'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'daphne.ws_protocol': {
+            'handlers': ['django.channels.server'],
+            'level': 'INFO',
+            'propagate': False
+        },
+        'daphne.http_protocol': {
+            'handlers': ['django.channels.server'],
+            'level': 'INFO',
+            'propagate': False
+        },
+        'daphne.server': {
+            'handlers': ['django.channels.server'],
+            'level': 'INFO',
+            'propagate': False
+        }
+    })
 
-    # Set up daphne protocol loggers
-    for module in ["daphne.ws_protocol", "daphne.http_protocol", "daphne.server"]:
-        daphne_logger = logging.getLogger(module)
-        daphne_logger.addHandler(handler)
-        daphne_logger.setLevel(
-            logging.DEBUG if verbosity > 1 else logging.INFO)
+    if logging_config:
+        # First find the logging configuration function ...
+        logging_config_func = import_string(logging_config)
 
-    logger.propagate = False
-    return logger
+        logging.config.dictConfig(DEFAULT_LOGGING)
+
+        # ... then invoke it with the logging settings
+        if logging_settings:
+            logging_config_func(logging_settings)
