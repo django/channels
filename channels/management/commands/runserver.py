@@ -12,7 +12,6 @@ from django.utils.encoding import get_system_encoding
 
 from channels import DEFAULT_CHANNEL_LAYER, channel_layers
 from channels.handler import ViewConsumer
-from channels.log import setup_logger
 from channels.staticfiles import StaticFilesConsumer
 from channels.worker import Worker
 
@@ -30,7 +29,7 @@ class Command(RunserverCommand):
 
     def handle(self, *args, **options):
         self.verbosity = options.get("verbosity", 1)
-        self.logger = setup_logger('django.channels', self.verbosity)
+        self.logger = logging.getLogger('django.channels.server')
         self.http_timeout = options.get("http_timeout", 60)
         super(Command, self).handle(*args, **options)
 
