@@ -11,6 +11,8 @@ from channels.signals import worker_process_ready
 from channels.staticfiles import StaticFilesConsumer
 from channels.worker import Worker, WorkerGroup
 
+logger = logging.getLogger('django.channels.server')
+
 
 class Command(BaseCommand):
 
@@ -39,7 +41,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         # Get the backend to use
         self.verbosity = options.get("verbosity", 1)
-        self.logger = logging.getLogger('django.channels.server')
         self.channel_layer = channel_layers[options.get("layer", DEFAULT_CHANNEL_LAYER)]
         self.n_threads = options.get('threads', 1)
         # Check that handler isn't inmemory
@@ -63,14 +64,14 @@ class Command(BaseCommand):
         # Choose an appropriate worker.
         worker_kwargs = {}
         if self.n_threads == 1:
-            self.logger.info("Using single-threaded worker.")
+            logger.info("Using single-threaded worker.")
             worker_cls = Worker
         else:
-            self.logger.info("Using multi-threaded worker, {} thread(s).".format(self.n_threads))
+            logger.info("Using multi-threaded worker, {} thread(s).".format(self.n_threads))
             worker_cls = WorkerGroup
             worker_kwargs['n_threads'] = self.n_threads
         # Run the worker
-        self.logger.info("Running worker against channel layer %s", self.channel_layer)
+        logger.info("Running worker against channel layer %s", self.channel_layer)
         try:
             worker = worker_cls(
                 channel_layer=self.channel_layer,
@@ -86,4 +87,4 @@ class Command(BaseCommand):
             pass
 
     def consumer_called(self, channel, message):
-        self.logger.debug("%s", channel)
+        logger.debug("%s", channel)

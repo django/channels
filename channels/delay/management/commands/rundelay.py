@@ -7,6 +7,8 @@ from django.core.management import BaseCommand, CommandError
 from channels import DEFAULT_CHANNEL_LAYER, channel_layers
 from channels.delay.worker import Worker
 
+logger = logging.getLogger('django.channels.server')
+
 
 class Command(BaseCommand):
 
@@ -24,7 +26,6 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        self.logger = logging.getLogger('django.channels.server')
         self.channel_layer = channel_layers[options.get("layer", DEFAULT_CHANNEL_LAYER)]
         # Check that handler isn't inmemory
         if self.channel_layer.local_only():
@@ -33,7 +34,7 @@ class Command(BaseCommand):
                 "Change your settings to use a cross-process channel layer."
             )
         self.options = options
-        self.logger.info("Running delay against channel layer %s", self.channel_layer)
+        logger.info("Running delay against channel layer %s", self.channel_layer)
         try:
             worker = Worker(
                 channel_layer=self.channel_layer,

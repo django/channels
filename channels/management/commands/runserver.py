@@ -16,6 +16,9 @@ from channels.staticfiles import StaticFilesConsumer
 from channels.worker import Worker
 
 
+logger = logging.getLogger('django.channels.server')
+
+
 class Command(RunserverCommand):
 
     def add_arguments(self, parser):
@@ -28,8 +31,6 @@ class Command(RunserverCommand):
             help='Specify the daphane http_timeout interval in seconds (default: 60)')
 
     def handle(self, *args, **options):
-        self.verbosity = options.get("verbosity", 1)
-        self.logger = logging.getLogger('django.channels.server')
         self.http_timeout = options.get("http_timeout", 60)
         super(Command, self).handle(*args, **options)
 
@@ -70,12 +71,12 @@ class Command(RunserverCommand):
         if options.get("run_worker", True):
             worker_count = 4 if options.get("use_threading", True) else 1
             for _ in range(worker_count):
-                worker = WorkerThread(self.channel_layer, self.logger)
+                worker = WorkerThread(self.channel_layer, logger)
                 worker.daemon = True
                 worker.start()
         # Launch server in 'main' thread. Signals are disabled as it's still
         # actually a subthread under the autoreloader.
-        self.logger.debug("Daphne running, listening on %s:%s", self.addr, self.port)
+        logger.debug("Daphne running, listening on %s:%s", self.addr, self.port)
 
         # build the endpoint description string from host/port options
         endpoints = build_endpoint_description_strings(host=self.addr, port=self.port)
@@ -89,7 +90,7 @@ class Command(RunserverCommand):
                 ws_protocols=getattr(settings, 'CHANNELS_WS_PROTOCOLS', None),
                 root_path=getattr(settings, 'FORCE_SCRIPT_NAME', '') or '',
             ).run()
-            self.logger.debug("Daphne exited")
+            logger.debug("Daphne exited")
         except KeyboardInterrupt:
             shutdown_message = options.get('shutdown_message', '')
             if shutdown_message:
@@ -138,7 +139,7 @@ class Command(RunserverCommand):
             msg += "WebSocket REJECT %(path)s [%(client)s]" % details
             level = logging.WARN
 
-        self.logger.log(level, msg)
+        logger.log(level, msg)
 
     def get_consumer(self, *args, **options):
         """
