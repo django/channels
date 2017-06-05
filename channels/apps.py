@@ -1,6 +1,8 @@
 from django.apps import AppConfig
+from django.conf import settings
 
 from .binding.base import BindingMetaclass
+from .log import configure_logging
 from .package_checks import check_all
 
 
@@ -17,3 +19,5 @@ class ChannelsConfig(AppConfig):
         monkeypatch_django()
         # Instantiate bindings
         BindingMetaclass.register_all()
+
+        configure_logging(settings.LOGGING_CONFIG, settings.LOGGING)
