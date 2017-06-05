@@ -64,6 +64,12 @@ class Group(object):
         else:
             self.channel_layer = channel_layers[alias]
 
+    def __len__(self):
+        return len(self.channel_layer.group_channels(self.name))
+    
+    def count(self):
+        return self.__len__()
+        
     def add(self, channel):
         if isinstance(channel, Channel):
             channel = channel.name
