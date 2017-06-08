@@ -88,7 +88,17 @@ They have the following attributes:
   representing the underlying channel layer to send messages on.
 
 * ``send(content)``: Sends the ``dict`` provided as *content* to all
-  members of the group.
+  members of the group. The ``dict`` keys are as follows:
+
+  * ``bytes``: Byte string of frame content, if in bytes mode, or ``None``.
+  * ``text``: Unicode string of frame content, if in text mode, or ``None``.
+  * ``close``: Boolean indicating if the connection should be closed after data
+    is sent, if any. Alternatively, a positive integer specifying the response
+    code. The response code will be 1000 if you pass ``True``. Optional, default
+    ``False``.
+  * ``accept``: Boolean saying if the connection should be accepted without
+    sending a frame if it is in the handshake phase. Optional.
+  * Note: A maximum of one of bytes or text may be provided.
 
 * ``add(channel)``: Adds the given channel (as either a :ref:`Channel <ref-channel>`
   object or a unicode string name) to the group. If the channel is already in
