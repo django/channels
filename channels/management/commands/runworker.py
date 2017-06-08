@@ -1,11 +1,12 @@
 from __future__ import unicode_literals
 
+import logging
+
 from django.apps import apps
 from django.conf import settings
 from django.core.management import BaseCommand, CommandError
 
 from channels import DEFAULT_CHANNEL_LAYER, channel_layers
-from channels.log import setup_logger
 from channels.signals import worker_process_ready
 from channels.staticfiles import StaticFilesConsumer
 from channels.worker import Worker, WorkerGroup
@@ -38,7 +39,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         # Get the backend to use
         self.verbosity = options.get("verbosity", 1)
-        self.logger = setup_logger('django.channels', self.verbosity)
+        self.logger = logging.getLogger('django.channels.server')
         self.channel_layer = channel_layers[options.get("layer", DEFAULT_CHANNEL_LAYER)]
         self.n_threads = options.get('threads', 1)
         # Check that handler isn't inmemory

@@ -1,10 +1,11 @@
 from __future__ import unicode_literals
 
+import logging
+
 from django.core.management import BaseCommand, CommandError
 
 from channels import DEFAULT_CHANNEL_LAYER, channel_layers
 from channels.delay.worker import Worker
-from channels.log import setup_logger
 
 
 class Command(BaseCommand):
@@ -23,8 +24,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        self.verbosity = options.get("verbosity", 1)
-        self.logger = setup_logger('django.channels', self.verbosity)
+        self.logger = logging.getLogger('django.channels.server')
         self.channel_layer = channel_layers[options.get("layer", DEFAULT_CHANNEL_LAYER)]
         # Check that handler isn't inmemory
         if self.channel_layer.local_only():
