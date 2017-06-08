@@ -135,6 +135,49 @@ Or telling a worker to ignore all messages on the "thumbnail" channel::
 
     python manage.py runworker --exclude-channels=thumbnail
 
+uWSGI-Mules
+^^^^^^^^^^^
+
+When you use uWSGI to run your django app it is also possible to let uWSGI
+take care of your workers.
+
+You would need to add a python script to your project that will act as a launcher,
+for example as `myproject/worker.py`::
+
+    import os
+
+    from channels import DEFAULT_CHANNEL_BACKEND
+    from channels import channel_backends
+    from channels.worker import Worker
+    from django.core.wsgi import get_wsgi_application
+
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "myproject.settings")
+
+
+    def run_worker():
+        # bootstrap application
+        get_wsgi_application()
+
+       channel_backend = channel_backends[DEFAULT_CHANNEL_BACKEND]
+
+       worker = Worker(channel_backend=channel_backend)
+       worker.run()
+
+
+    if __name__ == '__main__':
+       run_worker()
+
+
+you can then simply add as many `mules`_ you want to you uWSGI start options, for example
+with ``--mule=myproject/worker.py``.
+
+If you reload your uWSGI webworkers using signals or using the `master-fifo`_, uWSGI will also
+restart those mules, but if you use chained or graceful reload, uWSGI will only restart web
+workers. In this case you could add your own uWSGI signal handler to the start script and let
+the worker die after the current message. uWSGI will take care of restarting it.
+
+.. _master-fifo: http://uwsgi-docs.readthedocs.org/en/latest/MasterFIFO.html
+.. _mules: http://uwsgi-docs.readthedocs.org/en/latest/Mules.html
 
 Run interface servers
 ---------------------
