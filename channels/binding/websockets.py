@@ -43,6 +43,7 @@ class WebsocketBinding(Binding):
     def serialize(self, instance, action):
         payload = {
             "action": action,
+            "model": instance.__class__.__name__
             "pk": instance.pk,
             "data": self.serialize_data(instance),
             "model": self.model_label,
