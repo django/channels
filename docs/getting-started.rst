@@ -401,7 +401,7 @@ name in the path of your WebSocket request and a query string with your username
             message.channel_session["username"] = params["username"]
             # Add the user to the room_name group
             Group("chat-%s" % room_name).add(message.reply_channel)
-         else:
+        else:
             # Close the connection.
             message.reply_channel.send({"close": True})
 
