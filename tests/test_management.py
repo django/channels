@@ -122,7 +122,7 @@ class RunServerTests(TestCase):
         channels.log.handler = logging.StreamHandler(self.stream)
 
     @mock.patch('channels.management.commands.runserver.sys.stdout', new_callable=StringIO)
-    @mock.patch('channels.management.commands.runserver.Server')
+    @mock.patch('channels.management.commands.runserver.Command.server_cls')
     @mock.patch('channels.management.commands.runworker.Worker')
     def test_runserver_basic(self, mocked_worker, mocked_server, mock_stdout):
         # Django's autoreload util uses threads and this is not needed
@@ -138,10 +138,11 @@ class RunServerTests(TestCase):
             channel_layer=mock.ANY,
             ws_protocols=None,
             root_path='',
+            websocket_handshake_timeout=5,
         )
 
     @mock.patch('channels.management.commands.runserver.sys.stdout', new_callable=StringIO)
-    @mock.patch('channels.management.commands.runserver.Server')
+    @mock.patch('channels.management.commands.runserver.Command.server_cls')
     @mock.patch('channels.management.commands.runworker.Worker')
     def test_runserver_debug(self, mocked_worker, mocked_server, mock_stdout):
         """
@@ -158,6 +159,7 @@ class RunServerTests(TestCase):
                 channel_layer=mock.ANY,
                 ws_protocols=None,
                 root_path='',
+                websocket_handshake_timeout=5,
             )
 
             call_command('runserver', '--noreload', 'localhost:8001')
@@ -169,6 +171,7 @@ class RunServerTests(TestCase):
                 channel_layer=mock.ANY,
                 ws_protocols=None,
                 root_path='',
+                websocket_handshake_timeout=5,
             )
 
         self.assertFalse(
@@ -177,7 +180,7 @@ class RunServerTests(TestCase):
         )
 
     @mock.patch('channels.management.commands.runserver.sys.stdout', new_callable=StringIO)
-    @mock.patch('channels.management.commands.runserver.Server')
+    @mock.patch('channels.management.commands.runserver.Command.server_cls')
     @mock.patch('channels.management.commands.runworker.Worker')
     def test_runserver_noworker(self, mocked_worker, mocked_server, mock_stdout):
         '''
@@ -192,6 +195,7 @@ class RunServerTests(TestCase):
             channel_layer=mock.ANY,
             ws_protocols=None,
             root_path='',
+            websocket_handshake_timeout=5,
         )
         self.assertFalse(
             mocked_worker.called,

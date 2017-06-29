@@ -364,7 +364,7 @@ Persisting Data
 Echoing messages is a nice simple example, but it's ignoring the real
 need for a system like this - persistent state for connections.
 Let's consider a basic chat site where a user requests a chat room upon initial
-connection, as part of the query string (e.g. ``wss://host/websocket?room=abc``).
+connection, as part of the URL path (e.g. ``wss://host/rooms/room-name``).
 
 The ``reply_channel`` attribute you've seen before is our unique pointer to the
 open WebSocket - because it varies between different clients, it's how we can
@@ -382,34 +382,41 @@ provides you with an attribute called ``message.channel_session`` that acts
 just like a normal Django session.
 
 Let's use it now to build a chat server that expects you to pass a chatroom
-name in the path of your WebSocket request (we'll ignore auth for now - that's next)::
+name in the path of your WebSocket request and a query string with your username (we'll ignore auth for now - that's next)::
 
     # In consumers.py
     from channels import Group
     from channels.sessions import channel_session
+    from urllib.parse import parse_qs
 
     # Connected to websocket.connect
     @channel_session
-    def ws_connect(message):
+    def ws_connect(message, room_name):
         # Accept connection
         message.reply_channel.send({"accept": True})
-        # Work out room name from path (ignore slashes)
-        room = message.content['path'].strip("/")
-        # Save room in session and add us to the group
-        message.channel_session['room'] = room
-        Group("chat-%s" % room).add(message.reply_channel)
+        # Parse the query string
+        params = parse_qs(message.content["query_string"])
+        if "username" in params:
+            # Set the username in the session
+            message.channel_session["username"] = params["username"]
+            # Add the user to the room_name group
+            Group("chat-%s" % room_name).add(message.reply_channel)
+        else:
+            # Close the connection.
+            message.reply_channel.send({"close": True})
 
     # Connected to websocket.receive
     @channel_session
-    def ws_message(message):
-        Group("chat-%s" % message.channel_session['room']).send({
-            "text": message['text'],
+    def ws_message(message, room_name):
+        Group("chat-%s" % room_name).send({
+            "text": message["text"],
+            "username": message.channel_session["username"]
         })
 
     # Connected to websocket.disconnect
     @channel_session
-    def ws_disconnect(message):
-        Group("chat-%s" % message.channel_session['room']).discard(message.reply_channel)
+    def ws_disconnect(message, room_name):
+        Group("chat-%s" % room_name).discard(message.reply_channel)
 
 Update ``routing.py`` as well::
 
@@ -418,9 +425,9 @@ Update ``routing.py`` as well::
     from myapp.consumers import ws_connect, ws_message, ws_disconnect
 
     channel_routing = [
-        route("websocket.connect", ws_connect),
-        route("websocket.receive", ws_message),
-        route("websocket.disconnect", ws_disconnect),
+        route("websocket.connect", ws_connect, path=r"^/(?P<room_name>[a-zA-Z0-9_]+)/$"),
+        route("websocket.receive", ws_message, path=r"^/(?P<room_name>[a-zA-Z0-9_]+)/$"),
+        route("websocket.disconnect", ws_disconnect, path=r"^/(?P<room_name>[a-zA-Z0-9_]+)/$"),
     ]
 
 If you play around with it from the console (or start building a simple
@@ -591,7 +598,7 @@ routing our chat from above::
     ]
 
     chat_routing = [
-        route("websocket.connect", chat_connect, path=r"^/(?P<room>[a-zA-Z0-9_]+)/$"),
+        route("websocket.connect", chat_connect, path=r"^/(?P<room_name>[a-zA-Z0-9_]+)/$"),
         route("websocket.disconnect", chat_disconnect),
     ]
 
@@ -616,13 +623,13 @@ consumer above to use a room based on URL rather than username::
 
     # Connected to websocket.connect
     @channel_session_user_from_http
-    def ws_add(message, room):
+    def ws_add(message, room_name):
         # Add them to the right group
-        Group("chat-%s" % room).add(message.reply_channel)
+        Group("chat-%s" % room_name).add(message.reply_channel)
         # Accept the connection request
         message.reply_channel.send({"accept": True})
 
-In the next section, we'll change to sending the ``room`` as a part of the
+In the next section, we'll change to sending the ``room_name`` as a part of the
 WebSocket message - which you might do if you had a multiplexing client -
 but you could use routing there as well.
 

@@ -20,6 +20,8 @@ logger = logging.getLogger('django.channels.server')
 
 
 class Command(RunserverCommand):
+    protocol = 'http'
+    server_cls = Server
 
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser)
@@ -28,15 +30,20 @@ class Command(RunserverCommand):
         parser.add_argument('--noasgi', action='store_false', dest='use_asgi', default=True,
             help='Run the old WSGI-based runserver rather than the ASGI-based one')
         parser.add_argument('--http_timeout', action='store', dest='http_timeout', type=int, default=60,
-            help='Specify the daphane http_timeout interval in seconds (default: 60)')
+            help='Specify the daphne http_timeout interval in seconds (default: 60)')
+        parser.add_argument('--websocket_handshake_timeout', action='store', dest='websocket_handshake_timeout',
+            type=int, default=5,
+            help='Specify the daphne websocket_handshake_timeout interval in seconds (default: 5)')
 
     def handle(self, *args, **options):
         self.http_timeout = options.get("http_timeout", 60)
+        self.websocket_handshake_timeout = options.get("websocket_handshake_timeout", 5)
         super(Command, self).handle(*args, **options)
 
     def inner_run(self, *args, **options):
         # Maybe they want the wsgi one?
         if not options.get("use_asgi", True) or DEFAULT_CHANNEL_LAYER not in channel_layers:
+            self.server_cls = RunserverCommand.server_cls
             return RunserverCommand.inner_run(self, *args, **options)
         # Check a handler is registered for http reqs; if not, add default one
         self.channel_layer = channel_layers[DEFAULT_CHANNEL_LAYER]
@@ -55,12 +62,13 @@ class Command(RunserverCommand):
         self.stdout.write(now)
         self.stdout.write((
             "Django version %(version)s, using settings %(settings)r\n"
-            "Starting Channels development server at http://%(addr)s:%(port)s/\n"
+            "Starting Channels development server at %(protocol)s://%(addr)s:%(port)s/\n"
             "Channel layer %(layer)s\n"
             "Quit the server with %(quit_command)s.\n"
         ) % {
             "version": self.get_version(),
             "settings": settings.SETTINGS_MODULE,
+            "protocol": self.protocol,
             "addr": '[%s]' % self.addr if self._raw_ipv6 else self.addr,
             "port": self.port,
             "quit_command": quit_command,
@@ -81,7 +89,7 @@ class Command(RunserverCommand):
         # build the endpoint description string from host/port options
         endpoints = build_endpoint_description_strings(host=self.addr, port=self.port)
         try:
-            Server(
+            self.server_cls(
                 channel_layer=self.channel_layer,
                 endpoints=endpoints,
                 signal_handlers=not options['use_reloader'],
@@ -89,6 +97,7 @@ class Command(RunserverCommand):
                 http_timeout=self.http_timeout,
                 ws_protocols=getattr(settings, 'CHANNELS_WS_PROTOCOLS', None),
                 root_path=getattr(settings, 'FORCE_SCRIPT_NAME', '') or '',
+                websocket_handshake_timeout=self.websocket_handshake_timeout,
             ).run()
             logger.debug("Daphne exited")
         except KeyboardInterrupt:
