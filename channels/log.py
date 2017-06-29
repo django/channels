@@ -19,16 +19,6 @@ DEFAULT_LOGGING = {
             '()': 'django.utils.log.RequireDebugTrue',
         },
     },
-    'formatters': {
-        'django.server': {
-            '()': 'django.utils.log.ServerFormatter',
-            'format': '[%(server_time)s] %(message)s',
-        },
-        'django.channels.server': {
-            '()': 'django.utils.log.ServerFormatter',
-            'format': '%(asctime)s - %(levelname)s - %(module)s - %(message)s',
-        }
-    },
     'handlers': {
         'console': {
             'level': 'INFO',
@@ -38,7 +28,6 @@ DEFAULT_LOGGING = {
         'django.server': {
             'level': 'INFO',
             'class': 'logging.StreamHandler',
-            'formatter': 'django.server',
         },
         'mail_admins': {
             'level': 'ERROR',
@@ -48,7 +37,6 @@ DEFAULT_LOGGING = {
         'django.channels.server': {
             'level': 'INFO',
             'class': 'logging.StreamHandler',
-            'formatter': 'django.channels.server',
         }
     },
     'loggers': {
