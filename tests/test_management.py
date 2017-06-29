@@ -202,23 +202,24 @@ class RunServerTests(TestCase):
             "The worker should not be called with '--noworker'",
         )
 
-    @mock.patch('channels.management.commands.runserver.sys.stderr', new_callable=StringIO)
-    def test_log_action(self, mocked_stderr):
+    @mock.patch('channels.management.commands.runserver.logger.log')
+    def test_log_action(self, mocked_logger):
+        no_style = lambda x: x
         cmd = runserver.Command()
         test_actions = [
-            (100, 'http', 'complete', 'HTTP GET /a-path/ 100 [0.12, a-client]'),
-            (200, 'http', 'complete', 'HTTP GET /a-path/ 200 [0.12, a-client]'),
-            (300, 'http', 'complete', 'HTTP GET /a-path/ 300 [0.12, a-client]'),
-            (304, 'http', 'complete', 'HTTP GET /a-path/ 304 [0.12, a-client]'),
-            (400, 'http', 'complete', 'HTTP GET /a-path/ 400 [0.12, a-client]'),
-            (404, 'http', 'complete', 'HTTP GET /a-path/ 404 [0.12, a-client]'),
-            (500, 'http', 'complete', 'HTTP GET /a-path/ 500 [0.12, a-client]'),
-            (None, 'websocket', 'connected', 'WebSocket CONNECT /a-path/ [a-client]'),
-            (None, 'websocket', 'disconnected', 'WebSocket DISCONNECT /a-path/ [a-client]'),
-            (None, 'websocket', 'something', ''),  # This shouldn't happen
+            (100, logging.INFO, cmd.style.HTTP_INFO, 'http', 'complete', 'HTTP GET /a-path/ 100 [0.12, a-client]'),
+            (200, logging.INFO, cmd.style.HTTP_SUCCESS, 'http', 'complete', 'HTTP GET /a-path/ 200 [0.12, a-client]'),
+            (300, logging.INFO, cmd.style.HTTP_REDIRECT, 'http', 'complete', 'HTTP GET /a-path/ 300 [0.12, a-client]'),
+            (304, logging.INFO, cmd.style.HTTP_NOT_MODIFIED, 'http', 'complete', 'HTTP GET /a-path/ 304 [0.12, a-client]'),
+            (400, logging.WARN, cmd.style.HTTP_BAD_REQUEST, 'http', 'complete', 'HTTP GET /a-path/ 400 [0.12, a-client]'),
+            (404, logging.WARN, cmd.style.HTTP_NOT_FOUND, 'http', 'complete', 'HTTP GET /a-path/ 404 [0.12, a-client]'),
+            (500, logging.ERROR, cmd.style.HTTP_SERVER_ERROR, 'http', 'complete', 'HTTP GET /a-path/ 500 [0.12, a-client]'),
+            (None, logging.INFO, no_style, 'websocket', 'connected', 'WebSocket CONNECT /a-path/ [a-client]'),
+            (None, logging.INFO, no_style, 'websocket', 'disconnected', 'WebSocket DISCONNECT /a-path/ [a-client]'),
+            (None, logging.INFO, no_style, 'websocket', 'something', ''),  # This shouldn't happen
         ]
 
-        for status_code, protocol, action, output in test_actions:
+        for status_code, log_level, style, protocol, action, output in test_actions:
             details = {
                 'status': status_code,
                 'method': 'GET',
@@ -227,6 +228,6 @@ class RunServerTests(TestCase):
                 'client': 'a-client',
             }
             cmd.log_action(protocol, action, details)
-            self.assertIn(output, mocked_stderr.getvalue())
+            mocked_logger.assert_called_with(log_level, style(output))
             # Clear previous output
-            mocked_stderr.truncate(0)
+            mocked_logger.truncate(0)
