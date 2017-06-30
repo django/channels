@@ -1,7 +1,7 @@
 import datetime
+import logging
 import sys
 import threading
-import logging
 
 from daphne.server import Server, build_endpoint_description_strings
 from django.apps import apps
@@ -14,7 +14,6 @@ from channels import DEFAULT_CHANNEL_LAYER, channel_layers
 from channels.handler import ViewConsumer
 from channels.staticfiles import StaticFilesConsumer
 from channels.worker import Worker
-
 
 logger = logging.getLogger('django.channels.server')
 

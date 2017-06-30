@@ -3,7 +3,6 @@ import logging.config
 
 from django.utils.module_loading import import_string
 
-
 # Default logging for Django. This sends an email to the site admins on every
 # HTTP 500 error. Depending on DEBUG, all other log records are either sent to
 # the console (DEBUG=True) or discarded (DEBUG=False) by means of the
