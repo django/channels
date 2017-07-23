@@ -78,7 +78,7 @@ class Command(RunserverCommand):
         if options.get("run_worker", True):
             worker_count = 4 if options.get("use_threading", True) else 1
             for _ in range(worker_count):
-                worker = WorkerThread(self.channel_layer, logger)
+                worker = WorkerThread(self.channel_layer)
                 worker.daemon = True
                 worker.start()
         # Launch server in 'main' thread. Signals are disabled as it's still
@@ -169,14 +169,13 @@ class WorkerThread(threading.Thread):
     Class that runs a worker
     """
 
-    def __init__(self, channel_layer, logger):
+    def __init__(self, channel_layer):
         super(WorkerThread, self).__init__()
         self.channel_layer = channel_layer
-        self.logger = logger
 
     def run(self):
-        self.logger.debug("Worker thread running")
+        logger.debug("Worker thread running")
         worker = Worker(channel_layer=self.channel_layer, signal_handlers=False)
         worker.ready()
         worker.run()
-        self.logger.debug("Worker thread exited")
+        logger.debug("Worker thread exited")
