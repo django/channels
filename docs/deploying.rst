@@ -190,6 +190,9 @@ scenario, it will eventually time out and give you a 503 error after 2 minutes;
 you can configure how long it waits with the ``--http-timeout`` command line
 argument.
 
+With some browsers you may see errors regarding ``Sec-WebSocket-Protocol`` headers. You can set the allowed ws_protocols to match your client protocol like this::
+
+    CHANNELS_WS_PROTOCOLS = ["graphql-ws", ]
 
 Deploying new versions of code
 ------------------------------
