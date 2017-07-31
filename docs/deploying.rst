@@ -193,6 +193,14 @@ argument.
 With some browsers you may see errors regarding ``Sec-WebSocket-Protocol`` headers. You can set the allowed ws_protocols to match your client protocol like this::
 
     CHANNELS_WS_PROTOCOLS = ["graphql-ws", ]
+    
+In production you may start a daphne server without the runserver command. So you need to pass the ws-protocl directly::
+
+    daphne --ws-protocol "graphql-ws" --proxy-headers my_project.asgi:channel_layer
+    
+Note: The daphne server binds to 127.0.0.1 by default. If you deploy this not locally, bind to your ip or to any ip::
+
+    daphne -b 0.0.0.0 -p 8000 --ws-protocol "graphql-ws" --proxy-headers my_project.asgi:channel_layer
 
 Deploying new versions of code
 ------------------------------
