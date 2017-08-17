@@ -11,7 +11,7 @@ from channels.signals import worker_process_ready
 from channels.staticfiles import StaticFilesConsumer
 from channels.worker import Worker, WorkerGroup
 
-logger = logging.getLogger('django.channels.server')
+logger = logging.getLogger('channels.server')
 
 
 class Command(BaseCommand):

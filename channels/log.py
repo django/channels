@@ -33,7 +33,7 @@ DEFAULT_LOGGING = {
             'filters': ['require_debug_false'],
             'class': 'django.utils.log.AdminEmailHandler'
         },
-        'django.channels.server': {
+        'channels.server': {
             'level': 'INFO',
             'class': 'logging.StreamHandler',
         }
@@ -48,23 +48,23 @@ DEFAULT_LOGGING = {
             'level': 'INFO',
             'propagate': False,
         },
-        'django.channels.server': {
-            'handlers': ['django.channels.server'],
+        'channels.server': {
+            'handlers': ['channels.server'],
             'level': 'INFO',
             'propagate': False,
         },
         'daphne.ws_protocol': {
-            'handlers': ['django.channels.server'],
+            'handlers': ['channels.server'],
             'level': 'INFO',
             'propagate': False
         },
         'daphne.http_protocol': {
-            'handlers': ['django.channels.server'],
+            'handlers': ['channels.server'],
             'level': 'INFO',
             'propagate': False
         },
         'daphne.server': {
-            'handlers': ['django.channels.server'],
+            'handlers': ['channels.server'],
             'level': 'INFO',
             'propagate': False
         }

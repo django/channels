@@ -7,7 +7,7 @@ from django.core.management import BaseCommand, CommandError
 from channels import DEFAULT_CHANNEL_LAYER, channel_layers
 from channels.delay.worker import Worker
 
-logger = logging.getLogger('django.channels.server')
+logger = logging.getLogger('channels.server')
 
 
 class Command(BaseCommand):

@@ -15,7 +15,7 @@ from channels.handler import ViewConsumer
 from channels.staticfiles import StaticFilesConsumer
 from channels.worker import Worker
 
-logger = logging.getLogger('django.channels.server')
+logger = logging.getLogger('channels.server')
 
 
 class Command(RunserverCommand):
