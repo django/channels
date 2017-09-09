@@ -48,7 +48,7 @@ that hits the right balance between flexibility and simplicity.
 
 While our interface servers are written in Python, there's nothing stopping
 you from writing an interface server in another language, providing it follows
-the same serialisation standards for HTTP/WebSocket/etc. messages. In fact,
+the same serialization standards for HTTP/WebSocket/etc. messages. In fact,
 we may ship an alternative server implementation ourselves at some point.
 
 
