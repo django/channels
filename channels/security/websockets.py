@@ -36,10 +36,10 @@ class BaseOriginValidator(object):
 
     def get_header(self, message, name):
         headers = message.content['headers']
-        for header in headers:
+        for k, v in headers.items():
             try:
-                if header[0] == name:
-                    return header[1:]
+                if k == name:
+                    return v
             except IndexError:
                 continue
         raise KeyError('No header named "{}"'.format(name))
@@ -52,7 +52,7 @@ class BaseOriginValidator(object):
         header.
         """
         try:
-            header = self.get_header(message, b'origin')[0]
+            header = self.get_header(message, 'origin')
         except (IndexError, KeyError):
             raise DenyConnection
         try:
