@@ -53,7 +53,7 @@ class WSClientTests(ChannelTestCase):
 
         self.assertTrue('headers' in content)
         self.assertIn('cookie', [x[0] for x in content['headers']])
-        self.assertIn('sessionid', [x[1] for x in content['headers'] if x[0] is 'cookie'])
+        self.assertIn(b'sessionid', [x[1] for x in content['headers'] if x[0] is 'cookie'])
 
     def test_ordering_in_content(self):
         client = WSClient(ordered=True)
