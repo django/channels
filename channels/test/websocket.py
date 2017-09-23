@@ -83,7 +83,7 @@ class WSClient(Client):
         self._session_cookie = False
 
     def _tuple_headers(self):
-        return [[x, self.headers[x]]  for x in self.headers]
+        return [[x, self.headers[x]] for x in self.headers]
 
     def _get_content(self, content={}, text=None, path='/'):
         content = copy.deepcopy(content)
