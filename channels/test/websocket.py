@@ -82,7 +82,7 @@ class WSClient(Client):
         self.channel_layer.send(to, self._get_content(content, text, path))
         self._session_cookie = False
 
-    def _tuple_headers(self):
+    def _list_headers(self):
         return [[key, self.headers[key]] for key in self.headers]
 
     def _get_content(self, content={}, text=None, path='/'):
@@ -96,7 +96,7 @@ class WSClient(Client):
         else:
             content.setdefault('path', path)
 
-        content.setdefault('headers', self._tuple_headers())
+        content.setdefault('headers', self._list_headers())
 
         if self._ordered:
             if 'order' in content:
