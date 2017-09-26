@@ -83,7 +83,7 @@ class WSClient(Client):
         self._session_cookie = False
 
     def _list_headers(self):
-        return [[key, self.headers[key]] for key in self.headers]
+        return [[key.encode(), self.headers[key]] for key in self.headers]
 
     def _get_content(self, content={}, text=None, path='/'):
         content = copy.deepcopy(content)
