@@ -116,7 +116,9 @@ class PendingMessageStore(object):
                     "or handle the ChannelFull exception yourself after adding\n"
                     "immediately=True to send()." % (sender, self.retry_time)
                 )
-        delattr(self.threadlocal, "messages")
+
+        if self.active:
+            delattr(self.threadlocal, "messages")
 
 
 pending_message_store = PendingMessageStore()
