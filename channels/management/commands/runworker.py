@@ -8,7 +8,7 @@ from channels import DEFAULT_CHANNEL_LAYER, channel_layers
 from channels.log import setup_logger
 from channels.signals import worker_process_ready
 from channels.staticfiles import StaticFilesConsumer
-from channels.worker import Worker, WorkerGroup
+from channels.utils import apply_channel_filters
 
 
 class Command(BaseCommand):
@@ -59,24 +59,17 @@ class Command(BaseCommand):
             callback = self.consumer_called
         self.callback = callback
         self.options = options
-        # Choose an appropriate worker.
-        worker_kwargs = {}
-        if self.n_threads == 1:
-            self.logger.info("Using single-threaded worker.")
-            worker_cls = Worker
-        else:
-            self.logger.info("Using multi-threaded worker, {} thread(s).".format(self.n_threads))
-            worker_cls = WorkerGroup
-            worker_kwargs['n_threads'] = self.n_threads
+        # Prepare channels list.
+        only_channels = self.options.get("only_channels", None)
+        exclude_channels = self.options.get("exclude_channels", None)
+        channels = apply_channel_filters(self.channel_layer.router.channels, only_channels, exclude_channels)
         # Run the worker
         self.logger.info("Running worker against channel layer %s", self.channel_layer)
         try:
-            worker = worker_cls(
-                channel_layer=self.channel_layer,
+            worker = self.channel_layer.get_worker(
+                router=self.channel_layer.router,
+                channels=channels,
                 callback=self.callback,
-                only_channels=self.options.get("only_channels", None),
-                exclude_channels=self.options.get("exclude_channels", None),
-                **worker_kwargs
             )
             worker_process_ready.send(sender=worker)
             worker.ready()

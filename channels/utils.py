@@ -1,3 +1,4 @@
+import fnmatch
 import types
 
 
@@ -24,3 +25,26 @@ def name_that_thing(thing):
     if hasattr(thing, "__class__"):
         return name_that_thing(thing.__class__)
     return repr(thing)
+
+
+def apply_channel_filters(channels, only_channels, exclude_channels):
+    """
+    Applies our include and exclude filters to the channel list and returns it
+    """
+    if only_channels:
+        channels = [
+            channel for channel in channels
+            if any(
+                fnmatch.fnmatchcase(channel, pattern)
+                for pattern in only_channels
+            )
+        ]
+    if exclude_channels:
+        channels = [
+            channel for channel in channels
+            if not any(
+                fnmatch.fnmatchcase(channel, pattern)
+                for pattern in exclude_channels
+            )
+        ]
+    return channels
