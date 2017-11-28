@@ -7,7 +7,7 @@ from channels import DEFAULT_CHANNEL_LAYER, Channel, route
 from channels.asgi import channel_layers
 from channels.exceptions import ConsumeLater
 from channels.test import ChannelTestCase
-from channels.worker import Worker, WorkerGroup
+from channels.worker import Worker, WorkerGroup, StopWorkerGroupLoop
 
 try:
     from unittest import mock
@@ -103,12 +103,13 @@ class WorkerGroupTests(ChannelTestCase):
     def test_graceful_stop(self):
 
         callback_is_running = threading.Event()
+        callback_is_stopped = threading.Event()
 
         def callback(channel, message):
             callback_is_running.set()
             # emulate some delay to validate graceful stop
             time.sleep(0.1)
-            callback_is_running.clear()
+            callback_is_stopped.set()
 
         consumer = mock.Mock()
         Channel('test').send({'test': 'test'}, immediately=True)
@@ -124,8 +125,8 @@ class WorkerGroupTests(ChannelTestCase):
         worker_group_t.start()
         # wait when a worker starts the callback and terminate the worker group
         callback_is_running.wait()
-        self.assertRaises(SystemExit, worker_group.sigterm_handler, None, None)
-        self.assertFalse(callback_is_running.is_set())
+        self.assertRaises(StopWorkerGroupLoop, worker_group.sigterm_handler, None, None)
+        self.assertTrue(callback_is_stopped.wait(1))
 
         self.assertEqual(consumer.call_count, 1)
         self.assertEqual(channel_layer.send.call_count, 0)

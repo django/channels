@@ -16,6 +16,14 @@ from .utils import name_that_thing
 logger = logging.getLogger('django.channels')
 
 
+class StopWorkerGroupLoop(Exception):
+    """The exception is used to break worker group main thread loop from
+    SIGTERM/SIGINT handler when there is no job in process. If there is
+    a job in process, the loop will end by itself after processing it due
+    to self.termed flag and manual interruption is not needed.
+    """
+
+
 class Worker(object):
     """
     A "worker" process that continually looks for available messages to run
@@ -173,10 +181,11 @@ class WorkerGroup(Worker):
         msg_prefix = "Shutdown signal received by WorkerGroup, "
         if self.stop_gracefully:
             logger.info(msg_prefix + "waiting for sub-workers.")
-            self.wait_for_workers()
+            if not self.in_job:
+                raise StopWorkerGroupLoop()
         else:
             logger.info(msg_prefix + "terminating immediately.")
-        sys.exit(0)
+            sys.exit(0)
 
     def ready(self):
         super(WorkerGroup, self).ready()
@@ -192,13 +201,15 @@ class WorkerGroup(Worker):
         for t in self.threads:
             t.daemon = True
             t.start()
-        super(WorkerGroup, self).run()
+        try:
+            super(WorkerGroup, self).run()
+        except StopWorkerGroupLoop:
+            pass
         if self.stop_gracefully:
             self.wait_for_workers()
 
     def wait_for_workers(self):
-        while self.in_job or any(
-                self.threads[worker_id].is_alive() and
-                self.workers[worker_id].in_job
-                for worker_id in range(len(self.workers))):
+        while any(self.threads[worker_id].is_alive() and
+                  self.workers[worker_id].in_job
+                  for worker_id in range(len(self.workers))):
             time.sleep(0.1)
