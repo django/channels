@@ -101,6 +101,10 @@ class WorkerTests(ChannelTestCase):
 class WorkerGroupTests(ChannelTestCase):
 
     def test_graceful_stop(self):
+        """
+        Test that worker group is stopped gracefully on termination signal:
+        it should finish processing current messages and exit.
+        """
 
         callback_is_running = threading.Event()
         callback_is_stopped = threading.Event()
@@ -127,6 +131,9 @@ class WorkerGroupTests(ChannelTestCase):
         callback_is_running.wait()
         self.assertRaises(StopWorkerGroupLoop, worker_group.sigterm_handler, None, None)
         self.assertTrue(callback_is_stopped.wait(1))
-
+        worker_group_t.join()
+        for worker_id in range(len(worker_group.workers)):
+            self.assertFalse(worker_group.workers[worker_id].in_job)
+            self.assertFalse(worker_group.threads[worker_id].is_alive())
         self.assertEqual(consumer.call_count, 1)
         self.assertEqual(channel_layer.send.call_count, 0)
