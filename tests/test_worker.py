@@ -129,7 +129,10 @@ class WorkerGroupTests(ChannelTestCase):
         worker_group_t.start()
         # wait when a worker starts the callback and terminate the worker group
         callback_is_running.wait()
-        self.assertRaises(StopWorkerGroupLoop, worker_group.sigterm_handler, None, None)
+        try:
+            worker_group.sigterm_handler(None, None)
+        except StopWorkerGroupLoop:
+            pass
         self.assertTrue(callback_is_stopped.wait(1))
         worker_group_t.join()
         for worker_id in range(len(worker_group.workers)):
