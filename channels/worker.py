@@ -93,11 +93,11 @@ class Worker(object):
         while not self.termed:
             self.in_job = False
             channel, content = self.channel_layer.receive_many(channels, block=True)
-            self.in_job = True
             # If no message, stall a little to avoid busy-looping then continue
             if channel is None:
                 time.sleep(0.01)
                 continue
+            self.in_job = True
             # Create message wrapper
             logger.debug("Got message on %s (reply %s)", channel, content.get("reply_channel", "none"))
             message = Message(
