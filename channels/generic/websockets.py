@@ -97,23 +97,26 @@ class JsonWebsocketConsumer(WebsocketConsumer):
     error on binary data.
     """
 
-    def raw_receive(self, message, **kwargs):
-        if "text" in message:
-            self.receive(self.decode_json(message['text']), **kwargs)
+    def receive(self, text=None, bytes=None):
+        """
+        Called with a decoded WebSocket frame.
+        """
+        if text is not None:
+            self.receive_json(self.decode_json(text), **kwargs)
         else:
             raise ValueError("No text section for incoming WebSocket frame!")
 
-    def receive(self, content, **kwargs):
+    def receive_json(self, content):
         """
         Called with decoded JSON content.
         """
         pass
 
-    def send(self, content, close=False):
+    def send_json(self, content, close=False):
         """
         Encode the given content as JSON and send it to the client.
         """
-        super(JsonWebsocketConsumer, self).send(
+        self.send(
             text_data=self.encode_json(content),
             close=close,
         )
@@ -142,9 +145,9 @@ class WebsocketMultiplexer(object):
         self.stream = stream
         self.reply_channel = reply_channel
 
-    def send(self, payload):
+    def send_json(self, payload):
         """Multiplex the payload using the stream name and send it."""
-        self.reply_channel.send(self.encode(self.stream, payload))
+        self.reply_channel.send_json(self.encode(self.stream, payload))
 
     @classmethod
     def encode_json(cls, content):
@@ -159,7 +162,7 @@ class WebsocketMultiplexer(object):
         return {"text": cls.encode_json(content)}
 
     @classmethod
-    def group_send(cls, name, stream, payload, close=False):
+    def group_send_json(cls, name, stream, payload, close=False):
         message = cls.encode(stream, payload)
         if close:
             message["close"] = True
@@ -179,7 +182,7 @@ class WebsocketDemultiplexer(JsonWebsocketConsumer):
     so they fulfill the Channels message spec.
 
     To answer with a multiplexed message, a multiplexer object
-    with "send" and "group_send" methods is forwarded to the consumer as a kwargs
+    with "send" and "group_send_json" methods is forwarded to the consumer as a kwargs
     "multiplexer".
 
     Set a mapping of streams to consumer classes in the "consumers" keyword.
@@ -187,52 +190,55 @@ class WebsocketDemultiplexer(JsonWebsocketConsumer):
 
     # Put your JSON consumers here: {stream_name : consumer}
     consumers = {}
+    consumer_instances = {}
 
     # Optionally use a custom multiplexer class
     multiplexer_class = WebsocketMultiplexer
 
-    def receive(self, content, **kwargs):
+    def __init__(self, scope):
+        super().__init__(scope=scope)
+        for stream, consumer_class in self.consumers.items():
+            multiplexer = self.multiplexer_class(stream, self)
+            consumer = consumer_class(
+                scope=scope,
+                multiplexer=multiplexer,
+            )
+            self.consumer_instances[stream] = consumer
+
+    def receive_json(self, content):
         """Forward messages to all consumers."""
         # Check the frame looks good
         if isinstance(content, dict) and "stream" in content and "payload" in content:
             # Match it to a channel
-            for stream, consumer in self.consumers.items():
-                if stream == content['stream']:
-                    # Extract payload and add in reply_channel
-                    payload = content['payload']
-                    if not isinstance(payload, dict):
-                        raise ValueError("Multiplexed frame payload is not a dict")
-                    # The json consumer expects serialized JSON
-                    self.message.content['text'] = self.encode_json(payload)
-                    # Send demultiplexer to the consumer, to be able to answer
-                    kwargs['multiplexer'] = self.multiplexer_class(stream, self.message.reply_channel)
-                    # Patch send to avoid sending not formatted messages from the consumer
-                    if hasattr(consumer, "send"):
-                        consumer.send = self.send
-                    # Dispatch message
-                    consumer(self.message, **kwargs)
-                    return
+            stream = content['stream']
+            consumer = content.get(stream, None)
 
-            raise ValueError("Invalid multiplexed frame received (stream not mapped)")
+            if consumer is None:
+                raise ValueError("Invalid multiplexed frame received (stream not mapped)")
+
+            consumer.base_send = self.base_send
+
+            # Extract payload and add in reply_channel
+            payload = content['payload']
+            if not isinstance(payload, dict):
+                raise ValueError("Multiplexed frame payload is not a dict")
+
+            consumer.receive_json(payload)
         else:
             raise ValueError("Invalid multiplexed **frame received (no channel/payload key)")
 
-    def connect(self, message, **kwargs):
+    def connect(self, message):
         """Forward connection to all consumers."""
-        self.message.reply_channel.send({"accept": True})
         for stream, consumer in self.consumers.items():
-            kwargs['multiplexer'] = self.multiplexer_class(stream, self.message.reply_channel)
-            consumer(message, **kwargs)
+            consumer = self.consumer_instances[stream]
+            consumer.base_send = self.base_send
+            consumer.connect(message, **kwargs)
+        super().connect(message, **kwargs)
 
-    def disconnect(self, message, **kwargs):
+    def disconnect(self, message):
         """Forward disconnection to all consumers."""
         for stream, consumer in self.consumers.items():
-            kwargs['multiplexer'] = self.multiplexer_class(stream, self.message.reply_channel)
-            consumer(message, **kwargs)
-
-    def send(self, *args):
-        raise SendNotAvailableOnDemultiplexer("Use multiplexer.send of the multiplexer kwarg.")
-
-    @classmethod
-    def group_send(cls, name, stream, payload, close=False):
-        raise SendNotAvailableOnDemultiplexer("Use WebsocketMultiplexer.group_send")
+            consumer = self.consumer_instances[stream]
+            consumer.base_send = self.base_send
+            consumer.disconnect(message, **kwargs)
+        super().disconnect(message, **kwargs)
