@@ -225,6 +225,9 @@ class AsgiHandler(base.BaseHandler):
                 # The view has promised something else
                 # will send a response at a later time
                 return
+            if response.status_code == 113:
+                # equal to ResponseLater exception above
+                return
         # Transform response into messages, which we yield back to caller
         for message in self.encode_response(response):
             # TODO: file_to_stream
