@@ -41,12 +41,8 @@ class WebsocketBinding(Binding):
         return WebsocketMultiplexer.encode(stream, payload)
 
     def serialize(self, instance, action):
-        payload = {
-            "action": action,
-            "pk": instance.pk,
-            "data": self.serialize_data(instance),
-            "model": self.model_label,
-        }
+        payload = self.serialize_data(instance)
+        payload["action"] = action
         return payload
 
     def serialize_data(self, instance):
@@ -60,8 +56,7 @@ class WebsocketBinding(Binding):
                 fields = self.fields
         else:
             fields = [f.name for f in instance._meta.get_fields() if f.name not in self.exclude]
-        data = serializers.serialize('json', [instance], fields=fields)
-        return json.loads(data)[0]['fields']
+        return serializers.serialize('python', [instance], fields=fields)[0]
 
     # Inbound
     @classmethod
