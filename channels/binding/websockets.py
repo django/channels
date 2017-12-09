@@ -92,7 +92,7 @@ class WebsocketBinding(Binding):
         body = json.loads(message['text'])
         action = body['action']
         pk = body.get('pk', None)
-        data = body.get('data', None)
+        data = body.get('fields', None)
         return action, pk, data
 
     def _hydrate(self, pk, data):

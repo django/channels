@@ -36,11 +36,11 @@ class TestsBinding(ChannelTestCase):
         received = client.receive()
         self.assertTrue('payload' in received)
         self.assertTrue('action' in received['payload'])
-        self.assertTrue('data' in received['payload'])
-        self.assertTrue('username' in received['payload']['data'])
-        self.assertTrue('email' in received['payload']['data'])
-        self.assertTrue('password' in received['payload']['data'])
-        self.assertTrue('last_name' in received['payload']['data'])
+        self.assertTrue('fields' in received['payload'])
+        self.assertTrue('username' in received['payload']['fields'])
+        self.assertTrue('email' in received['payload']['fields'])
+        self.assertTrue('password' in received['payload']['fields'])
+        self.assertTrue('last_name' in received['payload']['fields'])
         self.assertTrue('model' in received['payload'])
         self.assertTrue('pk' in received['payload'])
 
@@ -48,10 +48,10 @@ class TestsBinding(ChannelTestCase):
         self.assertEqual(received['payload']['model'], 'auth.user')
         self.assertEqual(received['payload']['pk'], user.pk)
 
-        self.assertEqual(received['payload']['data']['email'], 'test@test.com')
-        self.assertEqual(received['payload']['data']['username'], 'test')
-        self.assertEqual(received['payload']['data']['password'], '')
-        self.assertEqual(received['payload']['data']['last_name'], '')
+        self.assertEqual(received['payload']['fields']['email'], 'test@test.com')
+        self.assertEqual(received['payload']['fields']['username'], 'test')
+        self.assertEqual(received['payload']['fields']['password'], '')
+        self.assertEqual(received['payload']['fields']['last_name'], '')
 
         received = client.receive()
         self.assertIsNone(received)
@@ -78,8 +78,8 @@ class TestsBinding(ChannelTestCase):
         received = client.receive()
         self.assertTrue('payload' in received)
         self.assertTrue('action' in received['payload'])
-        self.assertTrue('data' in received['payload'])
-        self.assertTrue('name' in received['payload']['data'])
+        self.assertTrue('fields' in received['payload'])
+        self.assertTrue('name' in received['payload']['fields'])
         self.assertTrue('model' in received['payload'])
         self.assertTrue('pk' in received['payload'])
 
@@ -87,7 +87,7 @@ class TestsBinding(ChannelTestCase):
         self.assertEqual(received['payload']['model'], 'tests.testuuidmodel')
         self.assertEqual(received['payload']['pk'], str(instance.pk))
 
-        self.assertEqual(received['payload']['data']['name'], 'testname')
+        self.assertEqual(received['payload']['fields']['name'], 'testname')
 
         received = client.receive()
         self.assertIsNone(received)
@@ -114,23 +114,23 @@ class TestsBinding(ChannelTestCase):
 
             self.assertTrue('payload' in received)
             self.assertTrue('action' in received['payload'])
-            self.assertTrue('data' in received['payload'])
-            self.assertTrue('username' in received['payload']['data'])
-            self.assertTrue('email' in received['payload']['data'])
-            self.assertTrue('password' in received['payload']['data'])
+            self.assertTrue('fields' in received['payload'])
+            self.assertTrue('username' in received['payload']['fields'])
+            self.assertTrue('email' in received['payload']['fields'])
+            self.assertTrue('password' in received['payload']['fields'])
             self.assertTrue('model' in received['payload'])
             self.assertTrue('pk' in received['payload'])
 
-            self.assertFalse('last_name' in received['payload']['data'])
-            self.assertFalse('first_name' in received['payload']['data'])
+            self.assertFalse('last_name' in received['payload']['fields'])
+            self.assertFalse('first_name' in received['payload']['fields'])
 
             self.assertEqual(received['payload']['action'], 'create')
             self.assertEqual(received['payload']['model'], 'auth.user')
             self.assertEqual(received['payload']['pk'], user.pk)
 
-            self.assertEqual(received['payload']['data']['email'], 'test@test.com')
-            self.assertEqual(received['payload']['data']['username'], 'test')
-            self.assertEqual(received['payload']['data']['password'], '')
+            self.assertEqual(received['payload']['fields']['email'], 'test@test.com')
+            self.assertEqual(received['payload']['fields']['username'], 'test')
+            self.assertEqual(received['payload']['fields']['password'], '')
 
             received = client.receive()
             self.assertIsNone(received)
@@ -174,11 +174,11 @@ class TestsBinding(ChannelTestCase):
         received = client.receive()
         self.assertTrue('payload' in received)
         self.assertTrue('action' in received['payload'])
-        self.assertTrue('data' in received['payload'])
-        self.assertTrue('username' in received['payload']['data'])
-        self.assertTrue('email' in received['payload']['data'])
-        self.assertTrue('password' in received['payload']['data'])
-        self.assertTrue('last_name' in received['payload']['data'])
+        self.assertTrue('fields' in received['payload'])
+        self.assertTrue('username' in received['payload']['fields'])
+        self.assertTrue('email' in received['payload']['fields'])
+        self.assertTrue('password' in received['payload']['fields'])
+        self.assertTrue('last_name' in received['payload']['fields'])
         self.assertTrue('model' in received['payload'])
         self.assertTrue('pk' in received['payload'])
 
@@ -186,10 +186,10 @@ class TestsBinding(ChannelTestCase):
         self.assertEqual(received['payload']['model'], 'auth.user')
         self.assertEqual(received['payload']['pk'], user.pk)
 
-        self.assertEqual(received['payload']['data']['email'], 'test@test.com')
-        self.assertEqual(received['payload']['data']['username'], 'test_new')
-        self.assertEqual(received['payload']['data']['password'], '')
-        self.assertEqual(received['payload']['data']['last_name'], '')
+        self.assertEqual(received['payload']['fields']['email'], 'test@test.com')
+        self.assertEqual(received['payload']['fields']['username'], 'test_new')
+        self.assertEqual(received['payload']['fields']['password'], '')
+        self.assertEqual(received['payload']['fields']['last_name'], '')
 
         received = client.receive()
         self.assertIsNone(received)
@@ -218,15 +218,15 @@ class TestsBinding(ChannelTestCase):
         received = client.receive()
         self.assertTrue('payload' in received)
         self.assertTrue('action' in received['payload'])
-        self.assertTrue('data' in received['payload'])
-        self.assertTrue('username' in received['payload']['data'])
+        self.assertTrue('fields' in received['payload'])
+        self.assertTrue('username' in received['payload']['fields'])
         self.assertTrue('model' in received['payload'])
         self.assertTrue('pk' in received['payload'])
 
         self.assertEqual(received['payload']['action'], 'delete')
         self.assertEqual(received['payload']['model'], 'auth.user')
         self.assertEqual(received['payload']['pk'], 1)
-        self.assertEqual(received['payload']['data']['username'], 'test')
+        self.assertEqual(received['payload']['fields']['username'], 'test')
 
         received = client.receive()
         self.assertIsNone(received)
@@ -260,7 +260,7 @@ class TestsBinding(ChannelTestCase):
                 'stream': 'users',
                 'payload': {
                     'action': CREATE,
-                    'data': {'username': 'test_inbound', 'email': 'test@user_steam.com'},
+                    'fields': {'username': 'test_inbound', 'email': 'test@user_steam.com'},
                 },
             })
 
@@ -298,7 +298,7 @@ class TestsBinding(ChannelTestCase):
             client.send_and_consume('websocket.connect', path='/')
             client.send_and_consume('websocket.receive', path='/', text={
                 'stream': 'users',
-                'payload': {'action': UPDATE, 'pk': user.pk, 'data': {'username': 'test_inbound'}}
+                'payload': {'action': UPDATE, 'pk': user.pk, 'fields': {'username': 'test_inbound'}}
             })
 
             user = User.objects.get(pk=user.pk)
@@ -308,7 +308,7 @@ class TestsBinding(ChannelTestCase):
             # trying change field that not in binding fields
             client.send_and_consume('websocket.receive', path='/', text={
                 'stream': 'users',
-                'payload': {'action': UPDATE, 'pk': user.pk, 'data': {'email': 'new@test.com'}}
+                'payload': {'action': UPDATE, 'pk': user.pk, 'fields': {'email': 'new@test.com'}}
             })
 
             user = User.objects.get(pk=user.pk)
