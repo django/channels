@@ -83,8 +83,7 @@ class SyncConsumer(AsyncConsumer):
 
     _sync = True
 
-    @sync_to_async
-    def dispatch(self, message):
+    async def dispatch(self, message):
         """
         Dispatches incoming messages to type-based handlers asynchronously.
         """
