@@ -54,7 +54,7 @@ class WebsocketBinding(Binding):
         Serializes model data into JSON-compatible types.
         """
         if self.fields is not None:
-            if self.fields == '__all__' or list(self.fields) == ['__all__']:
+            if self.fields in ('__all__', ['__all__']):
                 fields = None
             else:
                 fields = self.fields
@@ -123,7 +123,7 @@ class WebsocketBinding(Binding):
 
         if self.fields is not None:
             for name in data.keys():
-                if name in self.fields or self.fields == ['__all__']:
+                if name in self.fields or self.fields in ('__all__', ['__all__']):
                     setattr(instance, name, getattr(hydrated.object, name))
         else:
             for name in data.keys():
