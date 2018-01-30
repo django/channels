@@ -23,8 +23,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
  * @example
  * const webSocketBridge = new WebSocketBridge();
  * webSocketBridge.connect();
- * webSocketBridge.listen(function(action, stream) {
- *   console.log(action, stream);
+ * webSocketBridge.listen(function(payload, stream) {
+ *   console.log(payload, stream);
  * });
  */
 var WebSocketBridge = function () {
@@ -79,13 +79,13 @@ var WebSocketBridge = function () {
      * Starts listening for messages on the websocket, demultiplexing if necessary.
      *
      * @param      {Function}  [cb]         Callback to be execute when a message
-     * arrives. The callback will receive `action` and `stream` parameters
+     * arrives. The callback will receive `payload` and `stream` parameters
      *
      * @example
      * const webSocketBridge = new WebSocketBridge();
      * webSocketBridge.connect();
-     * webSocketBridge.listen(function(action, stream) {
-     *   console.log(action, stream);
+     * webSocketBridge.listen(function(payload, stream) {
+     *   console.log(payload, stream);
      * });
      */
 
@@ -97,18 +97,18 @@ var WebSocketBridge = function () {
       this.default_cb = cb;
       this.socket.onmessage = function (event) {
         var msg = JSON.parse(event.data);
-        var action = void 0;
+        var payload = void 0;
         var stream = void 0;
 
         if (msg.stream !== undefined) {
-          action = msg.payload;
+          payload = msg.payload;
           stream = msg.stream;
           var stream_cb = _this.streams[stream];
-          stream_cb ? stream_cb(action, stream) : null;
+          stream_cb ? stream_cb(payload, stream) : null;
         } else {
-          action = msg;
+          payload = msg;
           stream = null;
-          _this.default_cb ? _this.default_cb(action, stream) : null;
+          _this.default_cb ? _this.default_cb(payload, stream) : null;
         }
       };
     }
@@ -119,16 +119,16 @@ var WebSocketBridge = function () {
      *
      * @param      {String}    stream  The stream name
      * @param      {Function}  cb      Callback to be execute when a message
-     * arrives. The callback will receive `action` and `stream` parameters.
-      * @example
+     * arrives. The callback will receive `payload` and `stream` parameters.
+       * @example
      * const webSocketBridge = new WebSocketBridge();
      * webSocketBridge.connect();
      * webSocketBridge.listen();
-     * webSocketBridge.demultiplex('mystream', function(action, stream) {
-     *   console.log(action, stream);
+     * webSocketBridge.demultiplex('mystream', function(payload, stream) {
+     *   console.log(payload, stream);
      * });
-     * webSocketBridge.demultiplex('myotherstream', function(action, stream) {
-     *   console.info(action, stream);
+     * webSocketBridge.demultiplex('myotherstream', function(payload, stream) {
+     *   console.info(payload, stream);
      * });
      */
 

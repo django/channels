@@ -3,6 +3,9 @@
  */
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.channels = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 "use strict";
+;
+;
+;
 var isWebSocket = function (constructor) {
     return constructor && constructor.CLOSING === 2;
 };
@@ -44,7 +47,9 @@ var reassignEventListeners = function (ws, oldWs, listeners) {
         });
     });
     if (oldWs) {
-        LEVEL_0_EVENTS.forEach(function (name) { ws[name] = oldWs[name]; });
+        LEVEL_0_EVENTS.forEach(function (name) {
+            ws[name] = oldWs[name];
+        });
     }
 };
 var ReconnectingWebsocket = function (url, protocols, options) {
@@ -72,7 +77,7 @@ var ReconnectingWebsocket = function (url, protocols, options) {
     var log = config.debug ? function () {
         var params = [];
         for (var _i = 0; _i < arguments.length; _i++) {
-            params[_i - 0] = arguments[_i];
+            params[_i] = arguments[_i];
         }
         return console.log.apply(console, ['RWS:'].concat(params));
     } : function () { };
@@ -94,7 +99,7 @@ var ReconnectingWebsocket = function (url, protocols, options) {
         }
     }, 0); };
     var handleClose = function () {
-        log('close');
+        log('handleClose', { shouldRetry: shouldRetry });
         retriesCount++;
         log('retries count:', retriesCount);
         if (retriesCount > config.maxRetries) {
@@ -107,15 +112,19 @@ var ReconnectingWebsocket = function (url, protocols, options) {
         else {
             reconnectDelay = updateReconnectionDelay(config, reconnectDelay);
         }
-        log('reconnectDelay:', reconnectDelay);
+        log('handleClose - reconnectDelay:', reconnectDelay);
         if (shouldRetry) {
             setTimeout(connect, reconnectDelay);
         }
     };
     var connect = function () {
+        if (!shouldRetry) {
+            return;
+        }
         log('connect');
         var oldWs = ws;
-        ws = new config.constructor(url, protocols);
+        var wsUrl = (typeof url === 'function') ? url() : url;
+        ws = new config.constructor(wsUrl, protocols);
         connectingTimeout = setTimeout(function () {
             log('timeout');
             ws.close();
@@ -147,10 +156,11 @@ var ReconnectingWebsocket = function (url, protocols, options) {
         if (code === void 0) { code = 1000; }
         if (reason === void 0) { reason = ''; }
         var _b = _a === void 0 ? {} : _a, _c = _b.keepClosed, keepClosed = _c === void 0 ? false : _c, _d = _b.fastClose, fastClose = _d === void 0 ? true : _d, _e = _b.delay, delay = _e === void 0 ? 0 : _e;
+        log('close - params:', { reason: reason, keepClosed: keepClosed, fastClose: fastClose, delay: delay, retriesCount: retriesCount, maxRetries: config.maxRetries });
+        shouldRetry = !keepClosed && retriesCount <= config.maxRetries;
         if (delay) {
             reconnectDelay = delay;
         }
-        shouldRetry = !keepClosed;
         ws.close(code, reason);
         if (fastClose) {
             var fakeCloseEvent_1 = {
@@ -234,8 +244,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
  * @example
  * const webSocketBridge = new WebSocketBridge();
  * webSocketBridge.connect();
- * webSocketBridge.listen(function(action, stream) {
- *   console.log(action, stream);
+ * webSocketBridge.listen(function(payload, stream) {
+ *   console.log(payload, stream);
  * });
  */
 var WebSocketBridge = function () {
@@ -290,13 +300,13 @@ var WebSocketBridge = function () {
      * Starts listening for messages on the websocket, demultiplexing if necessary.
      *
      * @param      {Function}  [cb]         Callback to be execute when a message
-     * arrives. The callback will receive `action` and `stream` parameters
+     * arrives. The callback will receive `payload` and `stream` parameters
      *
      * @example
      * const webSocketBridge = new WebSocketBridge();
      * webSocketBridge.connect();
-     * webSocketBridge.listen(function(action, stream) {
-     *   console.log(action, stream);
+     * webSocketBridge.listen(function(payload, stream) {
+     *   console.log(payload, stream);
      * });
      */
 
@@ -308,18 +318,18 @@ var WebSocketBridge = function () {
       this.default_cb = cb;
       this.socket.onmessage = function (event) {
         var msg = JSON.parse(event.data);
-        var action = void 0;
+        var payload = void 0;
         var stream = void 0;
 
         if (msg.stream !== undefined) {
-          action = msg.payload;
+          payload = msg.payload;
           stream = msg.stream;
           var stream_cb = _this.streams[stream];
-          stream_cb ? stream_cb(action, stream) : null;
+          stream_cb ? stream_cb(payload, stream) : null;
         } else {
-          action = msg;
+          payload = msg;
           stream = null;
-          _this.default_cb ? _this.default_cb(action, stream) : null;
+          _this.default_cb ? _this.default_cb(payload, stream) : null;
         }
       };
     }
@@ -330,16 +340,16 @@ var WebSocketBridge = function () {
      *
      * @param      {String}    stream  The stream name
      * @param      {Function}  cb      Callback to be execute when a message
-     * arrives. The callback will receive `action` and `stream` parameters.
-      * @example
+     * arrives. The callback will receive `payload` and `stream` parameters.
+       * @example
      * const webSocketBridge = new WebSocketBridge();
      * webSocketBridge.connect();
      * webSocketBridge.listen();
-     * webSocketBridge.demultiplex('mystream', function(action, stream) {
-     *   console.log(action, stream);
+     * webSocketBridge.demultiplex('mystream', function(payload, stream) {
+     *   console.log(payload, stream);
      * });
-     * webSocketBridge.demultiplex('myotherstream', function(action, stream) {
-     *   console.info(action, stream);
+     * webSocketBridge.demultiplex('myotherstream', function(payload, stream) {
+     *   console.info(payload, stream);
      * });
      */
 
