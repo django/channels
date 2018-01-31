@@ -7,8 +7,8 @@ import ReconnectingWebSocket from 'reconnecting-websocket';
  * @example
  * const webSocketBridge = new WebSocketBridge();
  * webSocketBridge.connect();
- * webSocketBridge.listen(function(action, stream) {
- *   console.log(action, stream);
+ * webSocketBridge.listen(function(payload, stream) {
+ *   console.log(payload, stream);
  * });
  */
 export class WebSocketBridge {
@@ -57,31 +57,31 @@ export class WebSocketBridge {
    * Starts listening for messages on the websocket, demultiplexing if necessary.
    *
    * @param      {Function}  [cb]         Callback to be execute when a message
-   * arrives. The callback will receive `action` and `stream` parameters
+   * arrives. The callback will receive `payload` and `stream` parameters
    *
    * @example
    * const webSocketBridge = new WebSocketBridge();
    * webSocketBridge.connect();
-   * webSocketBridge.listen(function(action, stream) {
-   *   console.log(action, stream);
+   * webSocketBridge.listen(function(payload, stream) {
+   *   console.log(payload, stream);
    * });
    */
   listen(cb) {
     this.default_cb = cb;
     this.socket.onmessage = (event) => {
       const msg = JSON.parse(event.data);
-      let action;
+      let payload;
       let stream;
 
       if (msg.stream !== undefined) {
-        action = msg.payload;
+        payload = msg.payload;
         stream = msg.stream;
         const stream_cb = this.streams[stream];
-        stream_cb ? stream_cb(action, stream) : null;
+        stream_cb ? stream_cb(payload, stream) : null;
       } else {
-        action = msg;
+        payload = msg;
         stream = null;
-        this.default_cb ? this.default_cb(action, stream) : null;
+        this.default_cb ? this.default_cb(payload, stream) : null;
       }
     };
   }
@@ -92,17 +92,17 @@ export class WebSocketBridge {
    *
    * @param      {String}    stream  The stream name
    * @param      {Function}  cb      Callback to be execute when a message
-   * arrives. The callback will receive `action` and `stream` parameters.
+   * arrives. The callback will receive `payload` and `stream` parameters.
 
    * @example
    * const webSocketBridge = new WebSocketBridge();
    * webSocketBridge.connect();
    * webSocketBridge.listen();
-   * webSocketBridge.demultiplex('mystream', function(action, stream) {
-   *   console.log(action, stream);
+   * webSocketBridge.demultiplex('mystream', function(payload, stream) {
+   *   console.log(payload, stream);
    * });
-   * webSocketBridge.demultiplex('myotherstream', function(action, stream) {
-   *   console.info(action, stream);
+   * webSocketBridge.demultiplex('myotherstream', function(payload, stream) {
+   *   console.info(payload, stream);
    * });
    */
   demultiplex(stream, cb) {

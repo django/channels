@@ -9,8 +9,8 @@ import { WebSocketBridge } from 'django-channels'
 
 const webSocketBridge = new WebSocketBridge();
 webSocketBridge.connect('/ws/');
-webSocketBridge.listen(function(action, stream) {
-  console.log(action, stream);
+webSocketBridge.listen(function(payload, stream) {
+  console.log(payload, stream);
 });
 ```
 
@@ -26,11 +26,11 @@ To demultiplex specific streams:
 const webSocketBridge = new WebSocketBridge();
 webSocketBridge.connect('/ws/');
 webSocketBridge.listen();
-webSocketBridge.demultiplex('mystream', function(action, stream) {
-  console.log(action, stream);
+webSocketBridge.demultiplex('mystream', function(payload, stream) {
+  console.log(payload, stream);
 });
-webSocketBridge.demultiplex('myotherstream', function(action, stream) {
-  console.info(action, stream);
+webSocketBridge.demultiplex('myotherstream', function(payload, stream) {
+  console.info(payload, stream);
 });
 ```
 
