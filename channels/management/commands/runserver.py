@@ -1,4 +1,5 @@
 import datetime
+import logging
 import sys
 import threading
 
@@ -11,9 +12,10 @@ from django.utils.encoding import get_system_encoding
 
 from channels import DEFAULT_CHANNEL_LAYER, channel_layers
 from channels.handler import ViewConsumer
-from channels.log import setup_logger
 from channels.staticfiles import StaticFilesConsumer
 from channels.worker import Worker
+
+logger = logging.getLogger('channels.server')
 
 
 class Command(RunserverCommand):
@@ -33,8 +35,6 @@ class Command(RunserverCommand):
             help='Specify the daphne websocket_handshake_timeout interval in seconds (default: 5)')
 
     def handle(self, *args, **options):
-        self.verbosity = options.get("verbosity", 1)
-        self.logger = setup_logger('django.channels', self.verbosity)
         self.http_timeout = options.get("http_timeout", 60)
         self.websocket_handshake_timeout = options.get("websocket_handshake_timeout", 5)
         super(Command, self).handle(*args, **options)
@@ -79,12 +79,12 @@ class Command(RunserverCommand):
         if options.get("run_worker", True):
             worker_count = 4 if options.get("use_threading", True) else 1
             for _ in range(worker_count):
-                worker = WorkerThread(self.channel_layer, self.logger)
+                worker = WorkerThread(self.channel_layer)
                 worker.daemon = True
                 worker.start()
         # Launch server in 'main' thread. Signals are disabled as it's still
         # actually a subthread under the autoreloader.
-        self.logger.debug("Daphne running, listening on %s:%s", self.addr, self.port)
+        logger.debug("Daphne running, listening on %s:%s", self.addr, self.port)
 
         # build the endpoint description string from host/port options
         endpoints = build_endpoint_description_strings(host=self.addr, port=self.port)
@@ -99,7 +99,7 @@ class Command(RunserverCommand):
                 root_path=getattr(settings, 'FORCE_SCRIPT_NAME', '') or '',
                 websocket_handshake_timeout=self.websocket_handshake_timeout,
             ).run()
-            self.logger.debug("Daphne exited")
+            logger.debug("Daphne exited")
         except KeyboardInterrupt:
             shutdown_message = options.get('shutdown_message', '')
             if shutdown_message:
@@ -110,11 +110,13 @@ class Command(RunserverCommand):
         """
         Logs various different kinds of requests to the console.
         """
-        # All start with timestamp
-        msg = "[%s] " % datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")
+        # Sets default level to INFO
+        level = logging.INFO
+        msg = ""
+
         # HTTP requests
         if protocol == "http" and action == "complete":
-            msg += "HTTP %(method)s %(path)s %(status)s [%(time_taken).2f, %(client)s]\n" % details
+            msg += "HTTP %(method)s %(path)s %(status)s [%(time_taken).2f, %(client)s]" % details
             # Utilize terminal colors, if available
             if 200 <= details['status'] < 300:
                 # Put 2XX first, since it should be the common case
@@ -127,22 +129,26 @@ class Command(RunserverCommand):
                 msg = self.style.HTTP_REDIRECT(msg)
             elif details['status'] == 404:
                 msg = self.style.HTTP_NOT_FOUND(msg)
+                level = logging.WARN
             elif 400 <= details['status'] < 500:
                 msg = self.style.HTTP_BAD_REQUEST(msg)
+                level = logging.WARN
             else:
                 # Any 5XX, or any other response
                 msg = self.style.HTTP_SERVER_ERROR(msg)
+                level = logging.ERROR
         # Websocket requests
         elif protocol == "websocket" and action == "connected":
-            msg += "WebSocket CONNECT %(path)s [%(client)s]\n" % details
+            msg += "WebSocket CONNECT %(path)s [%(client)s]" % details
         elif protocol == "websocket" and action == "disconnected":
-            msg += "WebSocket DISCONNECT %(path)s [%(client)s]\n" % details
+            msg += "WebSocket DISCONNECT %(path)s [%(client)s]" % details
         elif protocol == "websocket" and action == "connecting":
-            msg += "WebSocket HANDSHAKING %(path)s [%(client)s]\n" % details
+            msg += "WebSocket HANDSHAKING %(path)s [%(client)s]" % details
         elif protocol == "websocket" and action == "rejected":
-            msg += "WebSocket REJECT %(path)s [%(client)s]\n" % details
+            msg += "WebSocket REJECT %(path)s [%(client)s]" % details
+            level = logging.WARN
 
-        sys.stderr.write(msg)
+        logger.log(level, msg)
 
     def get_consumer(self, *args, **options):
         """
@@ -164,14 +170,13 @@ class WorkerThread(threading.Thread):
     Class that runs a worker
     """
 
-    def __init__(self, channel_layer, logger):
+    def __init__(self, channel_layer):
         super(WorkerThread, self).__init__()
         self.channel_layer = channel_layer
-        self.logger = logger
 
     def run(self):
-        self.logger.debug("Worker thread running")
+        logger.debug("Worker thread running")
         worker = Worker(channel_layer=self.channel_layer, signal_handlers=False)
         worker.ready()
         worker.run()
-        self.logger.debug("Worker thread exited")
+        logger.debug("Worker thread exited")

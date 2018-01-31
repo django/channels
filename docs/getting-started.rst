@@ -793,6 +793,16 @@ session backend's performance. Make sure you choose a session backend wisely
 if you're going to rely heavily on ``enforce_ordering``.
 
 
+Logging
+-------
+
+Channels, like Django, uses Python's builtin `logging <https://docs.python.org/3/library/logging.html#module-logging>`_
+and, since channels log system is basically a copy from Django's log system,
+you can also use `Django's structure <https://docs.djangoproject.com/en/1.11/topics/logging/>`_ to configure your loggers.
+
+By default, channels logs servers outputs to ``logging.StreamHandler`` using ``channels.server`` logging handler.
+
+
 Next Steps
 ----------
 
