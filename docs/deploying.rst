@@ -194,7 +194,7 @@ With some browsers you may see errors regarding ``Sec-WebSocket-Protocol`` heade
 
     CHANNELS_WS_PROTOCOLS = ["graphql-ws", ]
     
-In production you may start a daphne server without the runserver command. So you need to pass the ws-protocl directly::
+In production you may start a daphne server without the runserver command. So you need to pass the ws-protocol directly::
 
     daphne --ws-protocol "graphql-ws" --proxy-headers my_project.asgi:channel_layer
     
