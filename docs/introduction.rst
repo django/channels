@@ -206,7 +206,7 @@ WebSockets and chat requests::
         "websocket": URLRouter([
             url("^chat/admin/$", AdminChatConsumer),
             url("^chat/$", PublicChatConsumer),
-        ])
+        ]),
 
         "telegram": TelegramConsumer,
     })
