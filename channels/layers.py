@@ -209,24 +209,22 @@ class InMemoryChannelLayer(BaseChannelLayer):
         assert self.valid_channel_name(channel), "Channel name not valid"
         # If it's a process-local channel, strip off local part and stick full name in message
         assert "__asgi_channel__" not in message
+
         if "!" in channel:
             message = dict(message.items())
             message["__asgi_channel__"] = channel
             channel = self.non_local_name(channel)
-            # Store it in our channels list
-            queue = self.channels.setdefault(channel, deque())
-            # Are we full
-            if len(queue) >= self.capacity:
-                raise ChannelFull(channel)
+        # Store it in our channels list
+        queue = self.channels.setdefault(channel, deque())
+        # Are we full
+        if len(queue) >= self.capacity:
+            raise ChannelFull(channel)
 
-            # Add message
-            queue.append((
-                time.time() + self.expiry,
-                deepcopy(message),
-            ))
-        else:
-            # We do not support non local channels
-            pass
+        # Add message
+        queue.append((
+            time.time() + self.expiry,
+            deepcopy(message),
+        ))
 
     async def receive(self, channel):
         """
@@ -253,9 +251,10 @@ class InMemoryChannelLayer(BaseChannelLayer):
             # Wait on the receive buffer's contents
             return await self.receive_buffer_lpop(channel)
         else:
-            # This must be a worker and we do not support it
-            raise InvalidChannelLayerError(_('Sorry we do not support worker channels/non process local channels'))
-
+            # Do a plain direct receive
+            _, msg_obj = await self.receive_single(channel)
+            channel, message = msg_obj
+            return message
 
     async def receive_loop(self, channel):
         """
