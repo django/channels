@@ -7,7 +7,6 @@ import re
 import string
 import threading
 import time
-
 from collections import deque
 from copy import deepcopy
 
@@ -410,6 +409,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
                 await self.send(channel, message)
             except ChannelFull:
                 pass
+
 
 def get_channel_layer(alias=DEFAULT_CHANNEL_LAYER):
     """
