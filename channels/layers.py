@@ -5,10 +5,17 @@ import fnmatch
 import random
 import re
 import string
+import time
+import threading
 
 from django.conf import settings
 from django.utils.module_loading import import_string
+from django.utils.translation import ugettext as _
 
+from collections import deque
+from copy import deepcopy
+
+from channels.exceptions import ChannelFull, InvalidChannelLayerError
 from channels import DEFAULT_CHANNEL_LAYER
 
 from .exceptions import InvalidChannelLayerError
@@ -177,9 +184,21 @@ class InMemoryChannelLayer(BaseChannelLayer):
     In-memory channel layer implementation for testing purposes.
     """
 
-    def __init__(self, *args, **kwargs):
-        super(InMemoryChannelLayer, self).__init__(*args, **kwargs)
+    local_poll_interval = 0.01
+
+    def __init__(self, expiry=60, capacity=100, channel_capacity=None, **kwargs):
+        super().__init__(expiry=expiry, capacity=capacity, channel_capacity=channel_capacity, **kwargs)
         self.channels = {}
+        self.groups = {}
+        self.thread_lock = threading.Lock()
+        # Coroutines currently receiving the process-local channel.
+        self.receive_tasks = {}
+        # Buffered messages by process-local channel name
+        self.receive_buffer = {}
+
+    ### Channel layer API ###
+
+    extensions = ["groups", "flush"]
 
     async def send(self, channel, message):
         """
@@ -194,8 +213,20 @@ class InMemoryChannelLayer(BaseChannelLayer):
             message = dict(message.items())
             message["__asgi_channel__"] = channel
             channel = self.non_local_name(channel)
-        # Store it in our channels list
-        self.channels.setdefault(channel, []).append(message)
+            # Store it in our channels list
+            queue = self.channels.setdefault(channel, deque())
+            # Are we full
+            if len(queue) >= self.capacity:
+                raise ChannelFull(channel)
+
+            # Add message
+            queue.append((
+                time.time() + self.expiry,
+                deepcopy(message),
+            ))
+        else:
+            # We do not support non local channels
+            pass
 
     async def receive(self, channel):
         """
@@ -204,14 +235,80 @@ class InMemoryChannelLayer(BaseChannelLayer):
         of the waiting coroutines will get the result.
         """
         assert self.valid_channel_name(channel)
+        self._clean_expired()
+        # process-local channel
+        if "!" in channel:
+            real_channel = self.non_local_name(channel)
+            assert real_channel.endswith("inmemory!"), "Wrong client prefix"
+
+            # Make sure a receive task is running
+            task = self.receive_tasks.get(real_channel, None)
+            if task is not None and task.done():
+                task = None
+            if task is None:
+                self.receive_tasks[real_channel] = asyncio.ensure_future(
+                    self.receive_loop(real_channel),
+                )
+
+            # Wait on the receive buffer's contents
+            return await self.receive_buffer_lpop(channel)
+        else:
+            # This must be a worker and we do not support it
+            raise InvalidChannelLayerError(_('Sorry we do not support worker channels/non process local channels'))
+
+
+    async def receive_loop(self, channel):
+        """
+        Continuous-receiving loop that fetches results into the receive buffer.
+        """
+        assert "!" in channel, "receive_loop called on non-process-local channel"
+        while True:
+            # Catch RuntimeErrors from the loop stopping while we release
+            # a connection. Wish there was a cleaner solution here.
+            real_channel, message = await self.receive_single(channel)
+            self.receive_buffer.setdefault(real_channel, deque()).append(message)
+    
+    async def receive_single(self, channel):
+        """
+        Receives a single message off of the channel and returns it.
+        """
+        # Check channel name
+        assert self.valid_channel_name(channel, receive=True), "Channel name invalid"
         while True:
             try:
-                message = self.channels.get(channel, []).pop(0)
+                msg_obj = self.channels.get(channel, deque()).popleft()
+                if msg_obj:
+                    _, message = msg_obj
+                    # If there is a full channel name stored in the message, unpack it.
+                    if "__asgi_channel__" in message:
+                        channel = message['__asgi_channel__']
+                        del message['__asgi_channel__']
+                    return channel, (time.time() + self.expiry, message)
+                else:
+                    # Sleep poll
+                    await asyncio.sleep(self.local_poll_interval)
             except IndexError:
-                asyncio.sleep(0.01)
-            else:
-                return message
+                await asyncio.sleep(self.local_poll_interval)
 
+    async def receive_buffer_lpop(self, channel):
+        """
+        Atomic, async method that returns the left-hand item in a receive buffer.
+        """
+        while True:
+            if self.receive_buffer.get(channel, None):
+                _, message = self.receive_buffer[channel].popleft()
+                if len(self.receive_buffer[channel]) == 0:
+                    del self.receive_buffer[channel]
+                return message
+            else:
+                # See if we need to propagate a dead receiver exception
+                real_channel = self.non_local_name(channel)
+                task = self.receive_tasks.get(real_channel, None)
+                if task is not None and task.done():
+                    task.result()
+                # Sleep poll
+                await asyncio.sleep(self.local_poll_interval)
+    
     async def new_channel(self, prefix="specific."):
         """
         Returns a new channel name that can be used by something in our
@@ -221,6 +318,102 @@ class InMemoryChannelLayer(BaseChannelLayer):
             prefix,
             "".join(random.choice(string.ascii_letters) for i in range(12)),
         )
+
+    ### Expire cleanup ###
+
+    def _clean_expired(self):
+        """
+        Goes through all messages and groups and removes those that are expired.
+        Any channel with an expired message is removed from all groups.
+        """
+        with self.thread_lock:
+            # Channel cleanup
+            for channel, queue in list(self.channels.items()):
+                remove = False
+                # See if it's expired
+                while queue and queue[0][0] < time.time():
+                    queue.popleft()
+                    remove = True
+                # Any removal prompts group discard
+                if remove:
+                    self._remove_from_groups(channel)
+                # Is the channel now empty and needs deleting?
+                if not queue:
+                    del self.channels[channel]
+
+            # Receive Buffer Cleanup
+            # DO WE NEED THIS?
+            for channel, queue in list(self.receive_buffer.items()):
+                remove = False
+                # See if it's expired
+                while queue and queue[0][0] < time.time():
+                    queue.popleft()
+                    remove = True
+                # Is the channel now empty and needs deleting?
+                if not queue:
+                    del self.channels[channel]
+
+    ### Flush extension ###
+
+    async def flush(self):
+        self.channels = {}
+        self.receive_buffer = {}
+        self.groups = {}
+
+    async def close(self):
+        # Stop all reader tasks
+        for task in self.receive_tasks.values():
+            task.cancel()
+        asyncio.wait(self.receive_tasks.values())
+        self.receive_tasks = {}
+
+    def _remove_from_groups(self, channel):
+        """
+        Removes a channel from all groups. Used when a message on it expires.
+        """
+        for channels in self.groups.values():
+            if channel in channels:
+                del channels[channel]
+
+    ### Groups extension ###
+
+    async def group_add(self, group, channel):
+        """
+        Adds the channel name to a group.
+        """
+        # Check the inputs
+        assert self.valid_group_name(group), "Group name not valid"
+        assert self.valid_channel_name(channel), "Channel name not valid"
+        # Add to group dict
+        with self.thread_lock:
+            self.groups.setdefault(group, {})
+            self.groups[group][channel] = time.time()
+
+    async def group_discard(self, group, channel):
+        # Both should be text and valid
+        assert self.valid_channel_name(channel), "Invalid channel name"
+        assert self.valid_group_name(group), "Invalid group name"
+        # Remove from group set
+        with self.thread_lock:
+            if group in self.groups:
+                if channel in self.groups[group]:
+                    del self.groups[group][channel]
+                if not self.groups[group]:
+                    del self.groups[group]
+
+    async def group_send(self, group, message):
+        # Check types
+        assert isinstance(message, dict), "Message is not a dict"
+        assert self.valid_group_name(group), "Invalid group name"
+        # Run clean
+        self._clean_expired()
+        # Send to each channel
+        for channel in self.groups.get(group, set()):
+            try:
+                await self.send(channel, message)
+            except ChannelFull:
+                pass
+
 
 
 def get_channel_layer(alias=DEFAULT_CHANNEL_LAYER):
