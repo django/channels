@@ -35,7 +35,11 @@ class BaseOriginValidator(object):
         return self.func(message, *args, **kwargs)
 
     def get_header(self, message, name):
-        headers = message.content["headers"]
+        if hasattr(message, "content"):
+            headers = message.content["headers"]
+        else:
+            headers = message["headers"]
+            
         for header in headers:
             try:
                 if header[0] == name:
