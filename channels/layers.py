@@ -10,15 +10,13 @@ import threading
 
 from django.conf import settings
 from django.utils.module_loading import import_string
-from django.utils.translation import ugettext as _
 
 from collections import deque
 from copy import deepcopy
 
-from channels.exceptions import ChannelFull, InvalidChannelLayerError
 from channels import DEFAULT_CHANNEL_LAYER
 
-from .exceptions import InvalidChannelLayerError
+from .exceptions import ChannelFull, InvalidChannelLayerError
 
 
 class ChannelLayerManager:
@@ -266,7 +264,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
             # a connection. Wish there was a cleaner solution here.
             real_channel, message = await self.receive_single(channel)
             self.receive_buffer.setdefault(real_channel, deque()).append(message)
-    
+
     async def receive_single(self, channel):
         """
         Receives a single message off of the channel and returns it.
@@ -307,7 +305,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
                     task.result()
                 # Sleep poll
                 await asyncio.sleep(self.local_poll_interval)
-    
+
     async def new_channel(self, prefix="specific."):
         """
         Returns a new channel name that can be used by something in our
@@ -412,8 +410,6 @@ class InMemoryChannelLayer(BaseChannelLayer):
                 await self.send(channel, message)
             except ChannelFull:
                 pass
-
-
 
 def get_channel_layer(alias=DEFAULT_CHANNEL_LAYER):
     """
