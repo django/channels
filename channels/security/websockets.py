@@ -39,7 +39,7 @@ class BaseOriginValidator(object):
             headers = message.content["headers"]
         else:
             headers = message["headers"]
-            
+
         for header in headers:
             try:
                 if header[0] == name:
