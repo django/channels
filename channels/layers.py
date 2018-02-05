@@ -5,14 +5,14 @@ import fnmatch
 import random
 import re
 import string
-import time
 import threading
-
-from django.conf import settings
-from django.utils.module_loading import import_string
+import time
 
 from collections import deque
 from copy import deepcopy
+
+from django.conf import settings
+from django.utils.module_loading import import_string
 
 from channels import DEFAULT_CHANNEL_LAYER
 
@@ -278,8 +278,8 @@ class InMemoryChannelLayer(BaseChannelLayer):
                     _, message = msg_obj
                     # If there is a full channel name stored in the message, unpack it.
                     if "__asgi_channel__" in message:
-                        channel = message['__asgi_channel__']
-                        del message['__asgi_channel__']
+                        channel = message["__asgi_channel__"]
+                        del message["__asgi_channel__"]
                     return channel, (time.time() + self.expiry, message)
                 else:
                     # Sleep poll
