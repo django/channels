@@ -7,6 +7,7 @@ from async_generator import async_generator, yield_
 from channels.exceptions import ChannelFull
 from channels.layers import InMemoryChannelLayer
 
+
 @pytest.fixture()
 @async_generator
 async def channel_layer():
