@@ -227,7 +227,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
         _, message = await queue.get()
 
         return message
-    
+
     async def new_channel(self, prefix="specific."):
         """
         Returns a new channel name that can be used by something in our
