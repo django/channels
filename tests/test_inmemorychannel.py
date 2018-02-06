@@ -80,26 +80,6 @@ async def test_multi_send_receive(channel_layer):
     assert (await channel_layer.receive("test-channel-3"))["type"] == "message.2"
     assert (await channel_layer.receive("test-channel-3"))["type"] == "message.3"
 
-'''
-@pytest.mark.asyncio
-async def test_reject_bad_channel(channel_layer):
-    """
-    Makes sure sending/receiving on an invalic channel name fails.
-    """
-    with pytest.raises(TypeError):
-        await channel_layer.send("=+135!", {"type": "foom"})
-    with pytest.raises(TypeError):
-        await channel_layer.receive("=+135!")
-
-
-@pytest.mark.asyncio
-async def test_reject_bad_client_prefix(channel_layer):
-    """
-    Makes sure receiving on a non-prefixed local channel is not allowed.
-    """
-    with pytest.raises(AssertionError):
-        await channel_layer.receive("not-client-prefix!local_part")
-'''
 
 @pytest.mark.asyncio
 async def test_groups_basic(channel_layer):
