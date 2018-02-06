@@ -221,7 +221,6 @@ class InMemoryChannelLayer(BaseChannelLayer):
         assert self.valid_channel_name(channel)
         self._clean_expired()
 
-        loop = asyncio.get_event_loop()
         queue = self.channels.setdefault(channel, asyncio.Queue())
 
         # Do a plain direct receive
