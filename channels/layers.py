@@ -177,7 +177,7 @@ class BaseChannelLayer:
 
 class InMemoryChannelLayer(BaseChannelLayer):
     '''
-    Our own in memory layer
+    In-memory channel layer implementation
     '''
     local_poll_interval = 0.01
 
