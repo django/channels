@@ -185,7 +185,6 @@ class InMemoryChannelLayer(BaseChannelLayer):
         super().__init__(expiry=expiry, capacity=capacity, channel_capacity=channel_capacity, **kwargs)
         self.channels = {}
         self.groups = {}
-        self.thread_lock = threading.Lock()
 
     ### Channel layer API ###
 
@@ -245,20 +244,19 @@ class InMemoryChannelLayer(BaseChannelLayer):
         Goes through all messages and groups and removes those that are expired.
         Any channel with an expired message is removed from all groups.
         """
-        with self.thread_lock:
-            # Channel cleanup
-            for channel, queue in list(self.channels.items()):
-                remove = False
-                # See if it's expired
-                while not queue.empty() and queue._queue[0][0] < time.time():
-                    queue.get_nowait()
-                    remove = True
-                # Any removal prompts group discard
-                if remove:
-                    self._remove_from_groups(channel)
-                # Is the channel now empty and needs deleting?
-                if not queue:
-                    del self.channels[channel]
+        # Channel cleanup
+        for channel, queue in list(self.channels.items()):
+            remove = False
+            # See if it's expired
+            while not queue.empty() and queue._queue[0][0] < time.time():
+                queue.get_nowait()
+                remove = True
+            # Any removal prompts group discard
+            if remove:
+                self._remove_from_groups(channel)
+            # Is the channel now empty and needs deleting?
+            if not queue:
+                del self.channels[channel]
 
     ### Flush extension ###
 
@@ -288,21 +286,19 @@ class InMemoryChannelLayer(BaseChannelLayer):
         assert self.valid_group_name(group), "Group name not valid"
         assert self.valid_channel_name(channel), "Channel name not valid"
         # Add to group dict
-        with self.thread_lock:
-            self.groups.setdefault(group, {})
-            self.groups[group][channel] = time.time()
+        self.groups.setdefault(group, {})
+        self.groups[group][channel] = time.time()
 
     async def group_discard(self, group, channel):
         # Both should be text and valid
         assert self.valid_channel_name(channel), "Invalid channel name"
         assert self.valid_group_name(group), "Invalid group name"
         # Remove from group set
-        with self.thread_lock:
-            if group in self.groups:
-                if channel in self.groups[group]:
-                    del self.groups[group][channel]
-                if not self.groups[group]:
-                    del self.groups[group]
+        if group in self.groups:
+            if channel in self.groups[group]:
+                del self.groups[group][channel]
+            if not self.groups[group]:
+                del self.groups[group]
 
     async def group_send(self, group, message):
         # Check types
