@@ -5,7 +5,6 @@ import fnmatch
 import random
 import re
 import string
-import threading
 import time
 from copy import deepcopy
 
@@ -267,7 +266,8 @@ class InMemoryChannelLayer(BaseChannelLayer):
         for group in self.groups:
             for channel in self.groups.get(group, set()):
                 # If join time is older than group_expiry end the group membership
-                if self.groups[group][channel] and int(self.groups[group][channel]) < (int(time.time()) - self.group_expiry):
+                if (self.groups[group][channel] and
+                    int(self.groups[group][channel]) < (int(time.time()) - self.group_expiry)):
                     del self.groups[group][channel]
 
     ### Flush extension ###
