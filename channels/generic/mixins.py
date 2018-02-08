@@ -7,7 +7,7 @@ class PermissionsMixin(object):
     def websocket_connect(self, message):
         if self.has_permission():
             return super().websocket_connect(message)
-        
+
         return self.close(code=-1)
 
     def has_permission(self):
@@ -20,6 +20,7 @@ class PermissionsMixin(object):
 
         return False
 
+
 class AsyncPermissionsMixin(object):
     """
     Mixin to check if user has the correct permissions
@@ -29,7 +30,7 @@ class AsyncPermissionsMixin(object):
     async def websocket_connect(self, message):
         if self.has_permission():
             return await super().websocket_connect(message)
-        
+
         return await self.close(code=-1)
 
     def has_permission(self):
