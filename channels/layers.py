@@ -176,15 +176,16 @@ class BaseChannelLayer:
 
 
 class InMemoryChannelLayer(BaseChannelLayer):
-    '''
+    """
     In-memory channel layer implementation
-    '''
+    """
     local_poll_interval = 0.01
 
-    def __init__(self, expiry=60, capacity=100, channel_capacity=None, **kwargs):
+    def __init__(self, expiry=60, group_expiry=86400, capacity=100, channel_capacity=None, **kwargs):
         super().__init__(expiry=expiry, capacity=capacity, channel_capacity=channel_capacity, **kwargs)
         self.channels = {}
         self.groups = {}
+        self.group_expiry = group_expiry
 
     ### Channel layer API ###
 
@@ -225,6 +226,10 @@ class InMemoryChannelLayer(BaseChannelLayer):
         # Do a plain direct receive
         _, message = await queue.get()
 
+        # Delete if empty
+        if queue.empty():
+            del self.channels[channel]
+
         return message
 
     async def new_channel(self, prefix="specific."):
@@ -257,6 +262,13 @@ class InMemoryChannelLayer(BaseChannelLayer):
             # Is the channel now empty and needs deleting?
             if not queue:
                 del self.channels[channel]
+
+        # Group Expiration
+        for group in self.groups:
+            for channel in self.groups.get(group, set()):
+                # If join time is older than group_expiry end the group membership
+                if self.groups[group][channel] and int(self.groups[group][channel]) < (int(time.time()) - self.group_expiry):
+                    del self.groups[group][channel]
 
     ### Flush extension ###
 
