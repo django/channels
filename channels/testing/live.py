@@ -72,7 +72,7 @@ class ChannelsLiveServerTestCase(LiveServerTestCase):
 
     In order to serve static files create a subclass with serve_static = True.
     """
-    
+
     server_thread_class = DaphneServerThread
     static_wrapper = StaticFilesWrapper
     serve_static = False
@@ -89,4 +89,4 @@ class ChannelsLiveServerTestCase(LiveServerTestCase):
             application,
             connections_override=connections_override,
             port=cls.port,
-    )
+        )
