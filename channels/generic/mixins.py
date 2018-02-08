@@ -1,4 +1,4 @@
-class PermissionsMixin(object):
+class PermissionsMixin:
     """
     Mixin to check if user has the correct permissions
     """
@@ -21,7 +21,7 @@ class PermissionsMixin(object):
         return False
 
 
-class AsyncPermissionsMixin(object):
+class AsyncPermissionsMixin:
     """
     Mixin to check if user has the correct permissions
     """
