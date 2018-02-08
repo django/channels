@@ -2,7 +2,7 @@ class PermissionsMixin(object):
     """
     Mixin to check if user has the correct permissions
     """
-    perm = 'consumer.changeme'
+    perm = "consumer.changeme"
 
     def websocket_connect(self, message):
         if self.has_permission():
@@ -25,7 +25,7 @@ class AsyncPermissionsMixin(object):
     """
     Mixin to check if user has the correct permissions
     """
-    perm = 'consumer.changeme'
+    perm = "consumer.changeme"
 
     async def websocket_connect(self, message):
         if self.has_permission():
