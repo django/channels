@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import sys
 
@@ -38,6 +39,9 @@ class Command(RunserverCommand):
         # Check Channels is installed right
         if not hasattr(settings, "ASGI_APPLICATION"):
             raise CommandError("You have not set ASGI_APPLICATION, which is needed to run the server.")
+        # Init the asyncio child watcher
+        asyncio.get_event_loop()
+        asyncio.get_child_watcher()
         # Dispatch upward
         super().handle(*args, **options)
 
