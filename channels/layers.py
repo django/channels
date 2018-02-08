@@ -267,7 +267,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
             for channel in self.groups.get(group, set()):
                 # If join time is older than group_expiry end the group membership
                 if (self.groups[group][channel] and
-                    int(self.groups[group][channel]) < (int(time.time()) - self.group_expiry)):
+                        int(self.groups[group][channel]) < (int(time.time()) - self.group_expiry)):
                     # Delete from group
                     del self.groups[group][channel]
 
