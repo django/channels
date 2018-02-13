@@ -71,13 +71,15 @@ async def test_websocket_consumer_groups():
         await communicator.connect()
 
         channel_layer = get_channel_layer()
+        # Test that the websocket channel was added to the group on connect
         message = {"type": "websocket.receive", "text": "hello"}
         await channel_layer.group_send("chat", message)
         response = await communicator.receive_from()
         assert response == "hello"
         assert results["received"] == ("hello", None)
-
+        # Test that the websocket channel was discarded from the group on disconnect
         await communicator.disconnect()
+        assert channel_layer.groups == {}
 
 
 @pytest.mark.asyncio
@@ -143,13 +145,16 @@ async def test_async_websocket_consumer_groups():
         await communicator.connect()
 
         channel_layer = get_channel_layer()
+        # Test that the websocket channel was added to the group on connect
         message = {"type": "websocket.receive", "text": "hello"}
         await channel_layer.group_send("chat", message)
         response = await communicator.receive_from()
         assert response == "hello"
         assert results["received"] == ("hello", None)
 
+        # Test that the websocket channel was discarded from the group on disconnect
         await communicator.disconnect()
+        assert channel_layer.groups == {}
 
 
 @pytest.mark.asyncio

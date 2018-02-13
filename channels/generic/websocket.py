@@ -89,7 +89,7 @@ class WebsocketConsumer(SyncConsumer):
         """
         if self.channel_layer:
             for group in self.groups:
-                async_to_sync(self.channel_layer.group_add)(group, self.channel_name)
+                async_to_sync(self.channel_layer.group_discard)(group, self.channel_name)
         self.disconnect(message["code"])
         raise StopConsumer()
 
