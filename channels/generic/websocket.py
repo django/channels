@@ -1,5 +1,7 @@
 import json
 
+from asgiref.sync import async_to_sync
+
 from ..consumer import AsyncConsumer, SyncConsumer
 from ..exceptions import AcceptConnection, DenyConnection, StopConsumer
 
@@ -9,12 +11,15 @@ class WebsocketConsumer(SyncConsumer):
     Base WebSocket consumer. Provides a general encapsulation for the
     WebSocket handling model that other applications can build on.
     """
+    groups = []
 
     def websocket_connect(self, message):
         """
         Called when a WebSocket connection is opened.
         """
-        # TODO: group joining
+        if self.channel_layer:
+            for group in self.groups:
+                async_to_sync(self.channel_layer.group_add)(group, self.channel_name)
         try:
             self.connect()
         except AcceptConnection:
@@ -82,7 +87,9 @@ class WebsocketConsumer(SyncConsumer):
         Called when a WebSocket connection is closed. Base level so you don't
         need to call super() all the time.
         """
-        # TODO: group leaving
+        if self.channel_layer:
+            for group in self.groups:
+                async_to_sync(self.channel_layer.group_add)(group, self.channel_name)
         self.disconnect(message["code"])
         raise StopConsumer()
 
@@ -135,12 +142,15 @@ class AsyncWebsocketConsumer(AsyncConsumer):
     Base WebSocket consumer, async version. Provides a general encapsulation
     for the WebSocket handling model that other applications can build on.
     """
+    groups = []
 
     async def websocket_connect(self, message):
         """
         Called when a WebSocket connection is opened.
         """
-        # TODO: group joining
+        if self.channel_layer:
+            for group in self.groups:
+                await self.channel_layer.group_add(group, self.channel_name)
         try:
             await self.connect()
         except AcceptConnection:
@@ -208,7 +218,9 @@ class AsyncWebsocketConsumer(AsyncConsumer):
         Called when a WebSocket connection is closed. Base level so you don't
         need to call super() all the time.
         """
-        # TODO: group leaving
+        if self.channel_layer:
+            for group in self.groups:
+                await self.channel_layer.group_discard(group, self.channel_name)
         await self.disconnect(message["code"])
         raise StopConsumer()
 
