@@ -3,7 +3,7 @@ import json
 from asgiref.sync import async_to_sync
 
 from ..consumer import AsyncConsumer, SyncConsumer
-from ..exceptions import AcceptConnection, DenyConnection, StopConsumer
+from ..exceptions import AcceptConnection, DenyConnection, InvalidChannelLayerError, StopConsumer
 
 
 class WebsocketConsumer(SyncConsumer):
@@ -17,9 +17,11 @@ class WebsocketConsumer(SyncConsumer):
         """
         Called when a WebSocket connection is opened.
         """
-        if self.channel_layer:
+        try:
             for group in self.groups:
                 async_to_sync(self.channel_layer.group_add)(group, self.channel_name)
+        except AttributeError:
+            raise InvalidChannelLayerError("BACKEND is unconfigured or doesn't support groups")
         try:
             self.connect()
         except AcceptConnection:
@@ -87,9 +89,11 @@ class WebsocketConsumer(SyncConsumer):
         Called when a WebSocket connection is closed. Base level so you don't
         need to call super() all the time.
         """
-        if self.channel_layer:
+        try:
             for group in self.groups:
                 async_to_sync(self.channel_layer.group_discard)(group, self.channel_name)
+        except AttributeError:
+            raise InvalidChannelLayerError("BACKEND is unconfigured or doesn't support groups")
         self.disconnect(message["code"])
         raise StopConsumer()
 
@@ -148,9 +152,11 @@ class AsyncWebsocketConsumer(AsyncConsumer):
         """
         Called when a WebSocket connection is opened.
         """
-        if self.channel_layer:
+        try:
             for group in self.groups:
                 await self.channel_layer.group_add(group, self.channel_name)
+        except AttributeError:
+            raise InvalidChannelLayerError("BACKEND is unconfigured or doesn't support groups")
         try:
             await self.connect()
         except AcceptConnection:
@@ -218,9 +224,11 @@ class AsyncWebsocketConsumer(AsyncConsumer):
         Called when a WebSocket connection is closed. Base level so you don't
         need to call super() all the time.
         """
-        if self.channel_layer:
+        try:
             for group in self.groups:
                 await self.channel_layer.group_discard(group, self.channel_name)
+        except AttributeError:
+            raise InvalidChannelLayerError("BACKEND is unconfigured or doesn't support groups")
         await self.disconnect(message["code"])
         raise StopConsumer()
 
