@@ -1,322 +1,334 @@
 import asyncio
 import logging
 from functools import partial
-from typing import Any, Dict
+from typing import Any, Callable, Dict, List, NamedTuple, Tuple
 
 from channels.consumer import get_handler_name
 from channels.exceptions import StopConsumer
-from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
 logger = logging.getLogger(__name__)
 
+ApplicationWrapper = NamedTuple(
+    "ApplicationWrapper",
+    [
+        ("name", str),
+        ("send_upstream", Callable),
+        ("task", asyncio.Task),
+    ]
+)
 
-class AsyncJsonWebsocketDemultiplexer(AsyncJsonWebsocketConsumer):
 
+class ApplicationWithChildren:
     """
-    JSON-understanding WebSocket consumer subclass that handles demultiplexing
-    streams using a "stream" key in a top-level dict and the actual payload
-    in a sub-dict called "payload". This lets you run multiple streams over
-    a single WebSocket connection in a standardised way.
-    Incoming messages on streams are dispatched to consumers so you can
-    just tie in consumers the normal way.
-
-    Set a mapping of streams to an application classes in the "applications"
-    keyword.
+    Base classes for an ASGI application to manage multiple children and close
+     its observed tasks (when it is watching queues) correctly.
     """
 
-    # timeout in seconds after close used before killing child applications.
-    application_close_timeout = 10
+    def __init__(self):
+        # the asyncio.Task for each child application.
+        # mapping based on a key.
+        self._child_application_tasks = {}  # type: Dict[str, asyncio.Task]
 
-    # the mapping of applications by stream_name
-    applications = {}  # type: Dict[str: 'typing.Type'[channels.consumer.AsyncConsumer]]
-
-    def __init__(self, scope: Dict[str, Any]):
-        super().__init__(scope)
-        self.stream_upstream_queues = {}  # type: Dict[str, asyncio.Queue]
-        self.accepted_upstream_stream = set()
-        self.disconnecting = False
-        self.sent_close = False
-        self._task_monitors = None  # type: typing.Optional[asyncio.Task]
-
-    # Methods to INTERCEPT Client -> Stream Applications
-
-    async def websocket_connect(self, message):
+    async def _observe_child_applications(self):
         """
-        Connect and then inform each stream application.
+        This runs its own little run-loop to detect if a child application
+        closes / raises an exception.
+
+        self._child_application_tasks should not be modified outside of this
+         method while this run-loop is running.
+
+        This run-loop will run until all tasks have stopped or one of them has
+         raised an exception.
+
+         :raises any exception raised within any of the children.
         """
-        await super().websocket_connect(message)
-        for queue in self.stream_upstream_queues.values():
-            queue.put_nowait(message)
-
-    async def websocket_disconnect(self, message):
-        """
-        Handle when the connection is lost.
-        """
-
-        # set the disconnecting so that we know to to send frames further down.
-        self.disconnecting = True
-
-        for stream_name, queue in self.stream_upstream_queues.items():
-            # inform all upstream applications that the connection is going
-            #  down (this includes ones that never accepted!)
-            queue.put_nowait(message)
-
-        if self._task_monitors is None:
-            await super().websocket_disconnect(message)
-            return
 
         try:
-            # wait for all the upstream applications to close down
-            await asyncio.wait_for(
-                self._task_monitors,
-                timeout=self.application_close_timeout
-            )
-        except asyncio.TimeoutError:
-            # they did not close down fast enough!
-            # not to worry they will be killed very soon.
-            logger.warning(
-                "One or more child application stream of %r took too long to "
-                "shut down and was killed.",
-                self,
-            )
-        # the `disconnect` method on the de-multiplexer is called after
-        # all upstream applications have stopped or the timeout has passed
-        #  (whatever is faster).
-        await super().websocket_disconnect(message)
-
-    async def receive_json(self, content, **kwargs):
-        """
-        Rout the message down the correct stream.
-        """
-        # Check the frame looks good
-        if isinstance(content, dict) and "stream" in content and "payload" in content:
-            # Match it to a channel
-            stream_name = content["stream"]
-            try:
-                stream_queue = await self._get_stream_queue(stream_name)
-
-            except ValueError:
-                raise ValueError(
-                    "Invalid multiplexed frame received (stream not mapped)"
+            # loop until there are no more child applciations
+            while len(self._child_application_tasks) > 0:
+                # what for one of the to finish
+                await asyncio.wait(
+                    self._child_application_tasks.values(),
+                    return_when=asyncio.FIRST_COMPLETED
                 )
 
-            payload = content["payload"]
+                # find that finished task
+                for key, task in list(self._child_application_tasks.items()):
+                    if task.done():
+                        try:
+                            # raise any exceptions that might be there.
+                            task.result()
+                        except asyncio.CancelledError:
+                            # TODO we should warn here these should not be
+                            #  Cancelled
+                            pass
 
-            # send it on to the application that handles this stream
-            stream_queue.put_nowait(
-                {
-                    "type": "websocket.receive",
-                    "text": await self.encode_json(payload)
-                }
+                        # we need to be sure `_child_application_tasks` is not
+                        # modifed outside of this loop
+                        del self._child_application_tasks[key]
+
+                        # call the delegate function
+                        await self._child_application_closed(key)
+            # call delegate function
+            await self._last_child_application_closed()
+        finally:
+            # make sure we clean up all child applciations.
+            await self._ensure_children_are_closed()
+
+    async def _last_child_application_closed(self):
+        """
+        Called if all child applciations are closed
+         (or there were non to start with)
+        """
+        pass
+
+    async def _child_application_closed(self, application_key: str):
+        """
+        Called when a child application closes normally, without raising an
+         exception.
+
+         This is run as part of the the `_observe_child_applications` loop.
+        """
+        pass
+
+    async def _start_observation(self, *args: Tuple[Callable, Callable]):
+        """
+        Start observing both the child applciations and the dispatch tasks.
+
+        this creates the main loop.
+        """
+
+        # set up the tasks
+        _observed_tasks = []
+        for observed_callable, dispatch_callable in args:
+            _observed_tasks.append(
+                asyncio.ensure_future(observed_callable())
             )
-            return
 
-        else:
-            raise ValueError("Invalid multiplexed **frame received (no channel/payload key)")
+        # start up
+        observed_applications_run_loop = asyncio.ensure_future(
+            self._observe_child_applications()
+        )
 
-    # Methods to INTERCEPT Stream Applications -> Client
-
-    async def websocket_send(self, message: Dict[str, Any], stream_name: str):
-        """
-        Capture downstream websocket.send messages from the stream applications.
-        """
-        text = message.get("text")
-        # todo what to do on binary!
-
-        json = await self.decode_json(text)
-        data = {
-            "stream": stream_name,
-            "payload": json
-        }
-
-        await self.send_json(data)
-
-    async def websocket_accept(self, message: Dict[str, Any], stream_name: str):
-        """
-        Intercept streams accepting the websocket connection and add them to
-        the set of accepted upstream streams.
-
-        An upstream Application must accept before messages will be
-        forwarded onto it.
-        """
-        self.accepted_upstream_stream.add(stream_name)
-
-    async def websocket_close(self, message: Dict[str, Any], stream_name: str):
-        """
-        Handle the downstream websocket.close message from a stream
-        application.
-        """
-        # just remove the stream from the set of open streams
-        self.accepted_upstream_stream.remove(stream_name)
-        # we don't cancel the task here, that will happen later.
-        # (when the main connection is closed).
-        # the application task could still send messages
-        # if it sends `websocket.accept` it will also start to recived messages
-        # again.
-        await self.close(code=message.get("code", None))
-
-    # De-multiplexing methods
-
-    async def __call__(self, receive, send):
-        """
-        Set up applications for each stream and set up self.
-        """
-        self.stream_upstream_queues, stream_tasks = await self._init_stream_applications()
-
-        # use gather here since we want to die as soon as any one raises
-        # an exception.
-
-        self._task_monitors = asyncio.gather(
-            *[self._monitor_task(name, task) for name, task in
-             stream_tasks.items()]
+        observe_dispatch_run_loop = asyncio.ensure_future(
+            self._observe_dispatch(*args, tasks=_observed_tasks)
         )
 
         try:
-            # TODO this results in `Task was destroyed but it is pending!` sometimes
 
-            await asyncio.gather(
-                super().__call__(receive=receive, send=send),
-                self._task_monitors
+            # as soon as either loop finishes we should exit.
+            await asyncio.wait(
+                [
+                    observed_applications_run_loop,
+                    observe_dispatch_run_loop
+                ],
+                return_when=asyncio.FIRST_COMPLETED
             )
 
+            # raise any exception that might have been there.
+            if observed_applications_run_loop.done():
+                try:
+                    observed_applications_run_loop.result()
+                except asyncio.CancelledError:
+                    # if it was cancelled then we dont need to raise this.
+                    pass
+
+            # raise any exception that might have been there.
+            if observe_dispatch_run_loop.done():
+                try:
+                    observe_dispatch_run_loop.result()
+                except asyncio.CancelledError:
+                    pass
+
         finally:
-            try:
-                self._task_monitors.cancel()
-            finally:
-                # this might have raised an exception.
-                # cleanup stream applications
-                for task in stream_tasks.values():
-                    task.cancel()
+            # lets just make sure that both loops are closed.
+            observe_dispatch_run_loop.cancel()
 
-    async def _monitor_task(self, stream_name: str, task: asyncio.Task):
+            observed_applications_run_loop.cancel()
+
+            # also ensure that we close all the child applciations
+            await self._ensure_children_are_closed()
+
+            # clean up all those tasks we are observing.
+            for task in _observed_tasks:
+                task.cancel()
+
+    async def _ensure_children_are_closed(self):
         """
-        Monitor a stream application to detect if it raises an exception.
-        We need to wrap the task in this _monitor method so that we do not exit
-        on the first StopConsumer exception.
+        Loop over all child applications tasks and cancel them.
         """
+        for child_task in self._child_application_tasks.values():
+            if not child_task.done():
+                # stop it
+                child_task.cancel()
+
+    async def _observe_dispatch(self, *args: Tuple[Callable, Callable],
+                                tasks: List[asyncio.Task]=[]):
+        """
+        Observe and dispatch all as part of one big loop.
+        This helps maintain ordering.
+        """
+        while True:
+            await asyncio.wait(
+                tasks,
+                return_when=asyncio.FIRST_COMPLETED
+            )
+
+            # Find the completed one(s), yield results, and replace them
+            for i, task in enumerate(tasks):
+                if task.done():
+                    observed, dispatch = args[i]
+                    result = task.result()
+                    await dispatch(result)
+                    # replace that task
+                    tasks[i] = asyncio.ensure_future(
+                        observed()
+                    )
+
+
+class Demultiplexer(ApplicationWithChildren):
+
+    # the mapping of applications by stream_name
+    applications = {}  # type: Dict[str, Type[AsyncConsumer]]
+
+    application_wrapper = ApplicationWrapper
+
+    def __init__(self, scope: Dict[str, Any]):
+        super().__init__()
+        self.scope = scope
+
+    async def __call__(self, receive, send):
+
+        self.base_send = send
+
+        # set up a queue that we read downstream messages from
+        self.downstream_queue = asyncio.Queue()
+
+        # create those upstream multiplexers that manage stuff :)
+        self.upstream_applications = {
+            name: self._init_application(name, cls)
+            for name, cls in self.applications.items()
+        }  # type: Dict[str, ApplicationWrapper]
+
+        self._child_application_tasks = {
+            name: app.task for name, app in
+            self.upstream_applications.items()
+        }
+
         try:
-            await task
+
+            await self._start_observation(
+                (receive, self.upstream_dispatch),
+                (self.downstream_queue.get, self.downstream_dispatch)
+            )
+
         except StopConsumer:
-            # unlikely to come here since this would only happen if
-            # 'StopConsumer' is raised either before or after the
-            # `await_many_dispatch` in the __call__ but might sometimes happen.
-            if stream_name in self.stream_upstream_queues:
-                # remove this stream from the possible upstream streams.
-                if stream_name in self.accepted_upstream_stream:
-                    self.accepted_upstream_stream.remove(stream_name)
-                # remove queue as well the task is no longer running after all.
-                del self.stream_upstream_queues[stream_name]
+            # Exit cleanly
+            pass
 
-                await self.close()
-
-        except asyncio.CancelledError:
-            # the task was.
-            if stream_name in self.accepted_upstream_stream:
-                self.accepted_upstream_stream.remove(stream_name)
-
-            del self.stream_upstream_queues[stream_name]
-
-            await self.close()
-
-        except Exception as e:
-
-            # if we have already received a 'websocket.disconnect'
-            if not self.disconnecting:
-                # https://tools.ietf.org/html/rfc6455#section-7.1.5
-                # 1011 indicates that a server is terminating the connection because
-                # it encountered an unexpected condition that prevented it from
-                # fulfilling the request.
-                await self.close(1011, force=True)
-            # re raise the exception this will kill everything!
-            raise e
+    async def upstream_dispatch(self, message):
+        """
+        Works out what to do with a message.
+        """
+        handler = getattr(self, get_handler_name(message), None)
+        if handler:
+            await handler(message)
         else:
-            # If an application ends with StopConsumer while inside of
-            # `await_many_dispatch` this is not re-raised in __call__
-            # so we end up here without any exception
-            if stream_name in self.accepted_upstream_stream:
-                self.accepted_upstream_stream.remove(stream_name)
-            del self.stream_upstream_queues[stream_name]
+            # default to send to all if its not intercepted
+            await self.send_to_all_upstream(message)
 
-            await self.close()
-
-    async def _multiplexing_send(self,
-                                 message: Dict[str, Any],
-                                 stream_name: str):
+    async def downstream_dispatch(self, full_message: Dict[str, Any]):
         """
-        Called by stream applications when they `base_send(message)`.
+        Intercept downstream messages, messages captured here are scoped by
+        the source stream.
 
-        if message.type matches a method of this De-multiplexer this method
-        will be called otherwise message will be passed directly up the
-        application stack.
+        {
+            "stream": <stream_name>,
+            "message": <ASGI message>
+        }
+
+
         """
+
+        message = full_message.get("message", None)
+        stream = full_message.get("stream", None)
+
+        if stream is None:
+            raise ValueError(
+                "De-mulitplexer unable to multiplex downstream message that"
+                " does not container a source stream"
+            )
+
         handler = getattr(self, get_handler_name(message), None)
 
         if handler:
-            await handler(message, stream_name=stream_name)
+            await handler(message, stream_name=stream)
         else:
+            # send further down if we dont have anything
+            # configured to intercept.
             await self.base_send(message)
 
-    async def _init_stream_applications(self) -> (
-            Dict[str, asyncio.Queue], Dict[str, asyncio.Task]):
+    async def send_upstream(self, stream: str, message: Dict[str, Any]):
         """
-        Create instances for each stream application and return a mapped set of
-         upstream queues/tasks.
-        """
-        queues = {}  # type: Dict[str, asyncio.Queue]
-        tasks = {}  # type: Dict[str, asyncio.Task]
+        Send a message upstream to a given stream.
 
-        for (stream_name, application_class) in self.applications.items():
-            # Make an instance of the application
-
-            queue = asyncio.Queue()
-            application_instance = application_class(self.scope)
-
-            # Run it, and stash the future for later checking
-            stream_future = application_instance(
-                receive=queue.get,
-                send=partial(
-                    self._multiplexing_send,
-                    stream_name=stream_name
-                ),
-            )
-
-            tasks[stream_name] = asyncio.ensure_future(stream_future)
-            queues[stream_name] = queue
-
-        return queues, tasks
-
-    async def _get_stream_queue(self, stream_name: str) -> asyncio.Queue:
-        """
-        Get the queue for a given stream, so that one can send a message
-         upstream.
+        if target stream cant be found this will call the `handle_no_stream`
+        method.
         """
 
-        if stream_name in self.stream_upstream_queues:
-            if stream_name in self.accepted_upstream_stream:
-                return self.stream_upstream_queues[stream_name]
+        app = self.upstream_applications.get(stream, None)
 
-        # do not include the `stream_name` in the exception to avoid the
-        # injection of bad strings from users into logs, this could result in
-        # a possible security issues depending on how logs are parsed later on.
-
-        raise ValueError(
-            "No child stream application for this lookup,"
-        )
-
-    async def close(self, code=None, force=False):
-        """
-        Send close command. This will not be sent if:
-        a) we have already sent it
-        b) we have already received a `websocket_disconnect` message
-        c) there is at least one upstream stream that is still open.
-
-        but if `force` is set it will still send the close command regardless.
-        """
-
-        if (len(self.accepted_upstream_stream) > 0 or self.sent_close or
-                self.disconnecting) and not force:
+        if app is not None:
+            await app.send_upstream(message)
             return
 
-        self.sent_close = True
+        await self.handle_no_stream(stream)
 
-        await super().close(code=code)
+    async def send_to_all_upstream(self, message: Dict[str, Any]):
+        """
+        Send a message to all upstream applciations.
+        """
+        for app in self.upstream_applications.values():
+            await app.send_upstream(message)
+
+    async def handle_no_stream(self, stream: str):
+        """
+
+        Optionally raise an exception here or send a message back?.
+        """
+        pass
+
+    def _init_application(self, stream_name, application_class) -> ApplicationWrapper:
+        """
+        Start up the child applciations.
+
+        """
+        upstream_queue = asyncio.Queue()
+        application_instance = application_class(self.scope)
+
+        # Run it, and stash the task for later checking
+        task = asyncio.ensure_future(
+            application_instance(
+                receive=upstream_queue.get,
+                send=partial(self.receive_downstream, stream_name=stream_name),
+            )
+        )
+
+        return self.application_wrapper(
+            name=stream_name,
+            send_upstream=upstream_queue.put,
+            task=task
+        )
+
+    async def receive_downstream(self, message, stream_name):
+        """
+        put it into the queue so that it is all processed in the same Coroutine
+         as the other messages.
+        """
+
+        await self.downstream_queue.put(
+            {
+                "stream": stream_name,
+                "message": message
+            }
+        )
