@@ -1,11 +1,9 @@
-from typing import Any, Dict, Optional
-
 from django.conf import settings
 from django.contrib.auth import (
     BACKEND_SESSION_KEY, HASH_SESSION_KEY, SESSION_KEY, _get_backends, get_user_model, load_backend, user_logged_in,
     user_logged_out,
 )
-from django.contrib.auth.models import AbstractUser, AnonymousUser
+from django.contrib.auth.models import AnonymousUser
 from django.utils.crypto import constant_time_compare
 from django.utils.functional import SimpleLazyObject
 from django.utils.translation import LANGUAGE_SESSION_KEY
@@ -14,18 +12,14 @@ from channels.db import database_sync_to_async
 from channels.sessions import CookieMiddleware, SessionMiddleware
 
 
-def get_user(scope: Dict[str, Any]) -> AbstractUser:
+def get_user(scope):
     """
     Return the user model instance associated with the given scope.
     If no user is retrieved, return an instance of `AnonymousUser`.
     """
     if "session" not in scope:
-        raise ValueError(
-            "Cannot find session in scope. "
-            "You should wrap your consumer in SessionMiddleware.")
-
+        raise ValueError("Cannot find session in scope. You should wrap your consumer in SessionMiddleware.")
     session = scope["session"]
-
     user = None
     try:
         user_id = _get_user_session_key(session)
@@ -36,7 +30,6 @@ def get_user(scope: Dict[str, Any]) -> AbstractUser:
         if backend_path in settings.AUTHENTICATION_BACKENDS:
             backend = load_backend(backend_path)
             user = backend.get_user(user_id)
-
             # Verify the session
             if hasattr(user, "get_session_auth_hash"):
                 session_hash = session.get(HASH_SESSION_KEY)
@@ -47,50 +40,35 @@ def get_user(scope: Dict[str, Any]) -> AbstractUser:
                 if not session_hash_verified:
                     session.flush()
                     user = None
-
     return user or AnonymousUser()
 
 
-def login(scope: Dict[str, Any], user: Optional[AbstractUser], backend=None):
+def login(scope, user, backend=None):
     """
-    Persist a user id and a backend in the request. This way a user doesn't
-    have to reauthenticate on every request. Note that data set during
-    the anonymous session is retained when the user logs in.
+    Persist a user id and a backend in the request.
+    This way a user doesn't have to re-authenticate on every request.
+    Note that data set during the anonymous session is retained when the user logs in.
     """
-
     if "session" not in scope:
-        raise ValueError(
-            "Cannot find session in scope. "
-            "You should wrap your consumer in SessionMiddleware.")
-
+        raise ValueError("Cannot find session in scope. You should wrap your consumer in SessionMiddleware.")
     session = scope["session"]
     session_auth_hash = ""
-
     if user is None:
         user = scope.get("user", None)
-
     if user is None:
-        raise ValueError(
-            "User must be passed as an argument or must be "
-            "present in the scope."
-        )
-
+        raise ValueError("User must be passed as an argument or must be present in the scope.")
     if hasattr(user, "get_session_auth_hash"):
         session_auth_hash = user.get_session_auth_hash()
-
     if SESSION_KEY in session:
         if _get_user_session_key(session) != user.pk or (
-                session_auth_hash and
-                not constant_time_compare(
-                    session.get(HASH_SESSION_KEY, ""),
-                    session_auth_hash)):
+                session_auth_hash and not
+                constant_time_compare(session.get(HASH_SESSION_KEY, ""), session_auth_hash)):
             # To avoid reusing another user's session, create a new, empty
             # session if the existing session corresponds to a different
             # authenticated user.
             session.flush()
     else:
         session.cycle_key()
-
     try:
         backend = backend or user.backend
     except AttributeError:
@@ -99,52 +77,38 @@ def login(scope: Dict[str, Any], user: Optional[AbstractUser], backend=None):
             _, backend = backends[0]
         else:
             raise ValueError(
-                "You have multiple authentication backends configured and "
-                "therefore must provide the `backend` argument or set the "
-                "`backend` attribute on the user."
+                "You have multiple authentication backends configured and therefore must provide the `backend` "
+                "argument or set the `backend` attribute on the user."
             )
-
     session[SESSION_KEY] = user._meta.pk.value_to_string(user)
     session[BACKEND_SESSION_KEY] = backend
     session[HASH_SESSION_KEY] = session_auth_hash
     scope["user"] = user
-
     # note this does not reset the CSRF_COOKIE/Token
-
     user_logged_in.send(sender=user.__class__, request=None, user=user)
 
 
-def logout(scope: Dict[str, Any]):
+def logout(scope):
     """
-    Remove the authenticated user's ID from the request and flush their session
-    data.
+    Remove the authenticated user's ID from the request and flush their session data.
     """
-
     if "session" not in scope:
         raise ValueError(
-            "Login cannot find session in scope. "
-            "You should wrap your consumer in SessionMiddleware.")
-
+            "Login cannot find session in scope. You should wrap your consumer in SessionMiddleware."
+        )
     session = scope["session"]
-
     # Dispatch the signal before the user is logged out so the receivers have a
     # chance to find out *who* logged out.
-
     user = scope.get("user", None)
-
     if hasattr(user, "is_authenticated") and not user.is_authenticated:
         user = None
-
     if user is not None:
         user_logged_out.send(sender=user.__class__, request=None, user=user)
-
     # remember language choice saved to session
     language = session.get(LANGUAGE_SESSION_KEY)
     session.flush()
-
     if language is not None:
         session[LANGUAGE_SESSION_KEY] = language
-
     if "user" in scope:
         scope["user"] = AnonymousUser()
 
