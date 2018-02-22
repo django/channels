@@ -60,7 +60,8 @@ class Command(RunserverCommand):
         self.stdout.write(now)
         self.stdout.write((
             "Django version %(version)s, using settings %(settings)r\n"
-            "Starting ASGI/Channels development server version %(channels_version)s at %(protocol)s://%(addr)s:%(port)s/\n"
+            "Starting ASGI/Channels version %(channels_version)s development server"
+            " at %(protocol)s://%(addr)s:%(port)s/\n"
             "Quit the server with %(quit_command)s.\n"
         ) % {
             "version": self.get_version(),
