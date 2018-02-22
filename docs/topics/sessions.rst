@@ -75,3 +75,35 @@ connections or HTTP views won't be able to see the changes.
     If you are in a long-polling HTTP consumer, you might want to save changes
     to the session before you send a response. If you want to do this,
     call ``scope["session"].save()``.
+
+
+How to log a user in/out
+------------------------
+
+Within your consumer you can call ``login(scope, user, backend=None)`` to login a user.
+This requires that your scope has a ``session`` object the best way to do this is to
+ensure your consumer is wrapped in a ``SessionMiddlewareStack`` or a ``AuthMiddlewareStack``.
+
+You can logout a user with the ``logout(scope)`` function.
+
+If you are in a WebSocket consumer, or logging-in after the first response has been sent in a http consumer,
+the session is populated **but will never be saved automatically** - you must call ``scope["session"].save()``
+after login in your consumer code::
+
+
+    from channels.auth import login
+
+    class ChatConsumer(WebsocketConsumer):
+
+        ...
+
+        def receive(self, text_data):
+            ...
+            login(self.scope, user)
+            self.scope["session"].save()
+
+.. note::
+
+    If you are using a long running consumer, websocket or long-polling HTTP it is possible
+    the user has been logged out of their session elsewere.
+    Use ``get_user(scope)`` to be sure that the user is still logged in.
