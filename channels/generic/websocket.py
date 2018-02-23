@@ -2,9 +2,8 @@ import asyncio
 import json
 from typing import Any, Dict
 
-from channels.generic.multiplexer import Demultiplexer
-
 from asgiref.sync import async_to_sync
+from channels.generic.multiplexer import Demultiplexer
 
 from ..consumer import AsyncConsumer, SyncConsumer
 from ..exceptions import AcceptConnection, DenyConnection, InvalidChannelLayerError, StopConsumer
