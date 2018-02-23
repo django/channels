@@ -36,7 +36,7 @@ async def await_many_dispatch(consumer_callables, dispatch):
     tasks = [
         asyncio.ensure_future(consumer_callable())
         for consumer_callable in consumer_callables
-    ]
+    ]  # type: typing.List[asyncio.Task]
     try:
         while True:
             # Wait for any of them to complete
@@ -50,4 +50,9 @@ async def await_many_dispatch(consumer_callables, dispatch):
     finally:
         # Make sure we clean up tasks on exit
         for task in tasks:
-            task.cancel()
+            # this is a nasty hack :( seems like the run-loop sometimes closes
+            #  before we get here.
+            try:
+                task.cancel()
+            except RuntimeError:
+                pass

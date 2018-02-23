@@ -1,6 +1,9 @@
+import asyncio
 import json
+from typing import Any, Dict
 
 from asgiref.sync import async_to_sync
+from channels.generic.multiplexer import Demultiplexer
 
 from ..consumer import AsyncConsumer, SyncConsumer
 from ..exceptions import AcceptConnection, DenyConnection, InvalidChannelLayerError, StopConsumer
@@ -274,3 +277,89 @@ class AsyncJsonWebsocketConsumer(AsyncWebsocketConsumer):
     @classmethod
     async def encode_json(cls, content):
         return json.dumps(content)
+
+
+class AsyncJsonWebsocketDemultiplexer(Demultiplexer, AsyncJsonWebsocketConsumer):
+
+    """
+    JSON-understanding WebSocket consumer subclass that handles de-multiplexing
+    streams using a "stream" key in a top-level dict and the actual payload
+    in a sub-dict called "payload". This lets you run multiple streams over
+    a single WebSocket connection in a standardised way.
+    Incoming messages on streams are dispatched to consumers so you can
+    just tie in consumers the normal way.
+    """
+
+    # Methods to INTERCEPT Client -> Stream Applications
+
+    application_close_timeout = 5
+
+    async def websocket_connect(self, message):
+        """
+        Connect and then inform each stream application.
+        """
+        await self.base_send({"type": "websocket.accept"})
+
+        await self.send_to_all_upstream(message)
+
+    async def receive_json(self, content, **kwargs):
+        """
+        Rout the message down the correct stream.
+        """
+        # Check the frame looks good
+        if isinstance(content, dict) and "stream" in content and "payload" in content:
+            # Match it to a channel
+
+            stream = content["stream"]
+            payload = content["payload"]
+
+            # send it on to the application that handles this stream
+            await self.send_upstream(
+                stream=stream,
+                message={
+                    "type": "websocket.receive",
+                    "text": await self.encode_json(payload)
+                }
+            )
+            return
+        else:
+            raise ValueError("Invalid multiplexed **frame received (no channel/payload key)")
+
+    # Methods to INTERCEPT Stream Applications -> Client
+
+    async def websocket_send(self, message: Dict[str, Any], stream_name: str):
+        """
+        Capture downstream websocket.send messages from the stream applications.
+        """
+        text = message.get("text")
+        # todo what to do on binary!
+
+        json = await self.decode_json(text)
+        data = {
+            "stream": stream_name,
+            "payload": json
+        }
+
+        await self.send_json(data)
+
+    async def websocket_accept(self, message: Dict[str, Any], stream_name: str):
+        """
+        do not send this on.
+        """
+        pass
+
+    async def websocket_disconnect(self, message):
+        await self.send_to_all_upstream(message)
+        try:
+            # wait for the children to die before calling the
+            # `disconnect method`
+            await asyncio.wait(
+                self._child_application_tasks.values(),
+                return_when=asyncio.ALL_COMPLETED,
+                timeout=self.application_close_timeout
+            )
+        except TimeoutError:
+            # TODO warning!
+            pass
+
+        await super().websocket_disconnect(message)
