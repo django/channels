@@ -1,4 +1,5 @@
 import json
+from urllib.parse import urlparse
 
 from asgiref.testing import ApplicationCommunicator
 
@@ -12,9 +13,11 @@ class WebsocketCommunicator(ApplicationCommunicator):
     """
 
     def __init__(self, application, path, headers=None, subprotocols=None):
+        parsed = urlparse(path)
         self.scope = {
             "type": "websocket",
-            "path": path,
+            "path": parsed.path,
+            "query_string": parsed.query,
             "headers": headers or [],
             "subprotocols": subprotocols or [],
         }
