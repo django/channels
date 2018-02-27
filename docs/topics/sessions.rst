@@ -93,17 +93,31 @@ after login in your consumer code::
 
     from channels.auth import login
 
-    class ChatConsumer(WebsocketConsumer):
+    class ChatConsumer(AsyncWebsocketConsumer):
+
+        ...
+
+        async def receive(self, text_data):
+            ...
+            # login the user to this session.
+            await login(self.scope, user)
+            # save the session (if the session backend does not access the db you an use `sync_to_async`)
+            await database_sync_to_async(self.scope["session"].save)()
+
+When calling ``login(scope, user)``, ``logout(scope)`` or ``get_user(scope)`` from an sync function you will need to
+wrap them in ``async_to_sync``::
+
+
+    from channels.auth import login
+
+    class SyncChatConsumer(WebsocketConsumer):
 
         ...
 
         def receive(self, text_data):
             ...
-            login(self.scope, user)
+            async_to_sync(login)(self.scope, user)
             self.scope["session"].save()
-
-When calling ``login(scope, user)``, ``logout(scope)`` or ``get_user(scope)`` from an async function you will need to
-wrap them in ``sync_to_async`` or in ``database_sync_to_async`` if your authentication backend uses a database.
 
 .. note::
 

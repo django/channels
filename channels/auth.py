@@ -5,12 +5,14 @@ from django.contrib.auth import (
 )
 from django.contrib.auth.models import AnonymousUser
 from django.utils.crypto import constant_time_compare
-from django.utils.functional import SimpleLazyObject
 from django.utils.translation import LANGUAGE_SESSION_KEY
 
+from asgiref.sync import async_to_sync
+from channels.db import database_sync_to_async
 from channels.sessions import CookieMiddleware, SessionMiddleware
 
 
+@database_sync_to_async
 def get_user(scope):
     """
     Return the user model instance associated with the given scope.
@@ -42,6 +44,7 @@ def get_user(scope):
     return user or AnonymousUser()
 
 
+@database_sync_to_async
 def login(scope, user, backend=None):
     """
     Persist a user id and a backend in the request.
@@ -87,6 +90,7 @@ def login(scope, user, backend=None):
     user_logged_in.send(sender=user.__class__, request=None, user=user)
 
 
+@database_sync_to_async
 def logout(scope):
     """
     Remove the authenticated user's ID from the request and flush their session data.
@@ -133,7 +137,7 @@ class AuthMiddleware:
             raise ValueError("AuthMiddleware cannot find session in scope. SessionMiddleware must be above it.")
         # Add it to the scope if it's not there already
         if "user" not in scope:
-            scope["user"] = SimpleLazyObject(lambda: get_user(scope))
+            scope["user"] = async_to_sync(get_user)(scope)
         # Pass control to inner application
         return self.inner(scope)
 
