@@ -102,6 +102,9 @@ after login in your consumer code::
             login(self.scope, user)
             self.scope["session"].save()
 
+When calling ``login(scope, user)``, ``logout(scope)`` or ``get_user(scope)`` from an async function you will need to
+wrap them in ``sync_to_async`` or in ``database_sync_to_async`` if your authentication backend uses a database.
+
 .. note::
 
     If you are using a long running consumer, websocket or long-polling HTTP it is possible

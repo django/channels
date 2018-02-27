@@ -8,7 +8,6 @@ from django.utils.crypto import constant_time_compare
 from django.utils.functional import SimpleLazyObject
 from django.utils.translation import LANGUAGE_SESSION_KEY
 
-from channels.db import database_sync_to_async
 from channels.sessions import CookieMiddleware, SessionMiddleware
 
 
@@ -111,11 +110,6 @@ def logout(scope):
         session[LANGUAGE_SESSION_KEY] = language
     if "user" in scope:
         scope["user"] = AnonymousUser()
-
-
-# It depends on your auth backend if you need `database_sync_to_async`
-async_login = database_sync_to_async(login)
-async_logout = database_sync_to_async(logout)
 
 
 def _get_user_session_key(session):
