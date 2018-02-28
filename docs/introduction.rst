@@ -129,7 +129,7 @@ A basic consumer looks like this::
             self.accept()
             self.send(text_data="[Welcome %s!]" % self.username)
 
-        def receive(self, text, bytes=None):
+        def receive(self, *, text_data):
             if text.startswith("/name"):
                 self.username = text[5:].strip()
                 self.send(text_data="[set your username to %s]" % self.username)
@@ -160,6 +160,10 @@ However, if you want more control and you're willing to work only in
 asynchronous functions, you can write fully asynchronous consumers::
 
     class PingConsumer(AsyncConsumer):
+        async def websocket_connect(self, message):
+            await self.send({
+                "type": "websocket.accept",
+            })
 
         async def websocket_receive(self, message):
             await asyncio.sleep(1)
@@ -208,7 +212,7 @@ WebSockets and chat requests::
             url("^chat/$", PublicChatConsumer),
         ]),
 
-        "telegram": TelegramConsumer,
+        "telegram": ChattyBotConsumer,
     })
 
 The goal of Channels is to let you build out your Django projects to work

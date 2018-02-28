@@ -20,6 +20,11 @@ layer that uses Redis as a transport and what we'll focus the examples on here.
     If you don't want to use them, just leave ``CHANNEL_LAYERS`` unset, or
     set it to the empty dict ``{}``.
 
+    Messages across channel layers also go to consumers/ASGI application
+    instances, just like events from the client, and so they now need a
+    ``type`` key as well. See more below.
+
+
 .. warning::
 
     Channel layers have a purely async interface (for both send and receive);
@@ -53,11 +58,74 @@ Synchronous Functions
 By default the ``send()``, ``group_send()``, ``group_add()`` and other functions
 are async functions, meaning you have to ``await`` them. If you need to call
 them from synchronous code, you'll need to use the handy
-``asgiref.sync.AsyncToSync`` wrapper::
+``asgiref.sync.async_to_sync`` wrapper::
 
-    from asgiref.sync import AsyncToSync
+    from asgiref.sync import async_to_sync
 
-    AsyncToSync(channel_layer.send)("channel_name", {...})
+    async_to_sync(channel_layer.send)("channel_name", {...})
+
+
+What To Send Over The Channel Layer
+-----------------------------------
+
+Unlike in Channels 1, the channel layer is only for high-level
+application-to-application communication. When you send a message, it is
+received by the consumers listening to the group or channel on the other end,
+and not transported to that consumer's socket directly.
+
+What this means is that you should send high-level events over the channel
+layer, and then have consumers handle those events and do appropriate low-level
+networking to their attached client.
+
+For example, the `multichat example <https://github.com/andrewgodwin/channels-examples/tree/master/multichat>`_
+in Andrew Godwin's ``channels-examples`` repository sends events like this
+over the channel layer::
+
+    await self.channel_layer.group_send(
+        room.group_name,
+        {
+            "type": "chat.message",
+            "room_id": room_id,
+            "username": self.scope["user"].username,
+            "message": message,
+        }
+    )
+
+And then the consumers define a handling function to receive those events
+and turn them into WebSocket frames::
+
+    async def chat_message(self, event):
+        """
+        Called when someone has messaged our chat.
+        """
+        # Send a message down to the client
+        await self.send_json(
+            {
+                "msg_type": settings.MSG_TYPE_MESSAGE,
+                "room": event["room_id"],
+                "username": event["username"],
+                "message": event["message"],
+            },
+        )
+
+Any consumer based on Channels' ``SyncConsumer`` or ``AsyncConsumer`` will
+automatically provide you a ``self.channel_layer`` and ``self.channel_name``
+attribute, which contains a pointer to the channel layer instance and the
+channel name that will reach the consumer respectively.
+
+Any message sent to that channel name - or to a group the channel name was
+added to - will be received by the consumer much like an event from its
+connected client, and dispatched to a named method on the consumer. The name
+of the method will be the ``type`` of the event with periods replaced by
+underscores - so, for example, an event coming in over the channel layer
+with a ``type`` of ``chat.join`` will be handled by the method ``chat_join``.
+
+.. note::
+
+    If you are inheriting from the ``AsyncConsumer`` class tree, all your
+    event handlers, including ones for events over the channel layer, must
+    be asynchronous (``async def``). If you are in the ``SyncConsumer`` class
+    tree instead, they must all be synchronous (``def``).
 
 
 Single Channels
@@ -82,7 +150,7 @@ and then specifying a handler method for events on it::
             # Make a database row with our channel name
             Clients.objects.create(channel_name=self.channel_name)
 
-        def disconnect(self):
+        def disconnect(self, close_code):
             # Note that in some rare cases (power loss, etc) disconnect may fail
             # to run; this naive example would leave zombie channel names around.
             Clients.objects.filter(channel_name=self.channel_name).delete()
@@ -107,6 +175,8 @@ we could crawl the database), and use ``channel_layer.send``::
         "text": "Hello there!",
     })
 
+
+.. _groups:
 
 Groups
 ------
@@ -137,15 +207,15 @@ during disconnection, illustrated here on the WebSocket generic consumer::
 
     # This example uses WebSocket consumer, which is synchronous, and so
     # needs the async channel layer functions to be converted.
-    from asgiref.sync import AsyncToSync
+    from asgiref.sync import async_to_sync
 
     class ChatConsumer(WebsocketConsumer):
 
         def connect(self):
-            AsyncToSync(self.channel_layer.group_add)("chat", self.channel_name)
+            async_to_sync(self.channel_layer.group_add)("chat", self.channel_name)
 
-        def disconnect(self):
-            AsyncToSync(self.channel_layer.group_discard)("chat", self.channel_name)
+        def disconnect(self, close_code):
+            async_to_sync(self.channel_layer.group_discard)("chat", self.channel_name)
 
 Then, to send to a group, use ``group_send``, like in this small example
 which broadcasts chat messages to every connected socket when combined with
@@ -156,7 +226,7 @@ the code above::
         ...
 
         def receive(self, text_data):
-            AsyncToSync(self.channel_layer.group_send)(
+            async_to_sync(self.channel_layer.group_send)(
                 "chat",
                 {
                     "type": "chat.message",
@@ -188,8 +258,8 @@ from your own asynchronous context::
             {"type": "chat.system_message", "text": announcement_text},
         )
 
-Or you'll need to use AsyncToSync::
+Or you'll need to use async_to_sync::
 
-    from asgiref.sync import AsyncToSync
+    from asgiref.sync import async_to_sync
 
-    AsyncToSync(channel_layer.group_send)("chat", {"type": "chat.force_disconnect"})
+    async_to_sync(channel_layer.group_send)("chat", {"type": "chat.force_disconnect"})

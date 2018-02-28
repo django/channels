@@ -99,9 +99,71 @@ be improved by async handling (long-running tasks that could be done in
 parallel) *and* you are only using async-native libraries.
 
 If you really want to call a synchronous function from an ``AsyncConsumer``,
-take a look at ``asgiref.SyncToAsync``, which is the utility that Channels
+take a look at ``asgiref.sync.sync_to_async``, which is the utility that Channels
 uses to run ``SyncConsumers`` in threadpools, and can turn any synchronous
 callable into an asynchronous coroutine.
+
+.. important::
+
+    If you want to call the Django ORM from an ``AsyncConsumer`` (or any other
+    synchronous code), you should use the ``database_sync_to_async`` adapter
+    instead. See :doc:`/topics/databases` for more.
+
+
+Closing Consumers
+~~~~~~~~~~~~~~~~~
+
+When the socket or connection attached to your consumer is closed - either by
+you or the client - you will likely get an event sent to you (for example,
+``http.disconnect`` or ``websocket.disconnect``), and your application instance
+will be given a short amount of time to act on it.
+
+Once you have finished doing your post-disconnect cleanup, you need to raise
+``channels.exceptions.StopConsumer`` to halt the ASGI application cleanly and
+let the server clean it up. If you leave it running - by not raising this
+exception - the server will reach its application close timeout (which is
+10 seconds by default in Daphne) and then kill your application and raise
+a warning.
+
+The generic consumers below do this for you, so this is only needed if you
+are writing your own consumer class based on ``AsyncConsumer`` or
+``SyncConsumer``.
+
+
+Channel Layers
+~~~~~~~~~~~~~~
+
+Consumers also let you deal with Channel's *channel layers*, to let them
+send messages between each other either one-to-one or via a broadcast system
+called groups. You can read more in :doc:`/topics/channel_layers`.
+
+
+Scope
+-----
+
+Consumers receive the connection's ``scope`` when they are initialised, which
+contains a lot of the information you'd find on the ``request`` object in a
+Django view. It's available as ``self.scope`` inside the consumer's methods.
+
+Scopes are part of the :doc:`ASGI specification </asgi>`, but here are
+some common things you might want to use:
+
+* ``scope["path"]``, the path on the request. *(HTTP and WebSocket)*
+* ``scope["headers"]``, raw name/value header pairs from the request *(HTTP and WebSocket)*
+* ``scope["method"]``, the method name used for the request. *(HTTP)*
+
+If you enable things like :doc:`authentication`, you'll also be able to access
+the user object as ``scope["user"]``, and the URLRouter, for example, will
+put captured groups from the URL into ``scope["url_route"]``.
+
+In general, the scope is the place to get connection information and where
+middleware will put attributes it wants to let you access (in the same way
+that Django's middleware adds things to ``request``).
+
+For a full list of what can occur in a connection scope, look at the basic
+ASGI spec for the protocol you are terminating, plus any middleware or routing
+code you are using. The web (HTTP and WebSocket) scopes are available in
+`the Web ASGI spec <https://github.com/django/asgiref/blob/master/specs/www.rst>`_.
 
 
 Generic Consumers
@@ -121,6 +183,7 @@ wraps the verbose plain-ASGI message sending and receiving into handling that
 just deals with text and binary frames::
 
     class MyConsumer(WebsocketConsumer):
+        groups = ["broadcast"]
 
         def connect(self):
             # Called on connection. Either call
@@ -147,6 +210,16 @@ You can also raise ``channels.exceptions.AcceptConnection`` or
 method in order to accept or reject a connection, if you want reuseable
 authentication or rate-limiting code that doesn't need to use mixins.
 
+A ``WebsocketConsumer``'s channel will automatically be added to (on connect)
+and removed from (on disconnect) any groups whose names appear in the
+consumer's ``groups`` class attribute. ``groups`` must be an iterable, and a
+channel layer with support for groups must be set as the channel backend
+(``channels.layers.InMemoryChannelLayer`` and
+``channels_redis.core.RedisChannelLayer`` both support groups). If no channel
+layer is configured or the channel layer doesn't support groups, connecting
+to a ``WebsocketConsumer`` with a non-empty ``groups`` attribute will raise
+``channels.exceptions.InvalidChannelLayerError``. See :ref:`groups` for more.
+
 
 AsyncWebsocketConsumer
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -156,6 +229,7 @@ the exact same methods and signature as ``WebsocketConsumer`` but everything
 is async, and the functions you need to write have to be as well::
 
     class MyConsumer(AsyncWebsocketConsumer):
+        groups = ["broadcast"]
 
         async def connect(self):
             # Called on connection. Either call
