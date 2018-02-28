@@ -277,3 +277,60 @@ AsyncJsonWebsocketConsumer
 An async version of ``JsonWebsocketConsumer``, available as
 ``channels.generic.websocket.AsyncJsonWebsocketConsumer``. Note that even
 ``encode_json`` and ``decode_json`` are async functions.
+
+
+AsyncHttpConsumer
+~~~~~~~~~~~~~~~~~
+
+Available as ``channels.generic.http.AsyncHttpConsumer``, this offers basic
+primitives to implement a HTTP endpoint::
+
+    class BasicHttpConsumer(AsyncHttpConsumer):
+        async def handle(self, body):
+            await asyncio.sleep(10)
+            await self.send_response(200, 'Your response text', headers=[
+                ('Content-Type', 'text/plain'),
+            ])
+
+You are expected to implement your own ``self.handle`` method. The
+method receives the whole request body as a single bytestring.  Headers
+may either be passed as a list of tuples or as a dictionary. The body
+content is expected to be a unicode string.
+
+If you need more control over the response, e.g. for implementing long
+polling, use the lower level ``self.send_headers`` and ``self.send_body``
+methods instead. This example already mentions channel layers which will
+be explained in detail later::
+
+    class LongPollConsumer(AsyncHttpConsumer):
+        async def handle(self, body):
+            await self.send_headers(headers=[
+                ('Content-Type', 'application/json'),
+            ])
+            # Headers are only sent after the first body event.
+            # Set "more_body" to tell the interface server to not
+            # finish the response yet:
+            await self.send_body('', more_body=True)
+
+        async def chat_message(self, event):
+            # Send JSON and finish the response:
+            await self.send_body(json.dumps(event))
+
+Of course you can also use those primitives to implement a HTTP endpoint for
+`Server-sent events`_::
+
+    class ServerSentEventsConsumer(AsyncHttpConsumer):
+        async def handle(self, body):
+            await self.send_headers(headers=[
+                ('Cache-Control', 'no-cache'),
+                ('Content-Type', 'text/event-stream'),
+                ('Transfer-Encoding', 'chunked'),
+            ])
+            while True:
+                await self.send_body(
+                    'data: %s\n\n' % datetime.now().isoformat(),
+                    more_body=True,
+                )
+                await asyncio.sleep(1)
+
+.. _Server-sent events: https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events
