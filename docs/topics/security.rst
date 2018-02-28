@@ -37,9 +37,38 @@ valid domains as the second argument::
                     ...
                 ])
             ),
-            ["goodsite.com", "*.goodsite.com"],
+            [".goodsite.com", "*"],
         ),
     })
+
+Note: If you want to resolve any domains, just add ``["*"]`` as second argument.
+
+``OriginValidator`` also has a ``full`` option. If this option is enabled,
+``OriginValidator`` checks the domain schema and port of each ``Origin`` header.
+To do this, pass the list of valid domains as the second argument:
+``scheme://domain[:port]``. The port is an optional parameter, but recommended.
+And just pass ``full=True`` as the third argument::
+
+    application = ProtocolTypeRouter({
+
+        "websocket": OriginValidator(
+            AuthMiddlewareStack(
+                URLRouter([
+                    ...
+                ])
+            ),
+            ["http://.goodsite.com", "https://domain.goodsite.com:443",
+            "http://.goodsite.com:80"],
+            full=True,
+        ),
+    })
+
+Note: If you want to resolve any domains, just add ``["*"]`` as second argument.
+
+``OriginValidator`` can accept the ``check_cert`` as fourth argument.
+Works only when the ``full`` option is enabled. If the argument is specified,
+then for ``https`` verifies the certificate. Just pass
+``check_cert=True`` as fourth argument.
 
 Often, the set of domains you want to restrict to is the same as the Django
 ``ALLOWED_HOSTS`` setting, which performs a similar security check for the
