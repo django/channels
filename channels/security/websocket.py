@@ -1,9 +1,10 @@
-import ssl, socket
+import socket
+import ssl
 from http import client as http_client
 from urllib.parse import urlparse
 
 from django.conf import settings
-from django.http.request import is_same_domain, validate_host
+from django.http.request import is_same_domain
 
 from ..generic.websocket import AsyncWebsocketConsumer
 
@@ -52,7 +53,7 @@ class OriginValidator:
             return False
         return self.validate_origin(parsed_origin)
 
-    def validate_origin(self, origin):
+    def validate_origin(self, parsed_origin):
         """
         Validate the given origin for this site.
 
@@ -70,11 +71,11 @@ class OriginValidator:
         Returns `` True`` for a valid host, `` False`` otherwise.
         """
         return any(
-            pattern == "*" or self.is_allowed_origin(origin, pattern)
+            pattern == "*" or self.is_allowed_origin(parsed_origin, pattern)
             for pattern in self.allowed_origins
         )
 
-    def is_allowed_origin(self, origin, pattern):
+    def is_allowed_origin(self, parsed_origin, pattern):
         """
         Returns ``True`` if the origin is either an exact match or a match
         to the wildcard pattern. Compares scheme, domain, port of origin and pattern.
@@ -103,34 +104,34 @@ class OriginValidator:
         parsed_pattern = urlparse(pattern.lower(), scheme=None)
         if parsed_pattern.scheme is None:
             pattern_hostname = urlparse("//" + pattern).hostname or pattern
-            return is_same_domain(origin.hostname, pattern_hostname)
+            return is_same_domain(parsed_origin.hostname, pattern_hostname)
         # Get origin.port or default ports for origin or None
-        origin_port = self.get_origin_port(origin)
+        origin_port = self.get_origin_port(parsed_origin)
         # Get pattern.port or default ports for pattern or None
         pattern_port = self.get_origin_port(parsed_pattern)
         # Compares hostname, scheme, ports of pattern and origin
-        if parsed_pattern.scheme == origin.scheme and origin_port == pattern_port \
-                and is_same_domain(origin.hostname, parsed_pattern.hostname):
+        if parsed_pattern.scheme == parsed_origin.scheme and origin_port == pattern_port \
+                and is_same_domain(parsed_origin.hostname, parsed_pattern.hostname):
             # Check ssl security certificate
-            if origin.scheme == "https":
+            if parsed_origin.scheme == "https":
                 try:
                     # Init HTTPSConnection object
-                    http_client.HTTPSConnection(origin.hostname, port=origin_port, timeout=5).connect()
+                    http_client.HTTPSConnection(parsed_origin.hostname, port=origin_port, timeout=5).connect()
                 # Except error: security certificate is invalid
                 except (ssl.SSLError, socket.gaierror, ConnectionRefusedError) as error:
                     # Raise Connection error
                     if isinstance(error, ConnectionRefusedError):
-                        address = origin.geturl()
+                        address = parsed_origin.geturl()
                         raise ConnectionRefusedError("Can not connect to " + address + " address.")
                     # Raise, if name or service not known
                     elif isinstance(error, socket.gaierror):
                         # Uncomment this string, if try to listen port. But include
                         raise socket.gaierror(
-                            "Address: " + origin.geturl() + ". Port: " + str(origin_port) +
+                            "Address: " + parsed_origin.geturl() + ". Port: " + str(origin_port) +
                             ". Name or service not known."
                         )
                     # Raise ssl.SSLError
-                    raise ssl.SSLError(origin.geturl() + " uses an invalid security certificate.")
+                    raise ssl.SSLError(parsed_origin.geturl() + " uses an invalid security certificate.")
             return True
         return False
 

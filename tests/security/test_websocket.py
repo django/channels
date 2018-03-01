@@ -34,4 +34,3 @@ async def test_origin_validator():
     connected, _ = await communicator.connect()
     assert not connected
     await communicator.disconnect()
-
