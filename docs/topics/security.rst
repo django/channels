@@ -25,7 +25,9 @@ ASGI middlewares it contains, ``OriginValidator`` and
 ``OriginValidator`` lets you restrict the valid options for the ``Origin``
 header that is sent with every WebSocket to say where it comes from. Just wrap
 it around your WebSocket application code like this, and pass it a list of
-valid domains as the second argument::
+valid domains as the second argument. You can pass only domain (for example,
+``.allowed-domain.com``) and full origin, than must be scheme://domain[:port]
+(for example, ``http://allowed-domain.com:80``). Port is optional, but recommended::
 
     from channels.security.websocket import OriginValidator
 
@@ -37,29 +39,7 @@ valid domains as the second argument::
                     ...
                 ])
             ),
-            [".goodsite.com", "*"],
-        ),
-    })
-
-Note: If you want to resolve any domains, just add ``["*"]`` as second argument.
-
-``OriginValidator`` also has a ``full`` option. If this option is enabled,
-``OriginValidator`` checks the domain schema and port of each ``Origin`` header.
-To do this, pass the list of valid domains as the second argument:
-``scheme://domain[:port]``. The port is an optional parameter, but recommended.
-And just pass ``full=True`` as the third argument::
-
-    application = ProtocolTypeRouter({
-
-        "websocket": OriginValidator(
-            AuthMiddlewareStack(
-                URLRouter([
-                    ...
-                ])
-            ),
-            ["http://.goodsite.com", "https://domain.goodsite.com:443",
-            "http://.goodsite.com:80"],
-            full=True,
+            [".goodsite.com", "http://.goodsite.com:80", "http://other.site.com"],
         ),
     })
 
