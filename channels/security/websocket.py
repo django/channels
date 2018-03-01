@@ -1,4 +1,4 @@
-import ssl
+import ssl, socket
 from http import client as http_client
 from urllib.parse import urlparse
 
@@ -12,129 +12,145 @@ class OriginValidator:
     """
     Validates that the incoming connection has an Origin header that
     is in an allowed list.
-
-    If full attr is True, any origin from allowed_origins must be scheme://hostname[:port].
-    Port is optional, but recommended.
-    Check_cert works only with full attr.
     """
 
-    def __init__(self, application, allowed_origins, full=False, check_cert=False):
+    def __init__(self, application, allowed_origins):
         self.application = application
         self.allowed_origins = allowed_origins
-        # Check state of variable full
-        self.full = full
-        # Check certificate or not. Works only if full True
-        self.check_cert = check_cert if full else False
 
     def __call__(self, scope):
         # Make sure the scope is of type websocket
         if scope["type"] != "websocket":
             raise ValueError("You cannot use OriginValidator on a non-WebSocket connection")
         # Extract the Origin header
-        origin_hostname = None
-        result_parse = None
+        parsed_origin = None
         for header_name, header_value in scope.get("headers", []):
             if header_name == b"origin":
                 try:
-                    # Set ResultParse and origin hostname
-                    result_parse = urlparse(header_value.decode("ascii"))
-                    origin_hostname = result_parse.hostname
+                    # Set ResultParse
+                    parsed_origin = urlparse(header_value.decode("ascii"))
                 except UnicodeDecodeError:
                     pass
-        # Check to see if the origin header is valid. Full or default check
-        valid = self.valid_origin(origin_hostname) if not self.full else self.valid_origin_full(result_parse)
-        if valid:
+        # Check to see if the origin header is valid
+        if self.valid_origin(parsed_origin):
             # Pass control to the application
             return self.application(scope)
         else:
             # Deny the connection
             return WebsocketDenier(scope)
 
-    def valid_origin(self, origin):
-        # None is not allowed
-        if origin is None:
-            return False
-        # Get only hostname all allowed origins
-        # Only if not full: https://domain.example.com:8443 -> domain.example.com
-        #   or //domain.example.com - > domain.example.com
-        #   or .example.com -> .example.com
-        self.allowed_origins = [urlparse(pattern).hostname or urlparse("//" + pattern).hostname
-                                or pattern for pattern in self.allowed_origins]
-        # Check against our list
-        return validate_host(origin, self.allowed_origins)
+    def valid_origin(self, parsed_origin):
+        """
+        Checks parsed origin is None.
 
-    def valid_origin_full(self, origin):
-        # None is not allowed
-        if origin is None:
-            return False
-        # Check against our list
-        return self.validate_host_full(origin)
+        Pass control to the validate_origin function.
 
-    def validate_host_full(self, origin):
-        # Return True if valid, False otherwise
-        return any(pattern == "*" or self.is_allowed_origin(origin, pattern)
-                   for pattern in self.allowed_origins)
+        Returns ``True`` if validation function was successful, ``False`` otherwise.
+        """
+        # None is not allowed
+        if parsed_origin is None:
+            return False
+        return self.validate_origin(parsed_origin)
+
+    def validate_origin(self, origin):
+        """
+        Validate the given origin for this site.
+
+        Check than the origin looks valid and matches the origin pattern in
+        specified list `` allowed_origins``. Any pattern begins with a scheme.
+        After the scheme there must be a domain. Any domain beginning with a period
+        corresponds to the domain and all its subdomains (for example, ``http://.example.com``
+        ``http://example.com`` and any subdomain).After the domain there must be a port,
+        but it can be omitted. `` * `` matches anything and anything
+        else must match exactly.
+
+        Note. This function assumes that the given origin has a schema, domain and port,
+        but port is optional.
+
+        Returns `` True`` for a valid host, `` False`` otherwise.
+        """
+        return any(
+            pattern == "*" or self.is_allowed_origin(origin, pattern)
+            for pattern in self.allowed_origins
+        )
 
     def is_allowed_origin(self, origin, pattern):
-        checked_address = 0
+        """
+        Returns ``True`` if the origin is either an exact match or a match
+        to the wildcard pattern. Compares scheme, domain, port of origin and pattern.
+
+        Any pattern can be begins with a scheme. After the scheme must be a domain,
+        or just domain without scheme.
+        Any domain beginning with a period corresponds to the domain and all
+        its subdomains (for example, ``.example.com`` ``example.com``
+        and any subdomain). Also with scheme (for example, ``http://.example.com``
+        ``http://exapmple.com``). After the domain there must be a port,
+        but it can be omitted.
+
+        Also, if scheme is ``https``, verifies security certificate.
+
+        Note. This function assumes that the given origin has a schema, domain and port,
+        or only domain. Port is optional.
+
+        Raises SSLError if origin used an invalid security certificate.
+
+        Raises ConnectionRefusedError if the connection is rejected.
+        Occurs when connected to a port that is not listening.
+
+        Raises socket.gaierror if name or service not known.
+        """
         # Get ResultParse object
-        pattern = urlparse(pattern.lower())
-        # Get check result and origin ports
-        valid, origin_ports = self.check_pattern(origin, pattern)
-        if valid:
+        parsed_pattern = urlparse(pattern.lower(), scheme=None)
+        if parsed_pattern.scheme is None:
+            pattern_hostname = urlparse("//" + pattern).hostname or pattern
+            return is_same_domain(origin.hostname, pattern_hostname)
+        # Get origin.port or default ports for origin or None
+        origin_port = self.get_origin_port(origin)
+        # Get pattern.port or default ports for pattern or None
+        pattern_port = self.get_origin_port(parsed_pattern)
+        # Compares hostname, scheme, ports of pattern and origin
+        if parsed_pattern.scheme == origin.scheme and origin_port == pattern_port \
+                and is_same_domain(origin.hostname, parsed_pattern.hostname):
             # Check ssl security certificate
-            if origin.scheme == "https" and self.check_cert:
-                for port in origin_ports:
-                    try:
-                        # Init HTTPSConnection object
-                        client = http_client.HTTPSConnection(origin.hostname, port)
-                        # Requesting a site with get method
-                        client.request("get", origin.hostname + origin.path)
-                        checked_address += 1
-                    # Except error: security certificate is invalid
-                    except (ssl.SSLError, ConnectionRefusedError) as error:
-                        # Check error
-                        if isinstance(error, ConnectionRefusedError):
-                            continue
-                        # Raise ssl.SSLError
-                        raise ssl.SSLError(origin.geturl() + " uses an invalid security certificate.")
-                if not checked_address:
-                    # Raise error, if all addresses are not available
-                    raise ConnectionRefusedError("Can not connect to at least one address.")
+            if origin.scheme == "https":
+                try:
+                    # Init HTTPSConnection object
+                    http_client.HTTPSConnection(origin.hostname, port=origin_port, timeout=5).connect()
+                # Except error: security certificate is invalid
+                except (ssl.SSLError, socket.gaierror, ConnectionRefusedError) as error:
+                    # Raise Connection error
+                    if isinstance(error, ConnectionRefusedError):
+                        address = origin.geturl()
+                        raise ConnectionRefusedError("Can not connect to " + address + " address.")
+                    # Raise, if name or service not known
+                    elif isinstance(error, socket.gaierror):
+                        # Uncomment this string, if try to listen port. But include
+                        raise socket.gaierror(
+                            "Address: " + origin.geturl() + ". Port: " + str(origin_port) +
+                            ". Name or service not known."
+                        )
+                    # Raise ssl.SSLError
+                    raise ssl.SSLError(origin.geturl() + " uses an invalid security certificate.")
             return True
         return False
 
-    def get_origin_ports(self, origin):
+    def get_origin_port(self, origin):
+        """
+        Returns the origin.port or port for this schema by default.
+        Otherwise, it returns None.
+        """
         if origin.port is not None:
-            # Return tuple (origin.port, )
-            return origin.port,
+            # Return origin.port
+            return origin.port
         # if origin.port doesn`t exists
-        if origin.scheme == "http":
-            # Default ports return for http
-            return 80, 8080
-        elif origin.scheme == "https":
-            # Default ports return for https
-            return 443, 8443
+        if origin.scheme == "http" or origin.scheme == "ws":
+            # Default port return for http
+            return 80
+        elif origin.scheme == "https" or origin.scheme == "wss":
+            # Default port return for https
+            return 443
         else:
             return None
-
-    def check_pattern(self, origin, pattern):
-        # Get origin.port or default ports for origin or None
-        origin_ports = self.get_origin_ports(origin)
-        # Get pattern.port or default ports for pattern or None
-        pattern_ports = self.get_origin_ports(pattern)
-        # Get valid origin ports or empty list
-        if origin_ports and pattern_ports:
-            valid_origin_ports = [origin_ports[i] for i in range(0, len(origin_ports))
-                                  if origin_ports[i] in pattern_ports]
-        else:
-            valid_origin_ports = []
-        # Compares hostname, scheme, ports of pattern and origin
-        # Return tuple. Values: (True/False, valid_origin_ports)
-        return all((pattern.scheme == origin.scheme,
-                    is_same_domain(origin.hostname, pattern.hostname),
-                    len(valid_origin_ports) > 0,
-                    )), valid_origin_ports
 
 
 def AllowedHostsOriginValidator(application):
