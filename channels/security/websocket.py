@@ -55,7 +55,7 @@ class OriginValidator:
         Validate the given origin for this site.
 
         Check than the origin looks valid and matches the origin pattern in
-        specified list `` allowed_origins``. Any pattern begins with a scheme.
+        specified list ``allowed_origins``. Any pattern begins with a scheme.
         After the scheme there must be a domain. Any domain beginning with a period
         corresponds to the domain and all its subdomains (for example, ``http://.example.com``
         ``http://example.com`` and any subdomain). After the domain there must be a port,
@@ -65,7 +65,7 @@ class OriginValidator:
         Note. This function assumes that the given origin has a schema, domain and port,
         but port is optional.
 
-        Returns `` True`` for a valid host, `` False`` otherwise.
+        Returns ``True`` for a valid host, ``False`` otherwise.
         """
         return any(
             pattern == "*" or self.match_allowed_origin(parsed_origin, pattern)
@@ -113,10 +113,10 @@ class OriginValidator:
             return origin.port
         # if origin.port doesn`t exists
         if origin.scheme == "http" or origin.scheme == "ws":
-            # Default port return for http
+            # Default port return for http, ws
             return 80
         elif origin.scheme == "https" or origin.scheme == "wss":
-            # Default port return for https
+            # Default port return for https, wss
             return 443
         else:
             return None
