@@ -46,6 +46,7 @@ Topics
 
    introduction
    installation
+   tutorial/index
    topics/consumers
    topics/routing
    topics/databases
