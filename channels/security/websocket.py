@@ -1,6 +1,3 @@
-import socket
-import ssl
-from http import client as http_client
 from urllib.parse import urlparse
 
 from django.conf import settings
@@ -61,8 +58,8 @@ class OriginValidator:
         specified list `` allowed_origins``. Any pattern begins with a scheme.
         After the scheme there must be a domain. Any domain beginning with a period
         corresponds to the domain and all its subdomains (for example, ``http://.example.com``
-        ``http://example.com`` and any subdomain).After the domain there must be a port,
-        but it can be omitted. `` * `` matches anything and anything
+        ``http://example.com`` and any subdomain). After the domain there must be a port,
+        but it can be omitted. ``*`` matches anything and anything
         else must match exactly.
 
         Note. This function assumes that the given origin has a schema, domain and port,
@@ -71,11 +68,11 @@ class OriginValidator:
         Returns `` True`` for a valid host, `` False`` otherwise.
         """
         return any(
-            pattern == "*" or self.is_allowed_origin(parsed_origin, pattern)
+            pattern == "*" or self.match_allowed_origin(parsed_origin, pattern)
             for pattern in self.allowed_origins
         )
 
-    def is_allowed_origin(self, parsed_origin, pattern):
+    def match_allowed_origin(self, parsed_origin, pattern):
         """
         Returns ``True`` if the origin is either an exact match or a match
         to the wildcard pattern. Compares scheme, domain, port of origin and pattern.
@@ -88,17 +85,8 @@ class OriginValidator:
         ``http://exapmple.com``). After the domain there must be a port,
         but it can be omitted.
 
-        Also, if scheme is ``https``, verifies security certificate.
-
         Note. This function assumes that the given origin has a schema, domain and port,
         or only domain. Port is optional.
-
-        Raises SSLError if origin used an invalid security certificate.
-
-        Raises ConnectionRefusedError if the connection is rejected.
-        Occurs when connected to a port that is not listening.
-
-        Raises socket.gaierror if name or service not known.
         """
         # Get ResultParse object
         parsed_pattern = urlparse(pattern.lower(), scheme=None)
@@ -112,26 +100,6 @@ class OriginValidator:
         # Compares hostname, scheme, ports of pattern and origin
         if parsed_pattern.scheme == parsed_origin.scheme and origin_port == pattern_port \
                 and is_same_domain(parsed_origin.hostname, parsed_pattern.hostname):
-            # Check ssl security certificate
-            if parsed_origin.scheme == "https":
-                try:
-                    # Init HTTPSConnection object
-                    http_client.HTTPSConnection(parsed_origin.hostname, port=origin_port, timeout=5).connect()
-                # Except error: security certificate is invalid
-                except (ssl.SSLError, socket.gaierror, ConnectionRefusedError) as error:
-                    # Raise Connection error
-                    if isinstance(error, ConnectionRefusedError):
-                        address = parsed_origin.geturl()
-                        raise ConnectionRefusedError("Can not connect to " + address + " address.")
-                    # Raise, if name or service not known
-                    elif isinstance(error, socket.gaierror):
-                        # Uncomment this string, if try to listen port. But include
-                        raise socket.gaierror(
-                            "Address: " + parsed_origin.geturl() + ". Port: " + str(origin_port) +
-                            ". Name or service not known."
-                        )
-                    # Raise ssl.SSLError
-                    raise ssl.SSLError(parsed_origin.geturl() + " uses an invalid security certificate.")
             return True
         return False
 
