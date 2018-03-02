@@ -75,14 +75,21 @@ class URLRouter:
         # Run through the routes we have until one matches
         for route in self.routes:
             try:
-                match = route.resolve(path)
-                if match is not None:
+                match = route.pattern.match(path)
+                if match:
+                    new_path, args, kwargs = match
+                    # Shallow copy of scope.
+                    scope = dict(scope)
+                    outer = scope.get("url_route", {})
+                    # Only pass on the rest of the path
+                    scope["path"] = new_path
+                    # scope["path"] = scope["path"][match.end():]
                     # Add args or kwargs into the scope
                     scope["url_route"] = {
-                        "args": match.args,
-                        "kwargs": match.kwargs,
+                        "args": outer.get("args", ()) + args,
+                        "kwargs": {**outer.get("kwargs", {}), **kwargs},
                     }
-                    return match.func(scope)
+                    return route.callback(scope)
             except Resolver404 as e:
                 pass
         else:

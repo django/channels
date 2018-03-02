@@ -84,22 +84,22 @@ def test_url_router():
         router({"type": "http", "path": "/nonexistent/"})
 
 
-@pytest.mark.xfail
+# @pytest.mark.xfail
 def test_url_router_nesting():
     """
     Tests that nested URLRouters add their keyword captures together.
     """
     test_app = MagicMock(return_value=1)
     inner_router = URLRouter([
-        url(r"^book/(?P<book>[\w\-]+)/page/(\d+)/$", test_app),
+        url(r"^book/(?P<book>[\w\-]+)/page/(?P<page>\d+)/$", test_app),
     ])
     outer_router = URLRouter([
-        url(r"^universe/(\d+)/author/(?P<author>\w+)/$", inner_router),
+        url(r"^universe/(?P<universe>\d+)/author/(?P<author>\w+)/", inner_router),
     ])
     assert outer_router({"type": "http", "path": "/universe/42/author/andrewgodwin/book/channels-guide/page/10/"}) == 1
     assert test_app.call_args[0][0]["url_route"] == {
-        "args": ("42", "10"),
-        "kwargs": {"book": "channels-guide", "author": "andrewgodwin"},
+        "args": (),
+        "kwargs": {"book": "channels-guide", "author": "andrewgodwin", "page": "10", "universe": "42"},
     }
 
 
