@@ -22,6 +22,20 @@ async def test_origin_validator():
     connected, _ = await communicator.connect()
     assert not connected
     await communicator.disconnect()
+    # Make our test application, bad pattern
+    application = OriginValidator(AsyncWebsocketConsumer, ["*.allowed-domain.com"])
+    # Test a bad connection
+    communicator = WebsocketCommunicator(application, "/", headers=[(b"origin", b"http://allowed-domain.com")])
+    connected, _ = await communicator.connect()
+    assert not connected
+    await communicator.disconnect()
+    # Make our test application, good pattern
+    application = OriginValidator(AsyncWebsocketConsumer, [".allowed-domain.com"])
+    # Test a normal connection
+    communicator = WebsocketCommunicator(application, "/", headers=[(b"origin", b"http://www.allowed-domain.com")])
+    connected, _ = await communicator.connect()
+    assert connected
+    await communicator.disconnect()
     # Make our test application, with scheme://domain[:port] for http
     application = OriginValidator(AsyncWebsocketConsumer, ["http://allowed-domain.com"])
     # Test a normal connection
