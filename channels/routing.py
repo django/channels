@@ -99,11 +99,10 @@ class URLRouter:
                     new_path, args, kwargs = match
                     # Shallow copy of scope.
                     scope = dict(scope)
-                    outer = scope.get("url_route", {})
                     # Only pass on the rest of the path
                     scope["path_remaining"] = new_path
-                    # scope["path"] = scope["path"][match.end():]
                     # Add args or kwargs into the scope
+                    outer = scope.get("url_route", {})
                     scope["url_route"] = {
                         "args": outer.get("args", ()) + args,
                         "kwargs": {**outer.get("kwargs", {}), **kwargs},
