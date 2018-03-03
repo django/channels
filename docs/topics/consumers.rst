@@ -181,7 +181,9 @@ WebsocketConsumer
 Available as ``channels.generic.websocket.WebsocketConsumer``, this
 wraps the verbose plain-ASGI message sending and receiving into handling that
 just deals with text and binary frames::
+
     from channels.generic.websocket import WebsocketConsumer
+
     class MyConsumer(WebsocketConsumer):
         groups = ["broadcast"]
 
@@ -227,7 +229,9 @@ AsyncWebsocketConsumer
 Available as ``channels.generic.websocket.AsyncWebsocketConsumer``, this has
 the exact same methods and signature as ``WebsocketConsumer`` but everything
 is async, and the functions you need to write have to be as well::
+
     from channels.generic.websocket import AsyncWebsocketConsumer
+
     class MyConsumer(AsyncWebsocketConsumer):
         groups = ["broadcast"]
 
@@ -285,6 +289,8 @@ AsyncHttpConsumer
 Available as ``channels.generic.http.AsyncHttpConsumer``, this offers basic
 primitives to implement a HTTP endpoint::
 
+    from channels.generic.http import AsyncHttpConsumer
+
     class BasicHttpConsumer(AsyncHttpConsumer):
         async def handle(self, body):
             await asyncio.sleep(10)
@@ -302,6 +308,9 @@ polling, use the lower level ``self.send_headers`` and ``self.send_body``
 methods instead. This example already mentions channel layers which will
 be explained in detail later::
 
+    import json
+    from channels.generic.http import AsyncHttpConsumer
+
     class LongPollConsumer(AsyncHttpConsumer):
         async def handle(self, body):
             await self.send_headers(headers=[
@@ -318,6 +327,9 @@ be explained in detail later::
 
 Of course you can also use those primitives to implement a HTTP endpoint for
 `Server-sent events`_::
+
+    from datetime import datetime
+    from channels.generic.http import AsyncHttpConsumer
 
     class ServerSentEventsConsumer(AsyncHttpConsumer):
         async def handle(self, body):
