@@ -19,7 +19,7 @@ async def test_async_http_consumer():
                 200,
                 json.dumps({
                     "value": data["value"],
-                }),
+                }).encode('utf-8'),
                 headers={
                     "Content-Type": "application/json",
                 },

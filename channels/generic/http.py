@@ -1,3 +1,5 @@
+from django.utils import six
+
 from channels.consumer import AsyncConsumer
 
 
@@ -47,16 +49,16 @@ class AsyncHttpConsumer(AsyncConsumer):
 
     async def send_body(self, body, *, more_body=False):
         """
-        Sends a response body to the client. The method expects a unicode
-        string.
+        Sends a response body to the client. The method expects a bytestring.
 
         Set ``more_body=True`` if you want to send more body content later.
         The default behavior closes the response, and further messages on
         the channel will be ignored.
         """
+        assert isinstance(body, six.binary_type), "Body is not bytes"
         await self.send({
             "type": "http.response.body",
-            "body": body.encode("utf-8"),
+            "body": body,
             "more_body": more_body,
         })
 
