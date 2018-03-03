@@ -67,7 +67,7 @@ class URLRouter:
 
     def __call__(self, scope):
         # Get the path
-        path = scope.get("path", None)
+        path = scope.get("path_remaining", scope.get("path", None))
         if path is None:
             raise ValueError("No 'path' key in connection scope, cannot route URLs")
         # Remove leading / to match Django's handling
@@ -82,7 +82,7 @@ class URLRouter:
                     scope = dict(scope)
                     outer = scope.get("url_route", {})
                     # Only pass on the rest of the path
-                    scope["path"] = new_path
+                    scope["path_remaining"] = new_path
                     # scope["path"] = scope["path"][match.end():]
                     # Add args or kwargs into the scope
                     scope["url_route"] = {
