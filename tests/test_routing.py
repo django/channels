@@ -84,7 +84,6 @@ def test_url_router():
         router({"type": "http", "path": "/nonexistent/"})
 
 
-# @pytest.mark.xfail
 def test_url_router_nesting():
     """
     Tests that nested URLRouters add their keyword captures together.
@@ -92,14 +91,46 @@ def test_url_router_nesting():
     test_app = MagicMock(return_value=1)
     inner_router = URLRouter([
         url(r"^book/(?P<book>[\w\-]+)/page/(?P<page>\d+)/$", test_app),
+        url(r"^test/(\d+)/$", test_app),
     ])
     outer_router = URLRouter([
         url(r"^universe/(?P<universe>\d+)/author/(?P<author>\w+)/", inner_router),
+        url(r"^positional/(\w+)/", inner_router),
     ])
     assert outer_router({"type": "http", "path": "/universe/42/author/andrewgodwin/book/channels-guide/page/10/"}) == 1
     assert test_app.call_args[0][0]["url_route"] == {
         "args": (),
         "kwargs": {"book": "channels-guide", "author": "andrewgodwin", "page": "10", "universe": "42"},
+    }
+
+    assert outer_router({"type": "http", "path": "/positional/foo/test/3/"}) == 1
+    assert test_app.call_args[0][0]["url_route"] == {
+        "args": ("foo", "3"),
+        "kwargs": {},
+    }
+
+
+@pytest.mark.skipif(django.VERSION[0] < 2, reason="Needs Django 2.x")
+def test_url_router_nesting_path():
+    """
+    Tests that nested URLRouters add their keyword captures together when used
+    with path().
+    """
+    from django.urls import path, re_path
+    test_app = MagicMock(return_value=1)
+    inner_router = URLRouter([
+        path("test/<int:page>/", test_app),
+    ])
+    outer_router = URLRouter([
+        # Since ASGI apps are callable, Django's path() thinks that we reached
+        # a view and appends a "$" to the generated regex...
+        re_path(r"^keyword/(?P<slug>\w+)/", inner_router),
+    ])
+
+    assert outer_router({"type": "http", "path": "/keyword/foo/test/3/"}) == 1
+    assert test_app.call_args[0][0]["url_route"] == {
+        "args": (),
+        "kwargs": {"slug": "foo", "page": 3},
     }
 
 
