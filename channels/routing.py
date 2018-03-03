@@ -53,6 +53,25 @@ class ProtocolTypeRouter:
             raise ValueError("No application configured for scope type %r" % scope["type"])
 
 
+def route_pattern_match(route, path):
+    """
+    Backport of RegexPattern.match for Django versions before 2.0. Returns
+    the remaining path and positional and keyword arguments matched.
+    """
+    if hasattr(route, "pattern"):
+        return route.pattern.match(path)
+    # Django<2.0. No converters... :-(
+    match = route.regex.search(path)
+    if match:
+        # If there are any named groups, use those as kwargs, ignoring
+        # non-named groups. Otherwise, pass all non-named arguments as
+        # positional arguments.
+        kwargs = match.groupdict()
+        args = () if kwargs else match.groups()
+        return path[match.end():], args, kwargs
+    return None
+
+
 class URLRouter:
     """
     Routes to different applications/consumers based on the URL path.
@@ -75,7 +94,7 @@ class URLRouter:
         # Run through the routes we have until one matches
         for route in self.routes:
             try:
-                match = route.pattern.match(path)
+                match = route_pattern_match(route, path)
                 if match:
                     new_path, args, kwargs = match
                     # Shallow copy of scope.
