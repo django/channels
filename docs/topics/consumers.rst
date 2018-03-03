@@ -294,8 +294,8 @@ primitives to implement a HTTP endpoint::
     class BasicHttpConsumer(AsyncHttpConsumer):
         async def handle(self, body):
             await asyncio.sleep(10)
-            await self.send_response(200, b'Your response bytes', headers=[
-                ('Content-Type', 'text/plain'),
+            await self.send_response(200, b"Your response bytes", headers=[
+                ("Content-Type", "text/plain"),
             ])
 
 You are expected to implement your own ``self.handle`` method. The
@@ -314,16 +314,16 @@ be explained in detail later::
     class LongPollConsumer(AsyncHttpConsumer):
         async def handle(self, body):
             await self.send_headers(headers=[
-                ('Content-Type', 'application/json'),
+                ("Content-Type", "application/json"),
             ])
             # Headers are only sent after the first body event.
             # Set "more_body" to tell the interface server to not
             # finish the response yet:
-            await self.send_body(b'', more_body=True)
+            await self.send_body(b"", more_body=True)
 
         async def chat_message(self, event):
             # Send JSON and finish the response:
-            await self.send_body(json.dumps(event).encode('utf-8'))
+            await self.send_body(json.dumps(event).encode("utf-8"))
 
 Of course you can also use those primitives to implement a HTTP endpoint for
 `Server-sent events`_::
@@ -334,13 +334,13 @@ Of course you can also use those primitives to implement a HTTP endpoint for
     class ServerSentEventsConsumer(AsyncHttpConsumer):
         async def handle(self, body):
             await self.send_headers(headers=[
-                ('Cache-Control', 'no-cache'),
-                ('Content-Type', 'text/event-stream'),
-                ('Transfer-Encoding', 'chunked'),
+                ("Cache-Control", "no-cache"),
+                ("Content-Type", "text/event-stream"),
+                ("Transfer-Encoding", "chunked"),
             ])
             while True:
-                payload = 'data: %s\n\n' % datetime.now().isoformat()
-                await self.send_body(payload.encode('utf-8'), more_body=True)
+                payload = "data: %s\n\n" % datetime.now().isoformat()
+                await self.send_body(payload.encode("utf-8"), more_body=True)
                 await asyncio.sleep(1)
 
 .. _Server-sent events: https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events
