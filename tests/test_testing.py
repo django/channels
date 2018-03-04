@@ -98,6 +98,16 @@ class QueryStringValidator(WebsocketConsumer):
         self.accept()
 
 
+class ConnectionTypeValidator(WebsocketConsumer):
+    """
+    Tests ASGI specification for ``type`` in the connection scope.
+    """
+
+    def connect(self):
+        assert self.scope["type"] == "websocket"
+        self.accept()
+
+
 paths = [
     'user:pass@example.com:8080/p/a/t/h?query=string#hash',
     'user:pass@example.com:8080/p/a/t/h?query=string#hash',
@@ -110,7 +120,7 @@ paths = [
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("path", paths)
-@pytest.mark.parametrize("app_cls", (PathValidator, QueryStringValidator))
+@pytest.mark.parametrize("app_cls", (PathValidator, QueryStringValidator, ConnectionTypeValidator))
 async def test_connection_scope(path, app_cls):
     """
     Tests ASGI specification for the the connection scope.
