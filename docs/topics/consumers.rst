@@ -326,7 +326,7 @@ be explained in detail later::
             await self.send_body(json.dumps(event).encode("utf-8"))
 
 Of course you can also use those primitives to implement a HTTP endpoint for
-`Server-sent events`_::
+`Server-sent events <https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events>`_::
 
     from datetime import datetime
     from channels.generic.http import AsyncHttpConsumer
@@ -342,5 +342,3 @@ Of course you can also use those primitives to implement a HTTP endpoint for
                 payload = "data: %s\n\n" % datetime.now().isoformat()
                 await self.send_body(payload.encode("utf-8"), more_body=True)
                 await asyncio.sleep(1)
-
-.. _Server-sent events: https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events
