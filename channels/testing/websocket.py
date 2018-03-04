@@ -1,5 +1,5 @@
 import json
-from urllib.parse import urlparse, unquote
+from urllib.parse import unquote, urlparse
 
 from asgiref.testing import ApplicationCommunicator
 

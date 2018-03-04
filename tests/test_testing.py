@@ -109,12 +109,12 @@ class ConnectionTypeValidator(WebsocketConsumer):
 
 
 paths = [
-    'user:pass@example.com:8080/p/a/t/h?query=string#hash',
-    'user:pass@example.com:8080/p/a/t/h?query=string#hash',
-    'wss://user:pass@example.com:8080/p/a/t/h?query=string#hash',
-    b'wss://user:pass@example.com:8080/p/a/t/h?query=string#hash',
-    'ws://www.example.com/%E9%A6%96%E9%A1%B5/index.php?foo=%E9%A6%96%E9%A1%B5&spam=eggs',
-    b'ws://www.example.com/%E9%A6%96%E9%A1%B5/index.php?foo=%E9%A6%96%E9%A1%B5&spam=eggs',
+    "user:pass@example.com:8080/p/a/t/h?query=string#hash",
+    "user:pass@example.com:8080/p/a/t/h?query=string#hash",
+    "wss://user:pass@example.com:8080/p/a/t/h?query=string#hash",
+    b"wss://user:pass@example.com:8080/p/a/t/h?query=string#hash",
+    "ws://www.example.com/%E9%A6%96%E9%A1%B5/index.php?foo=%E9%A6%96%E9%A1%B5&spam=eggs",
+    b"ws://www.example.com/%E9%A6%96%E9%A1%B5/index.php?foo=%E9%A6%96%E9%A1%B5&spam=eggs",
 ]
 
 
@@ -125,7 +125,6 @@ async def test_connection_scope(path, app_cls):
     """
     Tests ASGI specification for the the connection scope.
     """
-    url = path
     communicator = WebsocketCommunicator(app_cls, path)
     connected, _ = await communicator.connect()
     assert connected
