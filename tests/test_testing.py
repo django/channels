@@ -1,3 +1,5 @@
+from urllib.parse import unquote
+
 import pytest
 
 from channels.consumer import AsyncConsumer
@@ -71,4 +73,50 @@ async def test_websocket_communicator():
     response = await communicator.receive_json_from()
     assert response == {"hello": "world"}
     # Close out
+    await communicator.disconnect()
+
+
+class PathValidator(WebsocketConsumer):
+    """
+    Tests ASGI specification for ``path`` in the connection scope.
+    """
+    def connect(self):
+        # check if path is a unicode string
+        assert isinstance(self.scope["path"], str)
+        # check if path has percent escapes decoded
+        assert self.scope["path"] == unquote(self.scope["path"])
+        self.accept()
+
+
+class QueryStringValidator(WebsocketConsumer):
+    """
+    Tests ASGI specification for ``query_string`` in the connection scope.
+    """
+    def connect(self):
+        # check if query_string is a bytes sequence
+        assert isinstance(self.scope["query_string"], bytes)
+        self.accept()
+
+
+paths = [
+    'user:pass@example.com:8080/p/a/t/h?query=string#hash',
+    'user:pass@example.com:8080/p/a/t/h?query=string#hash',
+    'wss://user:pass@example.com:8080/p/a/t/h?query=string#hash',
+    b'wss://user:pass@example.com:8080/p/a/t/h?query=string#hash',
+    'ws://www.example.com/%E9%A6%96%E9%A1%B5/index.php?foo=%E9%A6%96%E9%A1%B5&spam=eggs',
+    b'ws://www.example.com/%E9%A6%96%E9%A1%B5/index.php?foo=%E9%A6%96%E9%A1%B5&spam=eggs',
+]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("path", paths)
+@pytest.mark.parametrize("app_cls", (PathValidator, QueryStringValidator))
+async def test_connection_scope(path, app_cls):
+    """
+    Tests ASGI specification for the the connection scope.
+    """
+    url = path
+    communicator = WebsocketCommunicator(app_cls, path)
+    connected, _ = await communicator.connect()
+    assert connected
     await communicator.disconnect()

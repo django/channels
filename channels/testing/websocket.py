@@ -1,5 +1,5 @@
 import json
-from urllib.parse import urlparse
+from urllib.parse import urlparse, unquote
 
 from asgiref.testing import ApplicationCommunicator
 
@@ -14,10 +14,18 @@ class WebsocketCommunicator(ApplicationCommunicator):
 
     def __init__(self, application, path, headers=None, subprotocols=None):
         parsed = urlparse(path)
+        query_string = parsed.query
+        # ASGI spec: query_string should be a byte string
+        if isinstance(query_string, str):
+            query_string = query_string.encode("utf-8")
+        path_string = parsed.path
+        # ASGI spec: path should be a unicode string
+        if isinstance(path_string, bytes):
+            path_string = path_string.decode("utf-8")
         self.scope = {
             "type": "websocket",
-            "path": parsed.path,
-            "query_string": parsed.query,
+            "path": unquote(path_string),
+            "query_string": query_string,
             "headers": headers or [],
             "subprotocols": subprotocols or [],
         }
