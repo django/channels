@@ -1,5 +1,3 @@
-from django.utils import six
-
 from channels.consumer import AsyncConsumer
 
 
@@ -55,7 +53,7 @@ class AsyncHttpConsumer(AsyncConsumer):
         The default behavior closes the response, and further messages on
         the channel will be ignored.
         """
-        assert isinstance(body, six.binary_type), "Body is not bytes"
+        assert isinstance(body, bytes), "Body is not bytes"
         await self.send({
             "type": "http.response.body",
             "body": body,
