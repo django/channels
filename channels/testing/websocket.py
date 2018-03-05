@@ -13,19 +13,13 @@ class WebsocketCommunicator(ApplicationCommunicator):
     """
 
     def __init__(self, application, path, headers=None, subprotocols=None):
+        if not isinstance(path, str):
+            raise TypeError("Expected str, got {}".format(type(path)))
         parsed = urlparse(path)
-        query_string = parsed.query
-        # ASGI spec: query_string should be a byte string
-        if isinstance(query_string, str):
-            query_string = query_string.encode("utf-8")
-        path_string = parsed.path
-        # ASGI spec: path should be a unicode string
-        if isinstance(path_string, bytes):
-            path_string = path_string.decode("utf-8")
         self.scope = {
             "type": "websocket",
-            "path": unquote(path_string),
-            "query_string": query_string,
+            "path": unquote(parsed.path),
+            "query_string": parsed.query.encode("utf-8"),
             "headers": headers or [],
             "subprotocols": subprotocols or [],
         }
