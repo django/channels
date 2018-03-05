@@ -40,8 +40,8 @@ type of message is being sent over the channel, as it will turn into an event
 a consumer has to handle.
 
 Also remember that if you are sending the event from a synchronous environment, 
-you have to either ``await`` the above function call or use the ``asgiref.sync.async_to_sync``
-wrapper as specified in :doc:`channel layers </topics/channel_layers>`. 
+you have to use the ``asgiref.sync.async_to_sync`` wrapper as specified in 
+:doc:`channel layers </topics/channel_layers>`. 
 
 Receiving and Consumers
 -----------------------
