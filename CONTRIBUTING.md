@@ -2,7 +2,7 @@ Contributing to Channels
 ========================
 
 As an open source project, Channels welcomes contributions of many forms. By participating in this project, you
-agree to abide by the Django `code of conduct <https://www.djangoproject.com/conduct/>`_.
+agree to abide by the Django [code of conduct](https://www.djangoproject.com/conduct/).
 
 Examples of contributions include:
 
@@ -10,7 +10,7 @@ Examples of contributions include:
 * Documentation improvements
 * Bug reports and patch reviews
 
-For more information, please see our `contribution guide <https://channels.readthedocs.io/en/latest/contributing.html>`_.
+For more information, please see our [contribution guide](https://channels.readthedocs.io/en/latest/contributing.html).
 
 Quick Setup
 -----------
@@ -34,4 +34,4 @@ Make sure your code conforms to the coding style:
     isort --check-only --diff --recursive channels tests
     unify --check-only --recursive --quote '"' channels tests
 
-Push to your fork and `submit a pull request <https://github.com/django/channels/compare/>`_.
+Push to your fork and [submit a pull request](https://github.com/django/channels/compare/).
