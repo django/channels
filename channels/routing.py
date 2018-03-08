@@ -81,13 +81,19 @@ class URLRouter:
     url() or path().
     """
 
-    extensions = {"path_routing"}
+    #: This router wants to do routing based on scope[path] or
+    #: scope[path_remaining]. ``path()`` entries in URLRouter should not be
+    #: treated as endpoints (ended with ``$``), but similar to ``include()``.
+    _path_routing = True
 
     def __init__(self, routes):
         self.routes = routes
+        # Django 2 introduced path(); older routes have no "pattern" attribute
         if self.routes and hasattr(self.routes[0], "pattern"):
             for route in self.routes:
-                if "path_routing" in getattr(route.callback, "extensions", set()):
+                # The inner ASGI app wants to do additional routing, route
+                # must not be an endpoint
+                if getattr(route.callback, "_path_routing", False) is True:
                     route.pattern._is_endpoint = False
 
     def __call__(self, scope):

@@ -126,7 +126,7 @@ def test_url_router_nesting_path():
         # Some middleware which hides the fact that we have an inner URLRouter
         def app(scope):
             return inner(scope)
-        app.extensions = {"path_routing"}
+        app._path_routing = True
         return app
 
     outer_router = URLRouter([
@@ -141,6 +141,8 @@ def test_url_router_nesting_path():
     }
     with pytest.raises(ValueError):
         assert outer_router({"type": "http", "path": "/number/42/test/3/bla/"})
+    with pytest.raises(ValueError):
+        assert outer_router({"type": "http", "path": "/number/42/blub/"})
 
 
 @pytest.mark.skipif(django.VERSION[0] < 2, reason="Needs Django 2.x")
