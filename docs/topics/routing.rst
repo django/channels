@@ -111,13 +111,6 @@ would do this::
 
     stream = self.scope["url_route"]["kwargs"]["stream"]
 
-.. note::
-    ``URLRouter`` instances may be nested. Outer ``URLRouter`` instances
-    should not use ``path()`` but ``re_path()`` (respectively
-    ``url()``), because ``path()`` wrongly translates the route into a
-    regex ending with a ``$`` because it assumes that the ASGI app is a
-    view.
-
 
 ChannelNameRouter
 -----------------
