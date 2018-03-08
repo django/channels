@@ -116,22 +116,31 @@ def test_url_router_nesting_path():
     Tests that nested URLRouters add their keyword captures together when used
     with path().
     """
-    from django.urls import path, re_path
+    from django.urls import path
     test_app = MagicMock(return_value=1)
     inner_router = URLRouter([
         path("test/<int:page>/", test_app),
     ])
+
+    def asgi_middleware(inner):
+        # Some middleware which hides the fact that we have an inner URLRouter
+        def app(scope):
+            return inner(scope)
+        app.extensions = {"path_routing"}
+        return app
+
     outer_router = URLRouter([
-        # Since ASGI apps are callable, Django's path() thinks that we reached
-        # a view and appends a "$" to the generated regex...
-        re_path(r"^keyword/(?P<slug>\w+)/", inner_router),
+        path("number/<int:number>/", asgi_middleware(inner_router)),
     ])
 
-    assert outer_router({"type": "http", "path": "/keyword/foo/test/3/"}) == 1
+    assert inner_router({"type": "http", "path": "/test/3/"}) == 1
+    assert outer_router({"type": "http", "path": "/number/42/test/3/"}) == 1
     assert test_app.call_args[0][0]["url_route"] == {
         "args": (),
-        "kwargs": {"slug": "foo", "page": 3},
+        "kwargs": {"number": 42, "page": 3},
     }
+    with pytest.raises(ValueError):
+        assert outer_router({"type": "http", "path": "/number/42/test/3/bla/"})
 
 
 @pytest.mark.skipif(django.VERSION[0] < 2, reason="Needs Django 2.x")

@@ -81,8 +81,14 @@ class URLRouter:
     url() or path().
     """
 
+    extensions = {"path_routing"}
+
     def __init__(self, routes):
         self.routes = routes
+        if self.routes and hasattr(self.routes[0], "pattern"):
+            for route in self.routes:
+                if "path_routing" in getattr(route.callback, "extensions", set()):
+                    route.pattern._is_endpoint = False
 
     def __call__(self, scope):
         # Get the path
