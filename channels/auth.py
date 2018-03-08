@@ -5,6 +5,7 @@ from django.contrib.auth import (
 )
 from django.contrib.auth.models import AnonymousUser
 from django.utils.crypto import constant_time_compare
+from django.utils.functional import SimpleLazyObject
 from django.utils.translation import LANGUAGE_SESSION_KEY
 
 from asgiref.sync import async_to_sync
@@ -137,7 +138,7 @@ class AuthMiddleware:
             raise ValueError("AuthMiddleware cannot find session in scope. SessionMiddleware must be above it.")
         # Add it to the scope if it's not there already
         if "user" not in scope:
-            scope["user"] = async_to_sync(get_user)(scope)
+            scope["user"] = SimpleLazyObject(lambda: async_to_sync(get_user)(scope))
         # Pass control to inner application
         return self.inner(scope)
 

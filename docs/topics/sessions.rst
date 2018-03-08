@@ -80,16 +80,15 @@ connections or HTTP views won't be able to see the changes.
 How to log a user in/out
 ------------------------
 
-Within your consumer you can call ``login(scope, user, backend=None)`` to login a user.
-This requires that your scope has a ``session`` object the best way to do this is to
+Within your consumer you can await ``login(scope, user, backend=None)`` to log a user in.
+This requires that your scope has a ``session`` object; the best way to do this is to
 ensure your consumer is wrapped in a ``SessionMiddlewareStack`` or a ``AuthMiddlewareStack``.
 
-You can logout a user with the ``logout(scope)`` function.
+You can logout a user with the ``logout(scope)`` async function.
 
 If you are in a WebSocket consumer, or logging-in after the first response has been sent in a http consumer,
 the session is populated **but will never be saved automatically** - you must call ``scope["session"].save()``
 after login in your consumer code::
-
 
     from channels.auth import login
 
@@ -107,7 +106,6 @@ after login in your consumer code::
 When calling ``login(scope, user)``, ``logout(scope)`` or ``get_user(scope)`` from an sync function you will need to
 wrap them in ``async_to_sync``::
 
-
     from channels.auth import login
 
     class SyncChatConsumer(WebsocketConsumer):
@@ -122,5 +120,5 @@ wrap them in ``async_to_sync``::
 .. note::
 
     If you are using a long running consumer, websocket or long-polling HTTP it is possible
-    the user has been logged out of their session elsewere.
-    Use ``get_user(scope)`` to be sure that the user is still logged in.
+    the user has been logged out of their session elsewhere.
+    You can periodically use ``get_user(scope)`` to be sure that the user is still logged in.
