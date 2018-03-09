@@ -100,7 +100,7 @@ after login in your consumer code::
             ...
             # login the user to this session.
             await login(self.scope, user)
-            # save the session (if the session backend does not access the db you an use `sync_to_async`)
+            # save the session (if the session backend does not access the db you can use `sync_to_async`)
             await database_sync_to_async(self.scope["session"].save)()
 
 When calling ``login(scope, user)``, ``logout(scope)`` or ``get_user(scope)`` from an sync function you will need to
