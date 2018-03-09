@@ -42,9 +42,9 @@ official website.
 Creating a project
 ------------------
 
-If you don’t already have a Django project, you will need to create one.
+If you don't already have a Django project, you will need to create one.
 
-From the command line, **cd** into a directory where you’d like to store your
+From the command line, **cd** into a directory where you'd like to store your
 code, then run the following command::
 
     $ django-admin startproject mysite
@@ -65,11 +65,11 @@ Creating the Chat app
 
 We will put the code for the chat server in its own app.
 
-Make sure you’re in the same directory as **manage.py** and type this command::
+Make sure you're in the same directory as **manage.py** and type this command::
 
     $ python3 manage.py startapp chat
 
-That’ll create a directory **chat**, which is laid out like this::
+That'll create a directory **chat**, which is laid out like this::
 
     chat/
         __init__.py
@@ -92,7 +92,7 @@ After removing unnecessary files, the **chat** directory should look like::
 
 We need to tell our project that the **chat** app is installed. Edit the
 **mysite/settings.py** file and add ``'chat'`` to the **INSTALLED_APPS** setting.
-It’ll look like this::
+It'll look like this::
 
     # mysite/settings.py
     INSTALLED_APPS = [
@@ -200,11 +200,11 @@ insert an **include()** in the **urlpatterns** list, so you have::
         url(r'^admin/', admin.site.urls),
     ]
 
-Let’s verify that the index view works. Run the following command::
+Let's verify that the index view works. Run the following command::
 
     $ python3 manage.py runserver
 
-You’ll see the following output on the command line::
+You'll see the following output on the command line::
 
     Performing system checks...
 
@@ -220,15 +220,15 @@ You’ll see the following output on the command line::
 
 .. note::
     Ignore the warning about unapplied database migrations.
-    We won’t be using a database in this tutorial.
+    We won't be using a database in this tutorial.
 
 Go to http://127.0.0.1:8000/chat/ in your browser and you should see the text
 "What chat room would you like to enter?" along with a text input to provide a
 room name.
 
 Type in "lobby" as the room name and press enter. You should be redirected to
-the room view at http://127.0.0.1:8000/chat/lobby/ but we haven’t written the
-room view yet, so you’ll get a "Page not found" error page.
+the room view at http://127.0.0.1:8000/chat/lobby/ but we haven't written the
+room view yet, so you'll get a "Page not found" error page.
 
 Go to the terminal where you ran the **runserver** command and press Control-C
 to stop the server.
@@ -236,14 +236,14 @@ to stop the server.
 Integrate the Channels library
 ------------------------------
 
-So far we’ve just created a regular Django app; we haven’t used the Channels
-library at all. Now it’s time to integrate Channels.
+So far we've just created a regular Django app; we haven't used the Channels
+library at all. Now it's time to integrate Channels.
 
-Let’s start by creating a root routing configuration for Channels. A Channels
+Let's start by creating a root routing configuration for Channels. A Channels
 :doc:`routing configuration </topics/routing>` is similar to a Django URLconf in that it tells Channels
 what code to run when an HTTP request is received by the Channels server.
 
-We’ll start with an empty routing configuration.
+We'll start with an empty routing configuration.
 Create a file **mysite/routing.py** and include the following code::
 
     # mysite/routing.py
@@ -255,7 +255,7 @@ Create a file **mysite/routing.py** and include the following code::
 
 Now add the Channels library to the list of installed apps.
 Edit the **mysite/settings.py** file and add ``'channels'`` to the
-``INSTALLED_APPS`` setting. It’ll look like this::
+``INSTALLED_APPS`` setting. It'll look like this::
 
     # mysite/settings.py
     INSTALLED_APPS = [
@@ -269,7 +269,7 @@ Edit the **mysite/settings.py** file and add ``'channels'`` to the
         'django.contrib.staticfiles',
     ]
 
-You’ll also need to point Channels at the root routing configuration.
+You'll also need to point Channels at the root routing configuration.
 Edit the **mysite/settings.py** file again and add the following to the bottom
 of it::
 
@@ -291,12 +291,12 @@ the Channels development server.
 .. _whitenoise.runserver_nostatic: https://github.com/evansd/whitenoise/issues/77
 .. _whitenoise: https://github.com/evansd/whitenoise
 
-Let’s ensure that the Channels development server is working correctly.
+Let's ensure that the Channels development server is working correctly.
 Run the following command::
 
     $ python3 manage.py runserver
 
-You’ll see the following output on the command line::
+You'll see the following output on the command line::
 
     Performing system checks...
     
@@ -315,7 +315,7 @@ You’ll see the following output on the command line::
 
 .. note::
     Ignore the warning about unapplied database migrations.
-    We won’t be using a database in this tutorial.
+    We won't be using a database in this tutorial.
 
 Notice the line beginning with 
 ``Starting ASGI/Channels development server at http://127.0.0.1:8000/``. 

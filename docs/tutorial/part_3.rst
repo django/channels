@@ -12,7 +12,7 @@ The ``ChatConsumer`` that we have written is currently synchronous. Synchronous
 consumers are convenient because they can call regular synchronous I/O functions
 such as those that access Django models without writing special code. However
 asynchronous consumers can provide a higher level of performance since they
-don’t need create additional threads when handling requests.
+don't need create additional threads when handling requests.
 
 ``ChatConsumer`` only uses async-native libraries (Channels and the channel layer)
 and in particular it does not access synchronous Django models. Therefore it can
@@ -26,7 +26,7 @@ be rewritten to be asynchronous without complications.
     used to call synchronous code from an asynchronous consumer. The performance
     gains however would be less than if it only used async-native libraries.
 
-Let’s rewrite ``ChatConsumer`` to be asynchronous.
+Let's rewrite ``ChatConsumer`` to be asynchronous.
 Put the following code in **chat/consumers.py**::
 
     # chat/consumers.py
@@ -81,7 +81,7 @@ This new code is for ChatConsumer is very similar to the original code, with the
 * ``await`` is used to call asynchronous functions that perform I/O.
 * ``async_to_sync`` is no longer needed when calling methods on the channel layer.
 
-Let’s verify that the consumer for the ``/ws/chat/ROOM_NAME/`` path still works.
+Let's verify that the consumer for the ``/ws/chat/ROOM_NAME/`` path still works.
 To start the Channels development server, run the following command::
 
     $ python3 manage.py runserver
@@ -228,7 +228,7 @@ Put the following code in **chat/tests.py**::
         def _chat_log_value(self):
             return self.driver.find_element_by_css_selector('#chat-log').get_property('value')
 
-Our test suite extends ``ChannelsLiveServerTestCase`` rather than Django’s usual
+Our test suite extends ``ChannelsLiveServerTestCase`` rather than Django's usual
 suites for end-to-end tests (``StaticLiveServerTestCase`` or ``LiveServerTestCase``) so
 that URLs inside the Channels routing configuration like ``/ws/room/ROOM_NAME/``
 will work inside the suite.

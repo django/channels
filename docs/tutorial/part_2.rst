@@ -115,8 +115,8 @@ Type the message "hello" and press enter. Nothing happens. In particular the
 message does not appear in the chat log. Why?
 
 The room view is trying to open a WebSocket to the URL
-``ws://127.0.0.1:8000/ws/chat/lobby/`` but we haven’t created a consumer that
-accepts WebSocket connections yet. If you open your browser’s JavaScript
+``ws://127.0.0.1:8000/ws/chat/lobby/`` but we haven't created a consumer that
+accepts WebSocket connections yet. If you open your browser's JavaScript
 console, you should see an error that looks like::
 
     WebSocket connection to 'ws://127.0.0.1:8000/ws/chat/lobby/' failed: Unexpected response code: 500
@@ -245,8 +245,8 @@ Channels development server, the ``ProtocolTypeRouter`` will first inspect the t
 of connection. If it is a WebSocket connection (**ws://** or **wss://**), the connection
 will be given to the ``AuthMiddlewareStack``.
 
-The ``AuthMiddlewareStack`` will populate the connection’s **scope** with a reference to
-the currently authenticated user, similar to how Django’s
+The ``AuthMiddlewareStack`` will populate the connection's **scope** with a reference to
+the currently authenticated user, similar to how Django's
 ``AuthenticationMiddleware`` populates the **request** object of a view function with
 the currently authenticated user. (Scopes will be discussed later in this
 tutorial.) Then the connection will be given to the ``URLRouter``.
@@ -254,7 +254,7 @@ tutorial.) Then the connection will be given to the ``URLRouter``.
 The ``URLRouter`` will examine the HTTP path of the connection to route it to a
 particular consumer, based on the provided ``url`` patterns.
 
-Let’s verify that the consumer for the ``/ws/chat/ROOM_NAME/`` path works. Start the
+Let's verify that the consumer for the ``/ws/chat/ROOM_NAME/`` path works. Start the
 Channels development server::
 
     $ python3 manage.py runserver
@@ -330,7 +330,7 @@ It should look like::
     It is possible to have multiple channel layers configured.
     However most projects will just use a single ``'default'`` channel layer.
 
-Let’s make sure that the channel layer can communicate with Redis. Open a Django
+Let's make sure that the channel layer can communicate with Redis. Open a Django
 shell and run the following commands::
 
     $ python3 manage.py shell
@@ -343,7 +343,7 @@ shell and run the following commands::
 
 Type Control-D to exit the Django shell.
 
-Now that we have a channel layer, let’s use it in ``ChatConsumer``. Put the
+Now that we have a channel layer, let's use it in ``ChatConsumer``. Put the
 following code in **chat/consumers.py**, replacing the old code::
 
     # chat/consumers.py
@@ -421,7 +421,7 @@ Several parts of the new ``ChatConsumer`` code deserve further explanation:
       layer method. (All channel layer methods are asynchronous.)
     * Group names are restricted to ASCII alphanumerics, hyphens, and periods
       only. Since this code constructs a group name directly from the room name,
-      it will fail if the room name contains any characters that aren’t valid in
+      it will fail if the room name contains any characters that aren't valid in
       a group name.
 
 * self.accept()
@@ -441,7 +441,7 @@ Several parts of the new ``ChatConsumer`` code deserve further explanation:
     * An event has a special ``'type'`` key corresponding to the name of the method
       that should be invoked on consumers that receive the event.
 
-Let’s verify that the new consumer for the ``/ws/chat/ROOM_NAME/`` path works.
+Let's verify that the new consumer for the ``/ws/chat/ROOM_NAME/`` path works.
 To start the Channels development server, run the following command::
 
     $ python3 manage.py runserver
