@@ -218,7 +218,7 @@ Put the following code in ``chat/routing.py``::
     from . import consumers
     
     websocket_urlpatterns = [
-        url("^ws/chat/(?P<room_name>[^/]+)/$", consumers.ChatConsumer),
+        url(r'^ws/chat/(?P<room_name>[^/]+)/$', consumers.ChatConsumer),
     ]
 
 The next step is to point the root routing configuration at the **chat.routing**
@@ -287,7 +287,7 @@ A channel layer provides the following abstractions:
   Anyone who has the name of a channel can send a message to the channel.
 
 * A **group** is a group of related channels. A group has a name. Anyone who has the
-  name of a group can (1) add/remove a channel to the group by name and (2) send
+  name of a group can add/remove a channel to the group by name and send
   a message to all channels in the group. It is not possible to enumerate what
   channels are in a particular group.
 
@@ -353,21 +353,23 @@ following code in ``chat/consumers.py``, replacing the old code::
     
     class ChatConsumer(WebsocketConsumer):
         def connect(self):
-            self._room_name = self.scope['url_route']['kwargs']['room_name']
-            self._room_group_name = 'chat_%s' % self._room_name
+            self.room_name = self.scope['url_route']['kwargs']['room_name']
+            self.room_group_name = 'chat_%s' % self.room_name
             
             # Join room group
             async_to_sync(self.channel_layer.group_add)(
-                self._room_group_name,
-                self.channel_name)
+                self.room_group_name,
+                self.channel_name
+            )
             
             self.accept()
         
         def disconnect(self, close_code):
             # Leave room group
             async_to_sync(self.channel_layer.group_discard)(
-                self._room_group_name,
-                self.channel_name)
+                self.room_group_name,
+                self.channel_name
+            )
         
         # Receive message from WebSocket
         def receive(self, text_data):
@@ -376,11 +378,12 @@ following code in ``chat/consumers.py``, replacing the old code::
             
             # Send message to room group
             async_to_sync(self.channel_layer.group_send)(
-                self._room_group_name,
+                self.room_group_name,
                 {
                     'type': 'chat_message',
                     'message': message
-                })
+                }
+            )
         
         # Receive message from room group
         def chat_message(self, event):
@@ -407,7 +410,7 @@ Several parts of the new ``ChatConsumer`` code deserve further explanation:
       including in particular any positional or keyword arguments from the URL
       route and the currently authenticated user if any.
 
-* self._room_group_name = 'chat_%s' % self._room_name
+* self.room_group_name = 'chat_%s' % self.room_name
     * Constructs a Channels group name directly from the user-specified room
       name, without any quoting or escaping.
     * Group names may only contain letters, digits, hyphens, and periods.
