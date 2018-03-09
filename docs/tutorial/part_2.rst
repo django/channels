@@ -456,7 +456,7 @@ In the second browser tab, type the message "hello" and press enter. You should
 now see "hello" echoed in the chat log in both the second browser tab and in the
 first browser tab.
 
-You now have a basic fully-functional chat server.
+You now have a basic fully-functional chat server!
 
 This tutorial continues in :doc:`Tutorial 3 </tutorial/part_3>`.
 
