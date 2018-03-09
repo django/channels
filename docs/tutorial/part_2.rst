@@ -11,7 +11,7 @@ Add the room view
 We will now create the second view, a room view that lets you see messages 
 posted in a particular chat room.
 
-Create a new file **chat/templates/chat/room.html**.
+Create a new file ``chat/templates/chat/room.html``.
 Your app directory should now look like::
 
     chat/
@@ -23,7 +23,7 @@ Your app directory should now look like::
         urls.py
         views.py
 
-Create the view template for the room view in **chat/templates/chat/room.html**::
+Create the view template for the room view in ``chat/templates/chat/room.html``::
 
     <!-- chat/templates/chat/room.html -->
     <!DOCTYPE html>
@@ -73,7 +73,7 @@ Create the view template for the room view in **chat/templates/chat/room.html**:
     </script>
     </html>
 
-Create the view function for the room view in **chat/views.py**.
+Create the view function for the room view in ``chat/views.py``.
 Add the imports of ``mark_safe`` and ``json`` and add the ``room`` view function::
 
     # chat/views.py
@@ -89,7 +89,7 @@ Add the imports of ``mark_safe`` and ``json`` and add the ``room`` view function
             'room_name_json': mark_safe(json.dumps(room_name))
         })
 
-Create the route for the room view in **chat/urls.py**::
+Create the route for the room view in ``chat/urls.py``::
 
     chat/urls.py
     from django.conf.urls import url
@@ -151,7 +151,7 @@ echos it back to the same WebSocket.
     separate WSGI server. In this deployment configuration no common path prefix
     like is ``/ws/`` is necessary.
 
-Create a new file **chat/consumers.py**. Your app directory should now look like::
+Create a new file ``chat/consumers.py``. Your app directory should now look like::
 
     chat/
         __init__.py
@@ -163,7 +163,7 @@ Create a new file **chat/consumers.py**. Your app directory should now look like
         urls.py
         views.py
 
-Put the following code in **chat/consumers.py**::
+Put the following code in ``chat/consumers.py``::
 
     # chat/consumers.py
     from channels.generic.websocket import WebsocketConsumer
@@ -195,8 +195,8 @@ now it does not broadcast messages to other clients in the same room.
     See the :doc:`/topics/consumers` reference for more information about writing asynchronous
     consumers.
 
-We need to create a routing configuration for the **chat** app that has a route to
-the consumer. Create a new file **chat/routing.py**. Your app directory should now
+We need to create a routing configuration for the ``chat`` app that has a route to
+the consumer. Create a new file ``chat/routing.py``. Your app directory should now
 look like::
 
     chat/
@@ -210,7 +210,7 @@ look like::
         urls.py
         views.py
 
-Put the following code in **chat/routing.py**::
+Put the following code in ``chat/routing.py``::
 
     # chat/routing.py
     from django.conf.urls import url
@@ -222,7 +222,7 @@ Put the following code in **chat/routing.py**::
     ]
 
 The next step is to point the root routing configuration at the **chat.routing**
-module. In **mysite/routing.py**, import ``AuthMiddlewareStack``, ``URLRouter``,
+module. In ``mysite/routing.py``, import ``AuthMiddlewareStack``, ``URLRouter``,
 and ``chat.routing``; and insert a ``'websocket'`` key in the
 ``ProtocolTypeRouter`` list in the following format::
 
@@ -272,7 +272,7 @@ the same ``ChatConsumer`` be able to talk to each other. Channels provides a
 **channel layer** abstraction that enables this kind of communication between
 consumers.
 
-Go to the terminal where you ran the **runserver** command and press Control-C to
+Go to the terminal where you ran the ``runserver`` command and press Control-C to
 stop the server.
 
 Enable a channel layer
@@ -311,7 +311,7 @@ Redis. Run the following command::
     $ pip3 install channels_redis
 
 Before we can use a channel layer, we must configure it. Edit the
-**mysite/settings.py** file and add a ``CHANNEL_LAYERS`` setting to the bottom.
+``mysite/settings.py`` file and add a ``CHANNEL_LAYERS`` setting to the bottom.
 It should look like::
 
     # mysite/settings.py
@@ -344,7 +344,7 @@ shell and run the following commands::
 Type Control-D to exit the Django shell.
 
 Now that we have a channel layer, let's use it in ``ChatConsumer``. Put the
-following code in **chat/consumers.py**, replacing the old code::
+following code in ``chat/consumers.py``, replacing the old code::
 
     # chat/consumers.py
     from asgiref.sync import async_to_sync
@@ -401,7 +401,7 @@ appended to the chat log.
 Several parts of the new ``ChatConsumer`` code deserve further explanation:
 
 * self.scope['url_route']['kwargs']['room_name']
-    * Obtains the ``'room_name'`` parameter from the URL route in **chat/routes.py**
+    * Obtains the ``'room_name'`` parameter from the URL route in ``chat/routes.py``
       that opened the WebSocket connection to the consumer.
     * Every consumer has a :ref:`scope <scope>` that contains information about its connection,
       including in particular any positional or keyword arguments from the URL

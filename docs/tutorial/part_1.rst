@@ -44,12 +44,12 @@ Creating a project
 
 If you don't already have a Django project, you will need to create one.
 
-From the command line, **cd** into a directory where you'd like to store your
+From the command line, ``cd`` into a directory where you'd like to store your
 code, then run the following command::
 
     $ django-admin startproject mysite
 
-This will create a **mysite** directory in your current directory with the 
+This will create a ``mysite`` directory in your current directory with the 
 following contents::
 
     mysite/
@@ -65,11 +65,11 @@ Creating the Chat app
 
 We will put the code for the chat server in its own app.
 
-Make sure you're in the same directory as **manage.py** and type this command::
+Make sure you're in the same directory as ``manage.py`` and type this command::
 
     $ python3 manage.py startapp chat
 
-That'll create a directory **chat**, which is laid out like this::
+That'll create a directory ``chat``, which is laid out like this::
 
     chat/
         __init__.py
@@ -81,17 +81,17 @@ That'll create a directory **chat**, which is laid out like this::
         tests.py
         views.py
 
-For the purposes of this tutorial, we will only be working with **chat/views.py** 
-and **chat/__init__.py**. So remove all other files from the **chat** directory.
+For the purposes of this tutorial, we will only be working with ``chat/views.py`` 
+and ``chat/__init__.py``. So remove all other files from the ``chat`` directory.
 
-After removing unnecessary files, the **chat** directory should look like::
+After removing unnecessary files, the ``chat`` directory should look like::
 
     chat/
         __init__.py
         views.py
 
-We need to tell our project that the **chat** app is installed. Edit the
-**mysite/settings.py** file and add ``'chat'`` to the **INSTALLED_APPS** setting.
+We need to tell our project that the ``chat`` app is installed. Edit the
+``mysite/settings.py`` file and add ``'chat'`` to the **INSTALLED_APPS** setting.
 It'll look like this::
 
     # mysite/settings.py
@@ -111,9 +111,9 @@ Add the index view
 We will now create the first view, an index view that lets you type the name of
 a chat room to join.
 
-Create a **templates** directory in your **chat** directory. Within the
-**templates** directory you have just created, create another directory called
-**chat**, and within that create a file called **index.html** to hold the
+Create a ``templates`` directory in your ``chat`` directory. Within the
+``templates`` directory you have just created, create another directory called
+``chat``, and within that create a file called ``index.html`` to hold the
 template for the index view.
 
 Your chat directory should now look like::
@@ -125,7 +125,7 @@ Your chat directory should now look like::
                 index.html
         views.py
 
-Put the following code in **chat/templates/chat/index.html**::
+Put the following code in ``chat/templates/chat/index.html``::
 
     <!-- chat/templates/chat/index.html -->
     <!DOCTYPE html>
@@ -155,7 +155,7 @@ Put the following code in **chat/templates/chat/index.html**::
     </html>
 
 Create the view function for the room view.
-Put the following code in **chat/views.py**::
+Put the following code in ``chat/views.py``::
 
     # chat/views.py
     from django.shortcuts import render
@@ -165,7 +165,7 @@ Put the following code in **chat/views.py**::
 
 To call the view, we need to map it to a URL - and for this we need a URLconf.
 
-To create a URLconf in the chat directory, create a file called **urls.py**.
+To create a URLconf in the chat directory, create a file called ``urls.py``.
 Your app directory should now look like::
 
     chat/
@@ -176,7 +176,7 @@ Your app directory should now look like::
         urls.py
         views.py
 
-In the **chat/urls.py** file include the following code::
+In the ``chat/urls.py`` file include the following code::
 
     # chat/urls.py
     from django.conf.urls import url
@@ -188,7 +188,7 @@ In the **chat/urls.py** file include the following code::
     ]
 
 The next step is to point the root URLconf at the **chat.urls** module.
-In **mysite/urls.py**, add an import for **django.conf.urls.include** and
+In ``mysite/urls.py``, add an import for **django.conf.urls.include** and
 insert an **include()** in the **urlpatterns** list, so you have::
 
     # mysite/urls.py
@@ -230,7 +230,7 @@ Type in "lobby" as the room name and press enter. You should be redirected to
 the room view at http://127.0.0.1:8000/chat/lobby/ but we haven't written the
 room view yet, so you'll get a "Page not found" error page.
 
-Go to the terminal where you ran the **runserver** command and press Control-C
+Go to the terminal where you ran the ``runserver`` command and press Control-C
 to stop the server.
 
 Integrate the Channels library
@@ -244,7 +244,7 @@ Let's start by creating a root routing configuration for Channels. A Channels
 what code to run when an HTTP request is received by the Channels server.
 
 We'll start with an empty routing configuration.
-Create a file **mysite/routing.py** and include the following code::
+Create a file ``mysite/routing.py`` and include the following code::
 
     # mysite/routing.py
     from channels.routing import ProtocolTypeRouter
@@ -254,7 +254,7 @@ Create a file **mysite/routing.py** and include the following code::
     })
 
 Now add the Channels library to the list of installed apps.
-Edit the **mysite/settings.py** file and add ``'channels'`` to the
+Edit the ``mysite/settings.py`` file and add ``'channels'`` to the
 ``INSTALLED_APPS`` setting. It'll look like this::
 
     # mysite/settings.py
@@ -270,7 +270,7 @@ Edit the **mysite/settings.py** file and add ``'channels'`` to the
     ]
 
 You'll also need to point Channels at the root routing configuration.
-Edit the **mysite/settings.py** file again and add the following to the bottom
+Edit the ``mysite/settings.py`` file again and add the following to the bottom
 of it::
 
     # mysite/settings.py
@@ -278,7 +278,7 @@ of it::
     ASGI_APPLICATION = 'mysite.routing.application'
 
 With Channels now in the installed apps, it will take control of the
-**runserver** command, replacing the standard Django development server with
+``runserver`` command, replacing the standard Django development server with
 the Channels development server.
 
 .. note::
@@ -325,7 +325,7 @@ Django development server.
 Go to http://127.0.0.1:8000/chat/ in your browser and you should still see the
 index page that we created before.
 
-Go to the terminal where you ran the **runserver** command and press Control-C
+Go to the terminal where you ran the ``runserver`` command and press Control-C
 to stop the server.
 
 This tutorial continues in :doc:`Tutorial 2 </tutorial/part_2>`.

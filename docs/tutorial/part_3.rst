@@ -27,7 +27,7 @@ be rewritten to be asynchronous without complications.
     gains however would be less than if it only used async-native libraries.
 
 Let's rewrite ``ChatConsumer`` to be asynchronous.
-Put the following code in **chat/consumers.py**::
+Put the following code in ``chat/consumers.py``::
 
     # chat/consumers.py
     from channels.generic.websocket import AsyncWebsocketConsumer
@@ -117,7 +117,7 @@ Install Selenium. Run the following command::
 .. _Install the Chrome web browser: https://www.google.com/chrome/
 .. _Install chromedriver: https://sites.google.com/a/chromium.org/chromedriver/getting-started
 
-Create a new file **chat/tests.py**. Your app directory should now look like::
+Create a new file ``chat/tests.py``. Your app directory should now look like::
 
     chat/
         __init__.py
@@ -131,7 +131,7 @@ Create a new file **chat/tests.py**. Your app directory should now look like::
         urls.py
         views.py
 
-Put the following code in **chat/tests.py**::
+Put the following code in ``chat/tests.py``::
 
     # chat/tests.py
     from channels.testing import ChannelsLiveServerTestCase
