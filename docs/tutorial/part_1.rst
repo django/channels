@@ -1,5 +1,5 @@
-Writing your first Channels app, part 1
-=======================================
+Tutorial Part 1: Basic Setup
+============================
 
 In this tutorial we will build a simple chat server. It will have two pages:
 

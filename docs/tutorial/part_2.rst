@@ -1,5 +1,5 @@
-Writing your first Channels app, part 2
-=======================================
+Tutorial Part 2: Implement a Chat Server
+========================================
 
 This tutorial begins where :doc:`Tutorial 1 </tutorial/part_1>` left off.
 We'll get the room page working so that you can chat with yourself and others

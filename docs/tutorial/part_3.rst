@@ -1,5 +1,5 @@
-Writing your first Channels app, part 3
-=======================================
+Tutorial Part 3: Rewrite Chat Server as Asynchronous
+====================================================
 
 This tutorial begins where :doc:`Tutorial 2 </tutorial/part_2>` left off.
 We'll rewrite the consumer code to be asynchronous rather than synchronous
