@@ -159,4 +159,14 @@ You should see output that looks like::
 
 You now have a tested chat server!
 
-This is the end of the tutorial.
+What's next?
+------------
+
+Congratulations! You've fully implemented a chat server, made it performant by
+writing it in asynchronous style, and written automated tests to ensure it won't
+break.
+
+This is the end of the tutorial. At this point you should know enough to start
+an app of your own that uses Channels and start fooling around.
+As you need to learn new tricks, come back to rest of the
+:ref:`documentation <topics>`.
