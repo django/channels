@@ -19,6 +19,8 @@ Channels - like routing, session handling and authentication - with any
 ASGI app, but they're generally the best way to write your application code.
 
 
+.. _sync_to_async:
+
 Basic Layout
 ------------
 
@@ -80,7 +82,7 @@ must be coroutines, and ``self.send`` is a coroutine::
         async def websocket_receive(self, event):
             await self.send({
                 "type": "websocket.send",
-                "text": text,
+                "text": event["text"],
             })
 
 When should you use ``AsyncConsumer`` and when should you use ``SyncConsumer``?
@@ -137,6 +139,8 @@ Consumers also let you deal with Channel's *channel layers*, to let them
 send messages between each other either one-to-one or via a broadcast system
 called groups. You can read more in :doc:`/topics/channel_layers`.
 
+
+.. _scope:
 
 Scope
 -----
