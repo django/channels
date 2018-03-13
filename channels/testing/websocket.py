@@ -1,10 +1,10 @@
 import json
 from urllib.parse import unquote, urlparse
 
-from asgiref.testing import ApplicationCommunicator
+from . import AuthCommunicator
 
 
-class WebsocketCommunicator(ApplicationCommunicator):
+class WebsocketCommunicator(AuthCommunicator):
     """
     ApplicationCommunicator subclass that has WebSocket shortcut methods.
 
@@ -12,7 +12,7 @@ class WebsocketCommunicator(ApplicationCommunicator):
     (uninstantiated) along with the initial connection parameters.
     """
 
-    def __init__(self, application, path, headers=None, subprotocols=None):
+    def __init__(self, application, path, headers=None, subprotocols=None, user=None):
         if not isinstance(path, str):
             raise TypeError("Expected str, got {}".format(type(path)))
         parsed = urlparse(path)
@@ -22,6 +22,7 @@ class WebsocketCommunicator(ApplicationCommunicator):
             "query_string": parsed.query.encode("utf-8"),
             "headers": headers or [],
             "subprotocols": subprotocols or [],
+            "user": user,
         }
         super().__init__(application, self.scope)
 
@@ -32,6 +33,7 @@ class WebsocketCommunicator(ApplicationCommunicator):
         On an accepted connection, returns (True, <chosen-subprotocol>)
         On a rejected connection, returns (False, <close-code>)
         """
+        await self.login()
         await self.send_input({
             "type": "websocket.connect",
         })

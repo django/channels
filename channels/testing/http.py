@@ -1,7 +1,7 @@
-from asgiref.testing import ApplicationCommunicator
+from . import AuthCommunicator
 
 
-class HttpCommunicator(ApplicationCommunicator):
+class HttpCommunicator(AuthCommunicator):
     """
     ApplicationCommunicator subclass that has HTTP shortcut methods.
 
@@ -12,13 +12,14 @@ class HttpCommunicator(ApplicationCommunicator):
     directly.
     """
 
-    def __init__(self, application, method, path, body=b"", headers=None):
+    def __init__(self, application, method, path, body=b"", headers=None, user=None):
         self.scope = {
             "type": "http",
             "http_version": "1.1",
             "method": method.upper(),
             "path": path,
             "headers": headers or [],
+            "user": user,
         }
         assert isinstance(body, bytes)
         self.body = body
@@ -30,6 +31,7 @@ class HttpCommunicator(ApplicationCommunicator):
         Get the application's response. Returns a dict with keys of
         "body", "headers" and "status".
         """
+        await self.login()
         # If we've not sent the request yet, do so
         if not self.sent_request:
             self.sent_request = True
