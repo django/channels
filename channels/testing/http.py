@@ -1,4 +1,4 @@
-from . import AuthCommunicator
+from .base import AuthCommunicator
 
 
 class HttpCommunicator(AuthCommunicator):

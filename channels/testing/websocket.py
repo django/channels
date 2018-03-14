@@ -1,7 +1,7 @@
 import json
 from urllib.parse import unquote, urlparse
 
-from . import AuthCommunicator
+from .base import AuthCommunicator
 
 
 class WebsocketCommunicator(AuthCommunicator):
