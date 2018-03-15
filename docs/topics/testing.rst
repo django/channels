@@ -88,7 +88,8 @@ Call it to receive an event from the application::
 receive_nothing
 ~~~~~~~~~~~~~~~
 
-Call it to check if there is an event waiting to be received from the application::
+Call it to check that there is no event waiting to be received from the
+application::
 
     assert await communicator.receive_nothing(timeout=0.1, interval=0.01) is False
     # Receive the rest of the http request from above
@@ -247,8 +248,9 @@ timing out, which defaults to 1.
 receive_nothing
 ~~~~~~~~~~~~~~~
 
-Checks if there is a frame waiting to be received from the application. For
-details see :ref:`ApplicationCommunicator <application_communicator-receive_nothing>`.
+Checks that there is no frame waiting to be received from the application. For
+details see
+:ref:`ApplicationCommunicator <application_communicator-receive_nothing>`.
 
 disconnect
 ~~~~~~~~~~
