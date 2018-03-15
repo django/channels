@@ -19,8 +19,12 @@ class HttpCommunicator(AuthCommunicator):
             "method": method.upper(),
             "path": path,
             "headers": headers or [],
-            "user": user,
         }
+        if user:
+            self.scope.update({
+                "user": user,
+                "session": self.get_new_session(),
+            })
         assert isinstance(body, bytes)
         self.body = body
         self.sent_request = False

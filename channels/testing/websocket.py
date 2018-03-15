@@ -22,8 +22,12 @@ class WebsocketCommunicator(AuthCommunicator):
             "query_string": parsed.query.encode("utf-8"),
             "headers": headers or [],
             "subprotocols": subprotocols or [],
-            "user": user,
         }
+        if user:
+            self.scope.update({
+                "user": user,
+                "session": self.get_new_session(),
+            })
         super().__init__(application, self.scope)
 
     async def connect(self, timeout=1):
