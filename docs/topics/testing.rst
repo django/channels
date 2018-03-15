@@ -106,12 +106,10 @@ application::
 
 The method has two optional parameters:
 
-* ``timeout`` is ``0.1`` by default to keep tests short when there is no event
-  to receive and should be more than enough time.
-* ``interval`` is the time between two checks for new events. (It will return after
-  a check if there is an event.) The default of ``0.01`` should work well. However,
-  if you want to customize it you might use a low value (``0.001``) if you expect an
-  event and a high value (equal to ``timeout``) if you don't.
+* ``timeout``: number of seconds to wait to ensure the queue is empty. Defaults
+  to 0.1.
+* ``interval``: number of seconds to wait for another check for new events.
+  Defaults to 0.01.
 
 wait
 ~~~~
