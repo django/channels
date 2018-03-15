@@ -23,12 +23,7 @@ class WebsocketCommunicator(AuthCommunicator):
             "headers": headers or [],
             "subprotocols": subprotocols or [],
         }
-        if user:
-            self.scope.update({
-                "user": user,
-                "session": self.get_new_session(),
-            })
-        super().__init__(application, self.scope)
+        super().__init__(application, self.scope, user)
 
     async def connect(self, timeout=1):
         """

@@ -20,15 +20,10 @@ class HttpCommunicator(AuthCommunicator):
             "path": path,
             "headers": headers or [],
         }
-        if user:
-            self.scope.update({
-                "user": user,
-                "session": self.get_new_session(),
-            })
         assert isinstance(body, bytes)
         self.body = body
         self.sent_request = False
-        super().__init__(application, self.scope)
+        super().__init__(application, self.scope, user)
 
     async def get_response(self, timeout=1):
         """

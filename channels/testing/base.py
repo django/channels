@@ -12,13 +12,18 @@ class AuthCommunicator(ApplicationCommunicator):
     """
     ApplicationCommunicator subclass with authentication helpers.
     """
-    
-    def get_new_session(self):
+
+    def __init__(self, application, scope, user):
         """
-        Returns a new session object.
+        Adds user and session to the scope.
         """
-        engine = import_module(settings.SESSION_ENGINE)
-        return engine.SessionStore()
+        if user:
+            engine = import_module(settings.SESSION_ENGINE)
+            scope.update({
+                "user": user,
+                "session": engine.SessionStore(),
+            })
+        super().__init__(application, scope)
 
     async def login(self):
         """
