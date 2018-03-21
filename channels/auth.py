@@ -16,8 +16,7 @@ from channels.sessions import CookieMiddleware, SessionMiddleware
 @database_sync_to_async
 def get_user(scope):
     """
-    Return the user model instance associated with the given scope.
-    If no user is retrieved, return an instance of `AnonymousUser`.
+    Returns the user associated with the `session` value of the `scope`.
     """
     if "session" not in scope:
         raise ValueError("Cannot find session in scope. You should wrap your consumer in SessionMiddleware.")
@@ -42,6 +41,7 @@ def get_user(scope):
                 if not session_hash_verified:
                     session.flush()
                     user = None
+    # If no user is retrieved, return an instance of AnonymousUser
     return user or AnonymousUser()
 
 

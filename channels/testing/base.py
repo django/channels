@@ -29,7 +29,7 @@ class AuthCommunicator(ApplicationCommunicator):
         """
         Logs a user in if found in the scope.
         """
-        if self.scope.get("user"):
+        if "user" in self.scope:
             await login(self.scope, self.scope["user"])
             await database_sync_to_async(self.scope["session"].save)()
 
