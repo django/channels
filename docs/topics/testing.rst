@@ -125,6 +125,64 @@ around ``wait``::
     with pytest.raises(ValueError):
         await communicator.wait()
 
+AuthCommunicator
+----------------
+
+``AuthCommunicator`` is a subclass of ``ApplicationCommunicator`` with
+authentication features. This is useful when your application requires a user
+that is logged in. You probably won't use ``AuthCommunicator`` directly but
+rather ``HttpCommunicator`` or ``WebsocketCommunicator`` (see below) which are
+subclasses thereof.
+
+You can just pass a user instance to the constructor and then log this user in
+and out like this::
+
+    from channels.testing.base import AuthCommunicator
+    communicator = AuthCommunicator(MyConsumer, scope, user=user)
+    await communicator.login()
+    await communicator.logout()
+
+.. _auth_communicator-session_middleware:
+
+.. note::
+
+    When you use ``SessionMiddleware``, ``SessionMiddlewareStack`` or
+    ``AuthMiddlewareStack`` as middleware in your test you can't use ``login``
+    and ``logout``. (That means the session of the scope in your application
+    won't be updated.)
+
+How to get a user instance
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can use a py.test fixture to create a user::
+
+    from django.contrib.auth import get_user_model
+    from channels.db import database_sync_to_async
+
+    @pytest.fixture
+    async def user(db):
+        User = get_user_model()
+        try:
+            user = await database_sync_to_async(User.objects.get)(
+                username="test-user",
+            )
+        except User.DoesNotExist:
+            user = await database_sync_to_async(User.objects.create_user)(
+                "test-user",
+                "password",
+            )
+        return user
+
+And then just use the fixture as parameter in your tests::
+
+    @pytest.mark.asyncio
+    async def test_something(user):
+        assert user.username == "test-user"
+
+.. note::
+
+    The database isn't cleaned up after each test. Therefore you might prefer
+    to let your fixture create a new user for each test.
 
 HttpCommunicator
 ----------------
@@ -141,14 +199,24 @@ And then wait for its response::
     response = await communicator.get_response()
     assert response["body"] == b"test response"
 
+You can make an authenticated request when you pass a user parameter::
+
+    communicator = HttpCommunicator(MyHttpConsumer, "GET", "/test/", user=user)
+
+.. note::
+
+    Don't use the ``user`` parameter and any
+    :ref:`session middleware <auth_communicator-session_middleware>` together.
+
 You can pass the following arguments to the constructor:
 
 * ``method``: HTTP method name (unicode string, required)
 * ``path``: HTTP path (unicode string, required)
 * ``body``: HTTP body (bytestring, optional)
+* ``user``: user (model instance, optional)
 
 The response from the ``get_response`` method will be a dict with the following
-keys::
+keys:
 
 * ``status``: HTTP status code (integer)
 * ``headers``: List of headers as (name, value) tuples (both bytestrings)
@@ -187,6 +255,16 @@ application, as shown in this example::
     things never being awaited, as you will be killing your app off in the
     middle of its lifecycle. You do not, however, have to ``disconnect()`` if
     your app already raised an error.
+
+If you need an authenticated user for your test you can just pass one to the
+constructor::
+
+    communicator = WebsocketCommunicator(MyWebsocketApp, "/testws/", user=user)
+
+.. note::
+
+    Don't use the ``user`` parameter and any
+    :ref:`session middleware <auth_communicator-session_middleware>` together.
 
 connect
 ~~~~~~~
