@@ -1,13 +1,58 @@
+import itertools
 from concurrent.futures import TimeoutError
 from urllib.parse import unquote
 
 import pytest
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AnonymousUser
 
+from channels.auth import get_user
 from channels.consumer import AsyncConsumer
-from channels.generic.websocket import WebsocketConsumer
+from channels.db import database_sync_to_async
+from channels.generic.websocket import (
+    AsyncWebsocketConsumer, WebsocketConsumer,
+)
+from channels.sessions import CookieMiddleware
 from channels.testing import HttpCommunicator, WebsocketCommunicator
+from channels.testing.base import AuthCommunicator
+
+counter = itertools.count()
 
 pytestmark = pytest.mark.asyncio
+
+
+@database_sync_to_async
+def create_user(username=None, password="password", **kwargs):
+    """
+    Returns a new user instance.
+    """
+    if username is None:
+        # Needed because the database isn't cleaned up after each test
+        # in an async context
+        username = "u{}".format(next(counter))
+    return get_user_model().objects.create_user(username, password, **kwargs)
+
+
+@pytest.fixture
+async def user(db):
+    """
+    Unique user fixture.
+    """
+    return await create_user()
+
+
+@pytest.fixture
+def scope():
+    """
+    HTTP scope fixture.
+    """
+    return {
+        "type": "http",
+        "http_version": "1.1",
+        "method": "GET",
+        "path": "/test/",
+        "headers": [],
+    }
 
 
 class SimpleHttpApp(AsyncConsumer):
@@ -29,6 +74,49 @@ class SimpleHttpApp(AsyncConsumer):
         })
 
 
+async def test_auth_communicator(user, scope):
+    """
+    Tests that the authentication communicator methods work.
+    """
+    communicator = AuthCommunicator(SimpleHttpApp, scope, user=user)
+    assert communicator.scope["user"] is user
+    assert "session" in communicator.scope
+    assert await get_user(communicator.scope) == AnonymousUser()
+    assert communicator.scope is communicator.instance.scope
+    assert await get_user(communicator.instance.scope) == AnonymousUser()
+    # Login
+    await communicator.login()
+    assert await get_user(communicator.scope) == user
+    assert await get_user(communicator.instance.scope) == user
+    # Logout
+    await communicator.logout()
+    assert await get_user(communicator.scope) == AnonymousUser()
+    assert await get_user(communicator.instance.scope) == AnonymousUser()
+
+
+async def test_auth_communicator_with_middleware(user, scope):
+    """
+    Tests that the authentication communicator works with middleware.
+    """
+    communicator = AuthCommunicator(
+        CookieMiddleware(SimpleHttpApp),
+        scope,
+        user=user,
+    )
+    assert await get_user(communicator.scope) == AnonymousUser()
+    assert communicator.scope is not communicator.instance.scope
+    assert await get_user(communicator.instance.scope) == AnonymousUser()
+    # Login
+    await communicator.login()
+    assert await get_user(communicator.scope) == user
+    assert await get_user(communicator.instance.scope) == user
+    # Logout
+    await communicator.logout()
+    assert await get_user(communicator.scope) == AnonymousUser()
+    assert await get_user(communicator.instance.scope) == AnonymousUser()
+    await communicator.wait(0.01)
+
+
 async def test_http_communicator():
     """
     Tests that the HTTP communicator class works at a basic level.
@@ -37,6 +125,16 @@ async def test_http_communicator():
     response = await communicator.get_response()
     assert response["body"] == b"test response"
     assert response["status"] == 200
+
+
+async def test_http_communicator_with_user(user):
+    """
+    Tests that the HTTP communicator class works with a user parameter.
+    """
+    communicator = HttpCommunicator(SimpleHttpApp, "GET", "/test/", user=user)
+    response = await communicator.get_response()
+    assert response["status"] == 200
+    assert await get_user(communicator.scope) == user
 
 
 class SimpleWebsocketApp(WebsocketConsumer):
@@ -61,6 +159,7 @@ class ErrorWebsocketApp(WebsocketConsumer):
         pass
 
 
+@pytest.mark.django_db
 async def test_websocket_communicator():
     """
     Tests that the WebSocket communicator class works at a basic level.
@@ -83,6 +182,45 @@ async def test_websocket_communicator():
     response = await communicator.receive_json_from()
     assert response == {"hello": "world"}
     # Close out
+    await communicator.disconnect()
+
+
+class AuthWebsocketApp(AsyncWebsocketConsumer):
+    """
+    WebSocket ASGI app with required login for testing.
+    """
+
+    async def connect(self):
+        assert self.scope["user"].is_authenticated
+        user = await get_user(self.scope)
+        assert user.is_authenticated
+        await self.accept()
+
+
+async def test_websocket_communicator_with_user(user):
+    """
+    Tests that the WebSocket communicator class works with a user parameter.
+    """
+    communicator = WebsocketCommunicator(AuthWebsocketApp, "/ws/", user=user)
+    connected, subprotocol = await communicator.connect()
+    assert connected
+    assert await get_user(communicator.scope) == user
+    await communicator.disconnect()
+
+
+async def test_websocket_communicator_with_user_and_middleware(user):
+    """
+    Tests that the WebSocket communicator works with middleware and
+    a user parameter.
+    """
+    communicator = WebsocketCommunicator(
+        CookieMiddleware(AuthWebsocketApp),
+        "/testws/",
+        user=user,
+    )
+    connected, subprotocol = await communicator.connect()
+    assert connected
+    assert await get_user(communicator.scope) == user
     await communicator.disconnect()
 
 
@@ -125,6 +263,7 @@ paths = [
 ]
 
 
+@pytest.mark.django_db
 @pytest.mark.parametrize("path", paths)
 async def test_connection_scope(path):
     """
