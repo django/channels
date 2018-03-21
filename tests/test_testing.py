@@ -7,6 +7,8 @@ from channels.consumer import AsyncConsumer
 from channels.generic.websocket import WebsocketConsumer
 from channels.testing import HttpCommunicator, WebsocketCommunicator
 
+pytestmark = pytest.mark.asyncio
+
 
 class SimpleHttpApp(AsyncConsumer):
     """
@@ -27,7 +29,6 @@ class SimpleHttpApp(AsyncConsumer):
         })
 
 
-@pytest.mark.asyncio
 async def test_http_communicator():
     """
     Tests that the HTTP communicator class works at a basic level.
@@ -60,7 +61,6 @@ class ErrorWebsocketApp(WebsocketConsumer):
         pass
 
 
-@pytest.mark.asyncio
 async def test_websocket_communicator():
     """
     Tests that the WebSocket communicator class works at a basic level.
@@ -86,7 +86,6 @@ async def test_websocket_communicator():
     await communicator.disconnect()
 
 
-@pytest.mark.asyncio
 async def test_timeout_disconnect():
     """
     Tests that disconnect() still works after a timeout.
@@ -126,7 +125,6 @@ paths = [
 ]
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("path", paths)
 async def test_connection_scope(path):
     """
