@@ -43,7 +43,48 @@ standard Django test tools and client. You only need the async setup for
 code that's written as consumers.
 
 There's a few variants of the Communicator - a plain one for generic usage,
-and one each for HTTP and WebSockets specifically that have shortcut methods,
+and one each for HTTP and WebSockets specifically that have shortcut methods.
+
+Using the ORM
+~~~~~~~~~~~~~
+
+There are several things to consider when you use Communicators and the ORM
+together:
+
+* Use ``database_sync_to_async``.
+* You shouldn't use an in-memory database in this setting (which is Django's
+  default for testing if you use SQLite). See below how to accomplish that.
+* The database isn't cleaned up after each test. As a result you shouldn't
+  modify an object you use in another test.
+* py.test fixtures are an easy way to get objects for multiple tests.
+
+Here is an example for a user fixture::
+
+    from django.contrib.auth import get_user_model
+    from channels.db import database_sync_to_async
+
+    @pytest.fixture
+    async def user(db):
+        """
+        Returns a user instance with the username `test-user`.
+        """
+        User = get_user_model()
+        try:
+            user = await database_sync_to_async(User.objects.get)(
+                username="test-user",
+            )
+        except User.DoesNotExist:
+            user = await database_sync_to_async(User.objects.create_user)(
+                "test-user",
+                "password",
+            )
+        return user
+
+Then just use the fixture as parameter in your tests::
+
+    @pytest.mark.asyncio
+    async def test_something(user):
+        assert user.username == "test-user"
 
 
 ApplicationCommunicator
@@ -125,65 +166,6 @@ around ``wait``::
     with pytest.raises(ValueError):
         await communicator.wait()
 
-AuthCommunicator
-----------------
-
-``AuthCommunicator`` is a subclass of ``ApplicationCommunicator`` with
-authentication features. This is useful when your application requires a user
-that is logged in. You probably won't use ``AuthCommunicator`` directly but
-rather ``HttpCommunicator`` or ``WebsocketCommunicator`` (see below) which are
-subclasses thereof.
-
-You can just pass a user instance to the constructor and then log this user in
-and out like this::
-
-    from channels.testing.base import AuthCommunicator
-    communicator = AuthCommunicator(MyConsumer, scope, user=user)
-    await communicator.login()
-    await communicator.logout()
-
-.. _auth_communicator-session_middleware:
-
-.. note::
-
-    When you use ``SessionMiddleware``, ``SessionMiddlewareStack`` or
-    ``AuthMiddlewareStack`` as middleware in your test you can't use ``login``
-    and ``logout``. (That means the session of the scope in your application
-    won't be updated.)
-
-How to get a user instance
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-You can use a py.test fixture to create a user::
-
-    from django.contrib.auth import get_user_model
-    from channels.db import database_sync_to_async
-
-    @pytest.fixture
-    async def user(db):
-        User = get_user_model()
-        try:
-            user = await database_sync_to_async(User.objects.get)(
-                username="test-user",
-            )
-        except User.DoesNotExist:
-            user = await database_sync_to_async(User.objects.create_user)(
-                "test-user",
-                "password",
-            )
-        return user
-
-And then just use the fixture as parameter in your tests::
-
-    @pytest.mark.asyncio
-    async def test_something(user):
-        assert user.username == "test-user"
-
-.. note::
-
-    The database isn't cleaned up after each test. Therefore you might prefer
-    to let your fixture create a new user for each test.
-
 HttpCommunicator
 ----------------
 
@@ -199,21 +181,18 @@ And then wait for its response::
     response = await communicator.get_response()
     assert response["body"] == b"test response"
 
-You can make an authenticated request when you pass a user parameter::
-
-    communicator = HttpCommunicator(MyHttpConsumer, "GET", "/test/", user=user)
-
-.. note::
-
-    Don't use the ``user`` parameter and any
-    :ref:`session middleware <auth_communicator-session_middleware>` together.
-
 You can pass the following arguments to the constructor:
 
 * ``method``: HTTP method name (unicode string, required)
 * ``path``: HTTP path (unicode string, required)
 * ``body``: HTTP body (bytestring, optional)
 * ``user``: user (model instance, optional)
+
+You can pass the ``user`` keyword argument when consumers require authenticated
+users. ``HttpCommunicator`` performs the login for you and adds appropriate
+``user`` and ``session`` values to the ``scope``::
+
+    communicator = HttpCommunicator(MyMembersApp, "GET", "/test/", user=user)
 
 The response from the ``get_response`` method will be a dict with the following
 keys:
@@ -241,6 +220,12 @@ application, as shown in this example::
     # Close
     await communicator.disconnect()
 
+If your consumer requires an authenticated user you can just pass a user
+instance to the constructor. ``WebsocketCommunicator`` performs the login for
+you and adds appropriate ``user`` and ``session`` values to the ``scope``::
+
+    communicator = WebsocketCommunicator(MyStaffApp, "/testws/", user=user)
+
 .. note::
 
     All of these methods are coroutines, which means you must ``await`` them.
@@ -255,16 +240,6 @@ application, as shown in this example::
     things never being awaited, as you will be killing your app off in the
     middle of its lifecycle. You do not, however, have to ``disconnect()`` if
     your app already raised an error.
-
-If you need an authenticated user for your test you can just pass one to the
-constructor::
-
-    communicator = WebsocketCommunicator(MyWebsocketApp, "/testws/", user=user)
-
-.. note::
-
-    Don't use the ``user`` parameter and any
-    :ref:`session middleware <auth_communicator-session_middleware>` together.
 
 connect
 ~~~~~~~
@@ -327,6 +302,22 @@ receive_nothing
 Checks that there is no frame waiting to be received from the application. For
 details see
 :ref:`ApplicationCommunicator <application_communicator-receive_nothing>`.
+
+login
+~~~~~
+
+Looks for a user in the scope and if found performs a login and updates and
+ saves the session. Normally you'll pass the user to the constructor and
+``WebsocketCommunicator`` will do the login automatically.
+
+logout
+~~~~~~
+
+Uses the scope to log the user out, update user and session and remove the old
+session from the session backend.
+
+Note that the scope of the communicator is used. That means that the user of
+the consumer might not be updated.
 
 disconnect
 ~~~~~~~~~~
