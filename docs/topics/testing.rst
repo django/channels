@@ -53,7 +53,8 @@ together:
 
 * Use ``database_sync_to_async``.
 * You shouldn't use an in-memory database in this setting (which is Django's
-  default for testing if you use SQLite). See below how to accomplish that.
+  default for testing if you use SQLite). See :ref:`below <test-database>` how
+  to do that.
 * The database isn't cleaned up after each test. As a result you shouldn't
   modify an object you use in another test.
 * py.test fixtures are an easy way to get objects for multiple tests.
@@ -166,6 +167,7 @@ around ``wait``::
     with pytest.raises(ValueError):
         await communicator.wait()
 
+
 HttpCommunicator
 ----------------
 
@@ -188,9 +190,9 @@ You can pass the following arguments to the constructor:
 * ``body``: HTTP body (bytestring, optional)
 * ``user``: user (model instance, optional)
 
-You can pass the ``user`` keyword argument when consumers require authenticated
-users. ``HttpCommunicator`` performs the login for you and adds appropriate
-``user`` and ``session`` values to the ``scope``::
+You can pass the ``user`` keyword argument when your consumer requires an
+authenticated user. ``HttpCommunicator`` performs the login for you and adds
+appropriate ``user`` and ``session`` values to the ``scope``::
 
     communicator = HttpCommunicator(MyMembersApp, "GET", "/test/", user=user)
 
@@ -303,22 +305,6 @@ Checks that there is no frame waiting to be received from the application. For
 details see
 :ref:`ApplicationCommunicator <application_communicator-receive_nothing>`.
 
-login
-~~~~~
-
-Looks for a user in the scope and if found performs a login and updates and
- saves the session. Normally you'll pass the user to the constructor and
-``WebsocketCommunicator`` will do the login automatically.
-
-logout
-~~~~~~
-
-Uses the scope to log the user out, update user and session and remove the old
-session from the session backend.
-
-Note that the scope of the communicator is used. That means that the user of
-the consumer might not be updated.
-
 disconnect
 ~~~~~~~~~~
 
@@ -343,6 +329,8 @@ standard Django ``LiveServerTestCase``::
 
         def test_live_stuff(self):
             call_external_testing_thing(self.live_server_url)
+
+.. _test-database:
 
 .. note::
 

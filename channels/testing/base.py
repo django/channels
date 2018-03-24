@@ -4,7 +4,7 @@ from django.conf import settings
 
 from asgiref.testing import ApplicationCommunicator
 
-from ..auth import login, logout
+from ..auth import login
 from ..db import database_sync_to_async
 
 
@@ -32,9 +32,3 @@ class AuthCommunicator(ApplicationCommunicator):
         if "user" in self.scope:
             await login(self.scope, self.scope["user"])
             await database_sync_to_async(self.scope["session"].save)()
-
-    async def logout(self):
-        """
-        Logs a scope's user out.
-        """
-        await logout(self.scope)

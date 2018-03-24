@@ -81,13 +81,6 @@ async def test_auth_communicator(user, application):
     await communicator.login()
     assert await get_user(communicator.scope) == user
     assert await get_user(communicator.instance.scope) == user
-    # Logout
-    await communicator.logout()
-    assert communicator.scope["user"] == AnonymousUser()
-    assert await get_user(communicator.scope) == AnonymousUser()
-    app_user = AnonymousUser() if application is SimpleHttpApp else user
-    assert communicator.instance.scope["user"] == app_user
-    assert await get_user(communicator.instance.scope) == AnonymousUser()
 
 
 @pytest.mark.asyncio
