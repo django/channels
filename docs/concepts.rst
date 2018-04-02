@@ -26,7 +26,7 @@ Let's look at what *channels* are first.
 What is a channel?
 ------------------
 
-The core of the system is, unsurprisingly, a datastructure called a *channel*.
+The core of the system is, unsurprisingly, a data structure called a *channel*.
 What is a channel? It is an *ordered*, *first-in first-out queue* with
 *message expiry* and *at-most-once delivery* to *only one listener at a time*.
 
