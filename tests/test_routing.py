@@ -174,6 +174,10 @@ def test_url_router_path():
 
 # @pytest.mark.xfail
 def test_path_remaining():
+    """
+    Resolving continues in outer router if an inner router has no matching
+    routes
+    """
     inner_router = URLRouter([
         url(r'^no-match/$', MagicMock(return_value=1)),
     ])
