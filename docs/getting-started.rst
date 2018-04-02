@@ -166,7 +166,7 @@ disconnect, like this::
     from channels import Group
 
     # Connected to websocket.connect
-    def ws_add(message):
+    def ws_connect(message):
         # Accept the incoming connection
         message.reply_channel.send({"accept": True})
         # Add them to the chat group
@@ -212,7 +212,7 @@ get the message. Here's all the code::
     from channels import Group
 
     # Connected to websocket.connect
-    def ws_add(message):
+    def ws_connect(message):
         # Accept the connection
         message.reply_channel.send({"accept": True})
         # Add to the chat group
@@ -231,10 +231,10 @@ get the message. Here's all the code::
 And what our routing should look like in ``routing.py``::
 
     from channels.routing import route
-    from myapp.consumers import ws_add, ws_message, ws_disconnect
+    from myapp.consumers import ws_connect, ws_message, ws_disconnect
 
     channel_routing = [
-        route("websocket.connect", ws_add),
+        route("websocket.connect", ws_connect),
         route("websocket.receive", ws_message),
         route("websocket.disconnect", ws_disconnect),
     ]
@@ -350,8 +350,9 @@ these two commands in two terminals:
 * ``manage.py runserver --noworker``
 * ``manage.py runworker``
 
-As you can probably guess, this disables the worker threads in ``runserver``
-and handles them in a separate process. You can pass ``-v 2`` to ``runworker``
+As you can probably guess, the first command starts the Daphne server and
+disables the worker threads; while the second command runs the worker
+threads in a separate process. You can also pass ``-v 2`` to ``runworker``
 if you want to see logging as it runs the consumers.
 
 If Django is in debug mode (``DEBUG=True``), then ``runworker`` will serve
@@ -388,7 +389,12 @@ name in the path of your WebSocket request and a query string with your username
     import json
     from channels import Group
     from channels.sessions import channel_session
-    from urllib.parse import parse_qs
+    try:
+        # Python 3
+        from urllib.parse import parse_qs
+    except ImportError:
+        # Python 2
+        from urlparse import parse_qs
 
     # Connected to websocket.connect
     @channel_session
@@ -444,13 +450,13 @@ Authentication
 Now, of course, a WebSocket solution is somewhat limited in scope without the
 ability to live with the rest of your website - in particular, we want to make
 sure we know what user we're talking to, in case we have things like private
-chat channels (we don't want a solution where clients just ask for the right
-channels, as anyone could change the code and just put in private channel names).
+chat channels (we don't want a solution where clients can set an arbitrary 
+channel, as a user could change the just put in private channel names in the path).
 
-It can also save you having to manually make clients ask for what they want to
-see; if I see you open a WebSocket to my "updates" endpoint, and I know which
-user you are, I can just auto-add that channel to all the relevant groups (mentions
-of that user, for example).
+Another common scenario: If the client opens a WebSocket to an "updates" endpoint, 
+and the handler is able to idenify the user, then the handler can also automatically
+add that reply channel to all the relevant groups (for example: to send message 
+back whenever the user is being mentioned).
 
 Handily, as WebSockets start off using the HTTP protocol, they have a lot of
 familiar features, including a path, GET parameters, and cookies. We'd like to
@@ -501,7 +507,7 @@ chat to people with the same first letter of their username::
 
     # Connected to websocket.connect
     @channel_session_user_from_http
-    def ws_add(message):
+    def ws_connect(message):
         # Accept connection
         message.reply_channel.send({"accept": True})
         # Add them to the right group
@@ -564,7 +570,7 @@ from hosts listed in the ``ALLOWED_HOSTS`` setting::
     # Connected to websocket.connect
     @allowed_hosts_only
     @channel_session_user_from_http
-    def ws_add(message):
+    def ws_connect(message):
         # Accept connection
         ...
 
@@ -626,7 +632,7 @@ consumer above to use a room based on URL rather than username::
 
     # Connected to websocket.connect
     @channel_session_user_from_http
-    def ws_add(message, room_name):
+    def ws_connect(message, room_name):
         # Add them to the right group
         Group("chat-%s" % room_name).add(message.reply_channel)
         # Accept the connection request
@@ -765,7 +771,7 @@ decorator. Here's an example of it being used::
     # Connected to websocket.connect
     @enforce_ordering
     @channel_session_user_from_http
-    def ws_add(message):
+    def ws_connect(message):
         # This doesn't need a decorator - it always runs separately
         message.channel_session['sent'] = 0
         # Add them to the right group
