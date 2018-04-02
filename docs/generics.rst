@@ -173,7 +173,7 @@ The JSON-enabled consumer looks slightly different::
         #     return my_custom_json_encoder(content)
 
 For this subclass, ``receive`` only gets a ``content`` argument that is the
-already-decoded JSON as Python datastructures; similarly, ``send`` now only
+already-decoded JSON as Python data structures; similarly, ``send`` now only
 takes a single argument, which it JSON-encodes before sending down to the
 client.
 
