@@ -5,6 +5,7 @@ import importlib
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.urls.exceptions import Resolver404
+from django.urls.resolvers import URLResolver
 
 from channels.http import AsgiHandler
 
@@ -95,6 +96,13 @@ class URLRouter:
                 # must not be an endpoint
                 if getattr(route.callback, "_path_routing", False) is True:
                     route.pattern._is_endpoint = False
+
+        for route in self.routes:
+            if not route.callback and isinstance(route, URLResolver):
+                raise ImproperlyConfigured(
+                    "%s: include() is not supported in URLRouter. Use nested"
+                    " URLRouter instances instead." % (route,)
+                )
 
     def __call__(self, scope):
         # Get the path

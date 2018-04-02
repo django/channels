@@ -3,6 +3,7 @@ from unittest.mock import MagicMock
 import django
 import pytest
 from django.conf.urls import url
+from django.core.exceptions import ImproperlyConfigured
 
 from channels.http import AsgiHandler
 from channels.routing import ChannelNameRouter, ProtocolTypeRouter, URLRouter
@@ -191,3 +192,18 @@ def test_path_remaining():
     ])
 
     assert outermost_router({"type": "http", "path": "/prefix/stuff/"}) == 2
+
+
+def test_invalid_routes():
+    """
+    Test URLRouter route validation
+    """
+    from django.urls import include
+
+    with pytest.raises(ImproperlyConfigured) as exc:
+        URLRouter([
+            url(r'^test/$', MagicMock()),
+            url(r'^$', include([])),
+        ])
+
+    assert "include() is not supported in URLRouter." in str(exc)
