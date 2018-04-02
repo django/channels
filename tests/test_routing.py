@@ -198,7 +198,10 @@ def test_invalid_routes():
     """
     Test URLRouter route validation
     """
-    from django.urls import include
+    try:
+        from django.urls import include
+    except ImportError:  # Django 1.11
+        from django.conf.urls import include
 
     with pytest.raises(ImproperlyConfigured) as exc:
         URLRouter([
