@@ -205,7 +205,6 @@ def test_invalid_routes():
 
     with pytest.raises(ImproperlyConfigured) as exc:
         URLRouter([
-            url(r'^test/$', MagicMock()),
             url(r'^$', include([])),
         ])
 
