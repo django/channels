@@ -267,7 +267,7 @@ the chat log.
 
 However if you open a second browser tab to the same room page at
 http://127.0.0.1:8000/chat/lobby/ and type in a message, the message will not
-appear in the first tab. For that to work, we need to have multiple instances of
+appear in the second tab. For that to work, we need to have multiple instances of
 the same ``ChatConsumer`` be able to talk to each other. Channels provides a
 **channel layer** abstraction that enables this kind of communication between
 consumers.
