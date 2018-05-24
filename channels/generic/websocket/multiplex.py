@@ -107,6 +107,7 @@ class WebsocketMultiplexerApplication:
             for child in self.children.values():
                 if not child["task"].done():
                     child["task"].cancel()
+                    await child["task"]
 
     async def create_children(self):
         """
@@ -134,7 +135,7 @@ class WebsocketMultiplexerApplication:
         Sends an event to all children.
         """
         for child in self.children.values():
-            if not child["task"].done():
+            if not child["task"].done() and child["queue"]:
                 await child["queue"].put(event)
 
     async def dispatch_event(self, event):
@@ -159,7 +160,7 @@ class WebsocketMultiplexerApplication:
             return
         child = self.children[stream]
         if not child["queue"] or child["task"].done():
-            warnings.warn("Application for stream %r is not in a receiving state." % stream)
+            warnings.warn("Application for stream %r is not in a receiving state but was sent a message." % stream)
             return
         # If they are not yet accepting, put these events onto a buffer
         event = {
