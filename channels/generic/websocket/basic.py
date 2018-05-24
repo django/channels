@@ -11,7 +11,6 @@ class WebsocketConsumer(SyncConsumer):
     Base WebSocket consumer. Provides a general encapsulation for the
     WebSocket handling model that other applications can build on.
     """
-    groups = []
 
     groups = None
 
@@ -153,7 +152,6 @@ class AsyncWebsocketConsumer(AsyncConsumer):
     Base WebSocket consumer, async version. Provides a general encapsulation
     for the WebSocket handling model that other applications can build on.
     """
-    groups = []
 
     groups = None
 
