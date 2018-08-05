@@ -41,15 +41,15 @@ class AsgiRequest(http.HttpRequest):
             self.path_info = scope['path'][len(self.script_name):]
         else:
             self.path_info = scope['path']
-        
+
         # Path info
         if settings.FORCE_SCRIPT_NAME:
             # django path is different from asgi scope path args, it should combine with script name
             self.path = '%s/%s' % (settings.FORCE_SCRIPT_NAME.rstrip('/'), self.path_info.replace('/', '', 1))
-            
+
         else:
             self.path = scope['path']
-        
+
         # HTTP basics
         self.method = self.scope["method"].upper()
         # fix https://github.com/django/channels/issues/622
