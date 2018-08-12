@@ -85,8 +85,8 @@ class OriginValidator:
         ``http://exapmple.com``). After the domain there must be a port,
         but it can be omitted.
 
-        Note. This function assumes that the given origin is None, has a schema,
-        domain and port, or only domain. Port is optional.
+        Note. This function assumes that the given origin is either None, a
+        schema-domain-port string, or just a domain string
         """
         if parsed_origin is None:
             return False
