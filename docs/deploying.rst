@@ -147,9 +147,9 @@ There are also alternative ASGI servers that you can use for serving Channels.
 To some degree ASGI web servers should be interchangable, they should all have
 the same basic functionality in terms of serving HTTP and WebSocket requests.
 
-Aspects where servers may differ are in their performance characteristics,
-support for resource limiting, differing protocol and socket support,
-and approaches to process management.
+Aspects where servers may differ are in their configuration and defaults,
+performance characteristics, support for resource limiting, differing protocol
+and socket support, and approaches to process management.
 
 Uvicorn
 -------
