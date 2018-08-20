@@ -255,8 +255,8 @@ The ``URLRouter`` will examine the HTTP path of the connection to route it to a
 particular consumer, based on the provided ``url`` patterns.
 
 Let's verify that the consumer for the ``/ws/chat/ROOM_NAME/`` path works. Run migrations to
-apply database changes(we need database to manage session) and then start the Channels development
-server::
+apply database changes (Django's session framework needs the database) and then start the
+Channels development server::
 
     $ python manage.py migrate
     Operations to perform:
