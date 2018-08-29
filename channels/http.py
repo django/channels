@@ -255,7 +255,10 @@ class AsgiHandler(base.BaseHandler):
         """
         # Because we create an AsgiHandler on every HTTP request
         # we need to preserve the Django middleware chain once we load it.
-        if self.__class__._middleware_chain:
+        if (
+            hasattr(self.__class__, "_middleware_chain")
+            and self.__class__._middleware_chain
+        ):
             self._middleware_chain = self.__class__._middleware_chain
             self._view_middleware = self.__class__._view_middleware
             self._template_response_middleware = (
