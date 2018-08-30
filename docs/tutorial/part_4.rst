@@ -142,9 +142,9 @@ suites for end-to-end tests (``StaticLiveServerTestCase`` or ``LiveServerTestCas
 that URLs inside the Channels routing configuration like ``/ws/room/ROOM_NAME/``
 will work inside the suite.
 
-We are using ``sqlite3``, which for testing, is treated as a database in memory, and therefore, the tests will not run correctly.
+We are using ``sqlite3``, which for testing, is run as an in-memory database, and therefore, the tests will not run correctly.
 We need to tell our project that the ``sqlite3`` database need not to be in memory for run the tests. Edit the
-``mysite/settings.py`` file and add ``TEST`` argument to the **DATABASES** setting::
+``mysite/settings.py`` file and add the ``TEST`` argument to the **DATABASES** setting::
 
     # mysite/settings.py
     DATABASES = {
