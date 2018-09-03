@@ -167,3 +167,68 @@ Hypercorn
 server based on the sans-io hyper, h11, h2, and wsproto libraries.
 
 It supports HTTP/1, HTTP/2, and websockets.
+
+How to use Channels 2 with Nginx and Supervisor
+-----------------------------------------------------
+
+Supervisor configuration:
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Create supervisor conf file for your project which would look like::
+
+    [fcgi-program:asgi]
+    socket=tcp://localhost:8000
+    directory=/your/code
+    command=daphne -u /run/daphne/daphne%(process_num)d.sock --fd 0 --access-log - --proxy-headers mysite.asgi:application
+    numprocs=number_of_process
+    process_name=asgi%(process_num)d
+    autostart=true
+    autorestart=true
+    stdout_logfile=/your/log/asgi.log
+    redirect_stderr=true
+
+Replaced your environment settings::
+
+    * /your/code: Location of your app source code path
+    * number_of_process: number of processes to startup, maybe the count of you cpus
+    * /your/log/asgi.log: Location of your asgi log path
+
+Reread and update your supervisord::
+
+    supervisorctl reread
+    supervisorctl update
+
+Nginx configuration:
+^^^^^^^^^^^^^^^^^^^^
+
+Setup your nginx upstream conf file for your project::
+
+    upstream channels-backend {
+        server localhost:8000;
+    }
+    ...
+    server {
+        ...
+        location / {
+            try_files $uri @proxy_to_app;
+        }
+        ...
+        localtion @proxy_to_app {
+            proxy_pass http://channels-backend;
+
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+
+            proxy_redirect off;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Host $server_name;
+        }
+        ...
+    }
+
+Reload your nginx service::
+
+    service nginx reload
