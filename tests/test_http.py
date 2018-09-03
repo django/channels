@@ -284,7 +284,7 @@ async def test_sessions():
 
     assert re.compile(r"Max-Age").search(value) is not None
 
-    assert re.compile(r'Path').search(value) is not None
+    assert re.compile(r"Path").search(value) is not None
 
 
 class MiddlewareTests(unittest.TestCase):
@@ -301,12 +301,12 @@ class MiddlewareTests(unittest.TestCase):
             "path": "/test/",
         }
 
-        first_handler = AsgiHandler(scope)
+        AsgiHandler(scope)  # First Handler
 
         self.assertTrue(AsgiHandler._middleware_chain is not None)
 
         with patch(
             "django.core.handlers.base.BaseHandler.load_middleware"
         ) as super_function:
-            second_handler = AsgiHandler(scope)
+            AsgiHandler(scope)  # Second Handler
             self.assertFalse(super_function.called)
