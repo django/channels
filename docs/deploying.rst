@@ -168,38 +168,61 @@ server based on the sans-io hyper, h11, h2, and wsproto libraries.
 
 It supports HTTP/1, HTTP/2, and websockets.
 
-How to use Channels 2 with Nginx and Supervisor
+How to use Channels 2 with Nginx and Supervisor on Ubuntu
 -----------------------------------------------------
 
-Supervisor configuration:
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+Prerequisites:
 
-Create supervisor conf file for your project which would look like::
+    * A Django Site to be deployed.
+    * A non-root user account with sudo pivileges set up on a Ubuntu Server.
+
+Install Nginx and Supervisor::
+
+    $ sudo apt install nginx
+    $ sudo apt install supervisor
+
+if you installed from default respository:
+
+    * Ubuntu < 16.04, the default init daemon service is Upstart.
+    * Ubuntu >= 16.04, the default init daemon service is systemd.
+
+Supervisor configuration::
+
+Create the supervisor configuration file, the contents of the configuration file are as follows::
 
     [fcgi-program:asgi]
+    # TCP socket used by Nginx backend upstream
     socket=tcp://localhost:8000
-    directory=/your/code
+
+    # where is "my-site" project files located?
+    # its your project running directory
+    directory=/my/app/path
+
+    # parameter %(process_num) for command's value is required,
+    # every new thread will create a sock file
     command=daphne -u /run/daphne/daphne%(process_num)d.sock --fd 0 --access-log - --proxy-headers mysite.asgi:application
-    numprocs=number_of_process
+
+    # number of processes to startup, maybe the count of you cpus
+    numprocs=4
+
+    # parameter %(process_num) for process_name's value is required,
+    # each process will give different process name of supervisord
     process_name=asgi%(process_num)d
+
     autostart=true
     autorestart=true
+
+    # where is asgi log file located?
     stdout_logfile=/your/log/asgi.log
+
     redirect_stderr=true
-
-Replaced your environment settings::
-
-    * /your/code: Location of your app source code path
-    * number_of_process: number of processes to startup, maybe the count of you cpus
-    * /your/log/asgi.log: Location of your asgi log path
 
 Reread and update your supervisord::
 
-    supervisorctl reread
-    supervisorctl update
+    $ sudo supervisorctl reread
+    $ sudo supervisorctl update
 
 Nginx configuration:
-^^^^^^^^^^^^^^^^^^^^
 
 Setup your nginx upstream conf file for your project::
 
@@ -231,4 +254,4 @@ Setup your nginx upstream conf file for your project::
 
 Reload your nginx service::
 
-    service nginx reload
+    $ service nginx reload
