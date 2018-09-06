@@ -202,7 +202,7 @@ Create the supervisor configuration file, the contents of the configuration file
     # every new thread will create a sock file
     command=daphne -u /run/daphne/daphne%(process_num)d.sock --fd 0 --access-log - --proxy-headers mysite.asgi:application
 
-    # number of processes to startup, maybe the count of you cpus
+    # number of processes to startup, maybe the count of your cpus
     numprocs=4
 
     # parameter %(process_num) for process_name's value is required,
@@ -254,4 +254,4 @@ Setup your nginx upstream conf file for your project::
 
 Reload your nginx service::
 
-    $ service nginx reload
+    $ sudo service nginx reload
