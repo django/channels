@@ -143,6 +143,36 @@ async def test_async_websocket_consumer():
 
 
 @pytest.mark.asyncio
+async def test_async_websocket_consumer_using_specific_channel_layer():
+    """
+    Tests that AsyncWebsocketConsumer that utilizes specific channel layers.
+    """
+    results = {}
+
+    class TestConsumer(AsyncWebsocketConsumer):
+        channel_layer_alias = 'another'
+
+        async def receive(self, text_data=None, bytes_data=None):
+            results["received"] = (text_data, bytes_data)
+            await self.send(text_data=text_data, bytes_data=bytes_data)
+
+    channel_layers_setting = {
+        "another": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+        },
+    }
+    with override_settings(CHANNEL_LAYERS=channel_layers_setting):
+        communicator = WebsocketCommunicator(TestConsumer, "/testws/")
+        await communicator.connect()
+
+        await communicator.send_to(text_data="hello")
+        response = await communicator.receive_from()
+        assert response == "hello"
+
+        await communicator.disconnect()
+
+
+@pytest.mark.asyncio
 async def test_async_websocket_consumer_subprotocol():
     """
     Tests that AsyncWebsocketConsumer correctly handles subprotocols.
