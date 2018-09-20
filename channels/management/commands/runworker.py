@@ -7,7 +7,6 @@ from channels.layers import get_channel_layer
 from channels.routing import get_default_application
 from channels.worker import Worker
 
-
 logger = logging.getLogger("django.channels.worker")
 
 

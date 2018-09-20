@@ -1,6 +1,6 @@
 import datetime
-import sys
 import logging
+import sys
 
 from django.apps import apps
 from django.conf import settings
@@ -13,7 +13,6 @@ from daphne.endpoints import build_endpoint_description_strings
 from daphne.server import Server
 
 from ...staticfiles import StaticFilesWrapper
-
 
 logger = logging.getLogger("django.channels.server")
 
