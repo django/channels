@@ -8,7 +8,7 @@ from channels.routing import get_default_application
 from channels.worker import Worker
 
 
-logger = logging.getLogger("channels.worker")
+logger = logging.getLogger("django.channels.worker")
 
 
 class Command(BaseCommand):

@@ -15,7 +15,7 @@ from daphne.server import Server
 from ...staticfiles import StaticFilesWrapper
 
 
-logger = logging.getLogger("channels.server")
+logger = logging.getLogger("django.channels.server")
 
 
 class Command(RunserverCommand):
