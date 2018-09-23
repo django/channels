@@ -138,20 +138,20 @@ class Command(RunserverCommand):
             # Utilize terminal colors, if available
             if 200 <= details["status"] < 300:
                 # Put 2XX first, since it should be the common case
-                logger.info(msg, details)
+                logger.info(self.style.HTTP_SUCCESS(msg), details)
             elif 100 <= details["status"] < 200:
-                logger.info(msg, details)
+                logger.info(self.style.HTTP_INFO(msg), details)
             elif details["status"] == 304:
-                logger.info(msg, details)
+                logger.info(self.style.HTTP_NOT_MODIFIED(msg), details)
             elif 300 <= details["status"] < 400:
-                logger.info(msg, details)
+                logger.info(self.style.HTTP_REDIRECT(msg), details)
             elif details["status"] == 404:
-                logger.warn(msg, details)
+                logger.warn(self.style.HTTP_NOT_FOUND(msg), details)
             elif 400 <= details["status"] < 500:
-                logger.warn(msg, details)
+                logger.warn(self.style.HTTP_BAD_REQUEST(msg), details)
             else:
                 # Any 5XX, or any other response
-                logger.error(msg, details)
+                logger.error(self.style.HTTP_SERVER_ERROR(msg), details)
 
         # Websocket requests
         elif protocol == "websocket" and action == "connected":
