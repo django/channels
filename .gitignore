@@ -23,6 +23,3 @@ Pipfile.lock
 
 # macOS
 .DS_Store
-
-# VSCode Tooling files
-.vscode/
