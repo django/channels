@@ -218,7 +218,7 @@ async def test_async_websocket_consumer_specific_channel_layer():
         await communicator.connect()
 
         channel_layer = get_channel_layer("testlayer")
-        # Test that we retreive the specific channel layer
+        # Test that the specific channel layer is retreived
         assert channel_layer != None
 
         channel_name = list(channel_layer.channels.keys())[0]
