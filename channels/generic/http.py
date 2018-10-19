@@ -27,11 +27,9 @@ class AsyncHttpConsumer(AsyncConsumer):
         elif isinstance(headers, dict):
             headers = list(headers.items())
 
-        await self.send({
-            "type": "http.response.start",
-            "status": status,
-            "headers": headers,
-        })
+        await self.send(
+            {"type": "http.response.start", "status": status, "headers": headers}
+        )
 
     async def send_body(self, body, *, more_body=False):
         """
@@ -42,11 +40,9 @@ class AsyncHttpConsumer(AsyncConsumer):
         the channel will be ignored.
         """
         assert isinstance(body, bytes), "Body is not bytes"
-        await self.send({
-            "type": "http.response.body",
-            "body": body,
-            "more_body": more_body,
-        })
+        await self.send(
+            {"type": "http.response.body", "body": body, "more_body": more_body}
+        )
 
     async def send_response(self, status, body, **kwargs):
         """
@@ -73,25 +69,25 @@ class AsyncHttpConsumer(AsyncConsumer):
         from here.
         """
         pass
-    
+
     async def http_request(self, message):
         """
         Async entrypoint - concatenates body fragments and hands off control
         to ``self.handle`` when the body has been completely received.
         """
-        
+
         try:
             if "body" in message:
                 self.body.append(message["body"])
             if not message.get("more_body"):
                 await self.handle(b"".join(self.body))
-                
+
                 await self.disconnect()
                 raise StopConsumer()
         except Exception:
             await self.disconnect()
             raise StopConsumer()
-    
+
     async def http_disconnect(self, message):
         """
         Let the user do their cleanup and close the consumer.
