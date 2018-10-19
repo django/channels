@@ -1,8 +1,6 @@
 from channels.consumer import AsyncConsumer
 
-from ..exceptions import (
-    StopConsumer,
-)
+from ..exceptions import StopConsumer
 
 
 class AsyncHttpConsumer(AsyncConsumer):
@@ -11,7 +9,9 @@ class AsyncHttpConsumer(AsyncConsumer):
     HTTP endpoints.
     """
 
-    body = []
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.body = []
 
     async def send_headers(self, *, status=200, headers=None):
         """
@@ -79,12 +79,18 @@ class AsyncHttpConsumer(AsyncConsumer):
         Async entrypoint - concatenates body fragments and hands off control
         to ``self.handle`` when the body has been completely received.
         """
+        
         try:
-            self.body.append(message["body"])
+            if "body" in message:
+                self.body.append(message["body"])
             if not message.get("more_body"):
                 await self.handle(b"".join(self.body))
-        finally:
+                
+                await self.disconnect()
+                raise StopConsumer()
+        except Exception:
             await self.disconnect()
+            raise StopConsumer()
     
     async def http_disconnect(self, message):
         """
