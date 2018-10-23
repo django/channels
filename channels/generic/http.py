@@ -75,18 +75,14 @@ class AsyncHttpConsumer(AsyncConsumer):
         Async entrypoint - concatenates body fragments and hands off control
         to ``self.handle`` when the body has been completely received.
         """
-
-        try:
-            if "body" in message:
-                self.body.append(message["body"])
-            if not message.get("more_body"):
+        if "body" in message:
+            self.body.append(message["body"])
+        if not message.get("more_body"):
+            try:
                 await self.handle(b"".join(self.body))
-
+            finally:
                 await self.disconnect()
                 raise StopConsumer()
-        except Exception:
-            await self.disconnect()
-            raise StopConsumer()
 
     async def http_disconnect(self, message):
         """
