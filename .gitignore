@@ -19,6 +19,3 @@ node_modules
 
 # macOS
 .DS_Store
-
-# virtualenv
-env/
