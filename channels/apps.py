@@ -5,8 +5,6 @@ from django.apps import AppConfig
 # (e.g. raven does this).
 import daphne.server
 
-del daphne.server
-
 
 class ChannelsConfig(AppConfig):
 
