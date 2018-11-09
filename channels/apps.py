@@ -5,6 +5,8 @@ from django.apps import AppConfig
 # (e.g. raven does this).
 import daphne.server
 
+assert daphne.server  # pyflakes doesn't support ignores
+
 
 class ChannelsConfig(AppConfig):
 
