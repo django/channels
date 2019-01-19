@@ -236,6 +236,8 @@ class AsgiHandler(base.BaseHandler):
         except RequestAborted:
             # Client closed connection on us mid request. Abort!
             return
+        except RequestDataTooBig:
+            response = HttpResponse("413 Payload too large", status=413)
         else:
             response = self.get_response(request)
             # Fix chunk size on file responses
