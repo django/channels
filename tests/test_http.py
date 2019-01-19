@@ -16,9 +16,6 @@ from channels.sessions import SessionMiddlewareStack
 from channels.testing import HttpCommunicator
 
 
-TOO_MUCH_DATA_MSG = 'Request body exceeded settings.DATA_UPLOAD_MAX_MEMORY_SIZE.'
-
-
 class RequestTests(unittest.TestCase):
     """
     Tests that ASGI request handling correctly decodes HTTP requests given scope
