@@ -8,6 +8,7 @@ from io import BytesIO
 from django import http
 from django.conf import settings
 from django.core import signals
+from django.core.exceptions import RequestDataTooBig
 from django.core.handlers import base
 from django.http import FileResponse, HttpResponse, HttpResponseServerError
 from django.urls import set_script_prefix
@@ -117,6 +118,12 @@ class AsgiRequest(http.HttpRequest):
                 pass
         # Body handling
         # TODO: chunked bodies
+
+        # Limit the maximum request data size that will be handled in-memory.
+        if (settings.DATA_UPLOAD_MAX_MEMORY_SIZE is not None and
+                int(self.META.get('CONTENT_LENGTH') or 0) > settings.DATA_UPLOAD_MAX_MEMORY_SIZE):
+            raise RequestDataTooBig('Request body exceeded settings.DATA_UPLOAD_MAX_MEMORY_SIZE.')
+
         self._body = body
         assert isinstance(self._body, bytes), "Body is not bytes"
         # Add a stream-a-like for the body
