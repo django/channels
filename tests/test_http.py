@@ -5,12 +5,10 @@ from unittest.mock import MagicMock, patch
 import pytest
 from django.core.exceptions import RequestDataTooBig
 from django.http import HttpResponse
-
-from asgiref.testing import ApplicationCommunicator
 from django.test import override_settings
 
+from asgiref.testing import ApplicationCommunicator
 from channels.consumer import AsyncConsumer
-
 from channels.http import AsgiHandler, AsgiRequest
 from channels.sessions import SessionMiddlewareStack
 from channels.testing import HttpCommunicator
@@ -114,13 +112,13 @@ class RequestTests(unittest.TestCase):
         Tests POSTing files using multipart form data.
         """
         body = (
-            b"--BOUNDARY\r\n"
-            + b'Content-Disposition: form-data; name="title"\r\n\r\n'
-            + b"My First Book\r\n"
-            + b"--BOUNDARY\r\n"
-            + b'Content-Disposition: form-data; name="pdf"; filename="book.pdf"\r\n\r\n'
-            + b"FAKEPDFBYTESGOHERE"
-            + b"--BOUNDARY--"
+                b"--BOUNDARY\r\n"
+                + b'Content-Disposition: form-data; name="title"\r\n\r\n'
+                + b"My First Book\r\n"
+                + b"--BOUNDARY\r\n"
+                + b'Content-Disposition: form-data; name="pdf"; filename="book.pdf"\r\n\r\n'
+                + b"FAKEPDFBYTESGOHERE"
+                + b"--BOUNDARY--"
         )
         request = AsgiRequest(
             {
@@ -159,7 +157,6 @@ class RequestTests(unittest.TestCase):
         self.assertEqual(request.read(), b"twothree")
 
     def test_script_name(self):
-
         request = AsgiRequest(
             {
                 "http_version": "1.1",
@@ -184,7 +181,6 @@ class RequestTests(unittest.TestCase):
                     },
                     b"",
                 )
-
 
 
 ### Handler tests
@@ -324,7 +320,7 @@ class MiddlewareTests(unittest.TestCase):
         self.assertTrue(AsgiHandler._middleware_chain is not None)
 
         with patch(
-            "django.core.handlers.base.BaseHandler.load_middleware"
+                "django.core.handlers.base.BaseHandler.load_middleware"
         ) as super_function:
             AsgiHandler(scope)  # Second Handler
             self.assertFalse(super_function.called)
