@@ -112,13 +112,13 @@ class RequestTests(unittest.TestCase):
         Tests POSTing files using multipart form data.
         """
         body = (
-                b"--BOUNDARY\r\n"
-                + b'Content-Disposition: form-data; name="title"\r\n\r\n'
-                + b"My First Book\r\n"
-                + b"--BOUNDARY\r\n"
-                + b'Content-Disposition: form-data; name="pdf"; filename="book.pdf"\r\n\r\n'
-                + b"FAKEPDFBYTESGOHERE"
-                + b"--BOUNDARY--"
+            b"--BOUNDARY\r\n"
+            + b'Content-Disposition: form-data; name="title"\r\n\r\n'
+            + b"My First Book\r\n"
+            + b"--BOUNDARY\r\n"
+            + b'Content-Disposition: form-data; name="pdf"; filename="book.pdf"\r\n\r\n'
+            + b"FAKEPDFBYTESGOHERE"
+            + b"--BOUNDARY--"
         )
         request = AsgiRequest(
             {
@@ -320,7 +320,7 @@ class MiddlewareTests(unittest.TestCase):
         self.assertTrue(AsgiHandler._middleware_chain is not None)
 
         with patch(
-                "django.core.handlers.base.BaseHandler.load_middleware"
+            "django.core.handlers.base.BaseHandler.load_middleware"
         ) as super_function:
             AsgiHandler(scope)  # Second Handler
             self.assertFalse(super_function.called)

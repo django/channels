@@ -120,9 +120,13 @@ class AsgiRequest(http.HttpRequest):
         # TODO: chunked bodies
 
         # Limit the maximum request data size that will be handled in-memory.
-        if (settings.DATA_UPLOAD_MAX_MEMORY_SIZE is not None and
-                self._content_length > settings.DATA_UPLOAD_MAX_MEMORY_SIZE):
-            raise RequestDataTooBig('Request body exceeded settings.DATA_UPLOAD_MAX_MEMORY_SIZE.')
+        if (
+            settings.DATA_UPLOAD_MAX_MEMORY_SIZE is not None
+            and self._content_length > settings.DATA_UPLOAD_MAX_MEMORY_SIZE
+        ):
+            raise RequestDataTooBig(
+                "Request body exceeded settings.DATA_UPLOAD_MAX_MEMORY_SIZE."
+            )
 
         self._body = body
         assert isinstance(self._body, bytes), "Body is not bytes"
