@@ -253,6 +253,11 @@ during disconnection, illustrated here on the WebSocket generic consumer:
         def disconnect(self, close_code):
             async_to_sync(self.channel_layer.group_discard)("chat", self.channel_name)
 
+.. note::
+
+    Group names are restricted to ASCII alphanumerics, hyphens, and periods
+    only and are limited to a maximum length of 100 in the default backend.
+
 Then, to send to a group, use ``group_send``, like in this small example
 which broadcasts chat messages to every connected socket when combined with
 the code above:

@@ -492,9 +492,10 @@ Several parts of the new ``ChatConsumer`` code deserve further explanation:
       synchronous WebsocketConsumer but it is calling an asynchronous channel
       layer method. (All channel layer methods are asynchronous.)
     * Group names are restricted to ASCII alphanumerics, hyphens, and periods
-      only. Since this code constructs a group name directly from the room name,
+      only and are limited to a maximum length of 100 in the default backend.
+      Since this code constructs a group name directly from the room name,
       it will fail if the room name contains any characters that aren't valid in
-      a group name.
+      a group name or exceeds the length limit.
 
 * ``self.accept()``
     * Accepts the WebSocket connection.
