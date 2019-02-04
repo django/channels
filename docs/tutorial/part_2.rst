@@ -97,8 +97,8 @@ Create the route for the room view in ``chat/urls.py``::
     from . import views
     
     urlpatterns = [
-        path('chat',views.index, name='index'),
-        path('chat/<str:room_name>/',views.room,name='room')
+        path('', views.index, name='index'),
+        path('<str:room_name>/', views.room,name='room')
     ]
 
 Start the Channels development server::
@@ -218,7 +218,7 @@ Put the following code in ``chat/routing.py``::
     from . import consumers
     
     websocket_urlpatterns = [
-        path('ws/chat/<str:room_name>/',consumers.ChatConsumer),
+        path('ws/chat/<str:room_name>/', consumers.ChatConsumer),
     ]
 
 The next step is to point the root routing configuration at the **chat.routing**

@@ -193,7 +193,7 @@ In the ``chat/urls.py`` file include the following code::
     from . import views
     
     urlpatterns = [
-        path('chat',views.index, name='index'),
+        path('', views.index, name='index'),
     ]
 
 The next step is to point the root URLconf at the **chat.urls** module.
@@ -205,7 +205,7 @@ insert an **include()** in the **urlpatterns** list, so you have::
     from django.urls import path,include
 
     urlpatterns = [
-        path('',include('chat.urls')),
+        path('chat', include('chat.urls')),
         path('admin/', admin.site.urls),
     ]
 
