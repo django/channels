@@ -182,6 +182,30 @@ class RequestTests(unittest.TestCase):
                     b"",
                 )
 
+    def test_size_check_ignore_files(self):
+        body = (
+            b"--BOUNDARY\r\n"
+            + b'Content-Disposition: form-data; name="title"\r\n\r\n'
+            + b"My First Book\r\n"
+            + b"--BOUNDARY\r\n"
+            + b'Content-Disposition: form-data; name="pdf"; filename="book.pdf"\r\n\r\n'
+            + b"FAKEPDFBYTESGOHERE"
+            + b"--BOUNDARY--"
+        )
+        with override_settings(DATA_UPLOAD_MAX_MEMORY_SIZE=10):
+            AsgiRequest(
+                {
+                    "http_version": "1.1",
+                    "method": "POST",
+                    "path": "/test/",
+                    "headers": {
+                        "content-type": b"multipart/form-data; boundary=BOUNDARY",
+                        "content-length": str(len(body)).encode("ascii"),
+                    },
+                },
+                body,
+            )
+
 
 ### Handler tests
 
