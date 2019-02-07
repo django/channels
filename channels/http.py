@@ -120,8 +120,11 @@ class AsgiRequest(http.HttpRequest):
         # TODO: chunked bodies
 
         # Limit the maximum request data size that will be handled in-memory.
+        # but only for non-multipart requests, because files are handled
+        # differently by django, see #1240
         if (
-            settings.DATA_UPLOAD_MAX_MEMORY_SIZE is not None
+            self.content_type != "multipart/form-data"
+            and settings.DATA_UPLOAD_MAX_MEMORY_SIZE is not None
             and self._content_length > settings.DATA_UPLOAD_MAX_MEMORY_SIZE
         ):
             raise RequestDataTooBig(
