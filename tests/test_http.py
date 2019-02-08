@@ -13,6 +13,24 @@ from channels.http import AsgiHandler, AsgiRequest
 from channels.sessions import SessionMiddlewareStack
 from channels.testing import HttpCommunicator
 
+BOUNDARY_WORD = b"BOUNDARY"
+BOUNDARY = b"--" + BOUNDARY_WORD + b"\r\n"
+END_BOUNDARY = b"--" + BOUNDARY_WORD + b"--"
+
+
+def MultipartAsgiRequest(body, **kwargs):
+    data = {
+        "http_version": "1.1",
+        "method": "POST",
+        "path": "/test/",
+        "headers": {
+            "content-type": b"multipart/form-data; boundary=" + BOUNDARY_WORD,
+            "content-length": str(len(body)).encode("ascii"),
+        },
+    }
+    data.update(kwargs)
+    return AsgiRequest(data, body)
+
 
 class RequestTests(unittest.TestCase):
     """
@@ -112,26 +130,15 @@ class RequestTests(unittest.TestCase):
         Tests POSTing files using multipart form data.
         """
         body = (
-            b"--BOUNDARY\r\n"
+            BOUNDARY
             + b'Content-Disposition: form-data; name="title"\r\n\r\n'
             + b"My First Book\r\n"
-            + b"--BOUNDARY\r\n"
+            + BOUNDARY
             + b'Content-Disposition: form-data; name="pdf"; filename="book.pdf"\r\n\r\n'
             + b"FAKEPDFBYTESGOHERE"
-            + b"--BOUNDARY--"
+            + END_BOUNDARY
         )
-        request = AsgiRequest(
-            {
-                "http_version": "1.1",
-                "method": "POST",
-                "path": "/test/",
-                "headers": {
-                    "content-type": b"multipart/form-data; boundary=BOUNDARY",
-                    "content-length": str(len(body)).encode("ascii"),
-                },
-            },
-            body,
-        )
+        request = MultipartAsgiRequest(body)
         self.assertEqual(request.method, "POST")
         self.assertEqual(len(request.body), len(body))
         self.assertTrue(request.META["CONTENT_TYPE"].startswith("multipart/form-data"))
@@ -184,51 +191,29 @@ class RequestTests(unittest.TestCase):
 
     def test_size_check_ignore_files(self):
         body = (
-            b"--BOUNDARY\r\n"
+            BOUNDARY
             + b'Content-Disposition: form-data; name="title"\r\n\r\n'
             + b"My First Book\r\n"
-            + b"--BOUNDARY\r\n"
+            + BOUNDARY
             + b'Content-Disposition: form-data; name="pdf"; filename="book.pdf"\r\n\r\n'
             + b"FAKEPDFBYTESGOHERETHISISREALLYLONGBUTNOTUSEDTOCOMPUTETHESIZEOFTHEREQUEST"
-            + b"--BOUNDARY--"
+            + END_BOUNDARY
         )
-        request = AsgiRequest(
-            {
-                "http_version": "1.1",
-                "method": "POST",
-                "path": "/test/",
-                "headers": {
-                    "content-type": b"multipart/form-data; boundary=BOUNDARY",
-                    "content-length": str(len(body)).encode("ascii"),
-                },
-            },
-            body,
-        )
+        request = MultipartAsgiRequest(body)
         with override_settings(DATA_UPLOAD_MAX_MEMORY_SIZE=60):
             request.POST
 
     def test_size_check_ignore_files_but_honor_other_post_data(self):
         body = (
-            b"--BOUNDARY\r\n"
+            BOUNDARY
             + b'Content-Disposition: form-data; name="title"\r\n\r\n'
             + b"My First Book\r\n"
-            + b"--BOUNDARY\r\n"
+            + BOUNDARY
             + b'Content-Disposition: form-data; name="pdf"; filename="book.pdf"\r\n\r\n'
             + b"FAKEPDFBYTESGOHERETHISISREALLYLONGBUTNOTUSEDTOCOMPUTETHESIZEOFTHEREQUEST"
-            + b"--BOUNDARY--"
+            + END_BOUNDARY
         )
-        request = AsgiRequest(
-            {
-                "http_version": "1.1",
-                "method": "POST",
-                "path": "/test/",
-                "headers": {
-                    "content-type": b"multipart/form-data; boundary=BOUNDARY",
-                    "content-length": str(len(body)).encode("ascii"),
-                },
-            },
-            body,
-        )
+        request = MultipartAsgiRequest(body)
         with override_settings(DATA_UPLOAD_MAX_MEMORY_SIZE=1):
             with pytest.raises(RequestDataTooBig):
                 request.POST
