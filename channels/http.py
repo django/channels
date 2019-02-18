@@ -119,21 +119,33 @@ class AsgiRequest(http.HttpRequest):
         # Body handling
         # TODO: chunked bodies
 
-        # Limit the maximum request data size that will be handled in-memory.
-        if (
-            settings.DATA_UPLOAD_MAX_MEMORY_SIZE is not None
-            and self._content_length > settings.DATA_UPLOAD_MAX_MEMORY_SIZE
-        ):
-            raise RequestDataTooBig(
-                "Request body exceeded settings.DATA_UPLOAD_MAX_MEMORY_SIZE."
-            )
-
-        self._body = body
-        assert isinstance(self._body, bytes), "Body is not bytes"
-        # Add a stream-a-like for the body
-        self._stream = BytesIO(self._body)
+        self._request_body_wrapper = body
+        #         assert isinstance(self._body, bytes), "Body is not bytes"
+        #         # Add a stream-a-like for the body
+        #         self._stream = BytesIO(self._body)
         # Other bits
         self.resolver_match = None
+
+    @property
+    def body(self):
+        if not hasattr(self, "_body"):
+            # Limit the maximum request data size that will be handled in-memory.
+            if (
+                settings.DATA_UPLOAD_MAX_MEMORY_SIZE is not None
+                and self._content_length > settings.DATA_UPLOAD_MAX_MEMORY_SIZE
+            ):
+                raise RequestDataTooBig(
+                    "Request body exceeded settings.DATA_UPLOAD_MAX_MEMORY_SIZE."
+                )
+            self._body = self._request_body_wrapper.read()
+            self._stream = BytesIO(self._body)
+
+        return self._body
+
+    def read(self, *args, **kwargs):
+        if not hasattr(self, "_body"):
+            self.body
+        return super().read(*args, **kwargs)
 
     @cached_property
     def GET(self):
@@ -163,6 +175,23 @@ class AsgiRequest(http.HttpRequest):
     @cached_property
     def COOKIES(self):
         return http.parse_cookie(self.META.get("HTTP_COOKIE", ""))
+
+
+class RequestBodyWrapper:
+    def __init__(self, receive):
+        self.receive = receive
+
+    @async_to_sync
+    async def read(self):
+        body = b""
+        while True:
+            message = await self.receive()
+            # See if the message has body, and if it's the end, launch into
+            # handling (and a synchronous subthread)
+            if "body" in message:
+                body += message["body"]
+            if not message.get("more_body", False):
+                return body
 
 
 class AsgiHandler(base.BaseHandler):
@@ -198,20 +227,10 @@ class AsgiHandler(base.BaseHandler):
         threadpool.
         """
         self.send = async_to_sync(send)
-        body = b""
-        while True:
-            message = await receive()
-            if message["type"] == "http.disconnect":
-                # Once they disconnect, that's it. GOOD DAY SIR. I SAID GOOD. DAY.
-                return
-            else:
-                # See if the message has body, and if it's the end, launch into
-                # handling (and a synchronous subthread)
-                if "body" in message:
-                    body += message["body"]
-                if not message.get("more_body", False):
-                    await self.handle(body)
-                    return
+
+        body = RequestBodyWrapper(receive)
+        await self.handle(body)
+        return
 
     @sync_to_async
     def handle(self, body):
