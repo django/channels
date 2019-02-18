@@ -9,7 +9,7 @@ from django.test import override_settings
 
 from asgiref.testing import ApplicationCommunicator
 from channels.consumer import AsyncConsumer
-from channels.http import AsgiHandler, AsgiRequest
+from channels.http import AsgiHandler, AsgiRequest, RequestBodyWrapper
 from channels.sessions import SessionMiddlewareStack
 from channels.testing import HttpCommunicator
 
@@ -25,8 +25,14 @@ class RequestTests(unittest.TestCase):
         Tests that the handler can decode the most basic request message,
         with all optional fields omitted.
         """
+
+        async def recieve():
+            return {}
+
+        body_wrapper = RequestBodyWrapper(recieve)
+
         request = AsgiRequest(
-            {"http_version": "1.1", "method": "GET", "path": "/test/"}, b""
+            {"http_version": "1.1", "method": "GET", "path": "/test/"}, body_wrapper
         )
         self.assertEqual(request.path, "/test/")
         self.assertEqual(request.method, "GET")
@@ -45,6 +51,12 @@ class RequestTests(unittest.TestCase):
         """
         Tests a more fully-featured GET request
         """
+
+        async def recieve():
+            return {}
+
+        body_wrapper = RequestBodyWrapper(recieve)
+
         request = AsgiRequest(
             {
                 "http_version": "1.1",
@@ -58,7 +70,7 @@ class RequestTests(unittest.TestCase):
                 "client": ["10.0.0.1", 1234],
                 "server": ["10.0.0.2", 80],
             },
-            b"",
+            body_wrapper,
         )
         self.assertEqual(request.path, "/test2/")
         self.assertEqual(request.method, "GET")
@@ -79,6 +91,12 @@ class RequestTests(unittest.TestCase):
         """
         Tests a POST body.
         """
+
+        async def recieve():
+            return {"type": "http.request", "body": b"djangoponies=are+awesome"}
+
+        body_wrapper = RequestBodyWrapper(recieve)
+
         request = AsgiRequest(
             {
                 "http_version": "1.1",
@@ -91,7 +109,7 @@ class RequestTests(unittest.TestCase):
                     "content-length": b"18",
                 },
             },
-            b"djangoponies=are+awesome",
+            body_wrapper,
         )
         self.assertEqual(request.path, "/test2/")
         self.assertEqual(request.method, "POST")
@@ -120,6 +138,12 @@ class RequestTests(unittest.TestCase):
             + b"FAKEPDFBYTESGOHERE"
             + b"--BOUNDARY--"
         )
+
+        async def recieve():
+            return {"type": "http.request", "body": body}
+
+        body_wrapper = RequestBodyWrapper(recieve)
+
         request = AsgiRequest(
             {
                 "http_version": "1.1",
@@ -130,7 +154,7 @@ class RequestTests(unittest.TestCase):
                     "content-length": str(len(body)).encode("ascii"),
                 },
             },
-            body,
+            body_wrapper,
         )
         self.assertEqual(request.method, "POST")
         self.assertEqual(len(request.body), len(body))
@@ -143,6 +167,12 @@ class RequestTests(unittest.TestCase):
         """
         Tests the body stream is emulated correctly.
         """
+
+        async def recieve():
+            return {"type": "http.request", "body": b"onetwothree"}
+
+        body_wrapper = RequestBodyWrapper(recieve)
+
         request = AsgiRequest(
             {
                 "http_version": "1.1",
@@ -150,7 +180,7 @@ class RequestTests(unittest.TestCase):
                 "path": "/",
                 "headers": {"host": b"example.com", "content-length": b"11"},
             },
-            b"onetwothree",
+            body_wrapper,
         )
         self.assertEqual(request.method, "PUT")
         self.assertEqual(request.read(3), b"one")
@@ -170,6 +200,11 @@ class RequestTests(unittest.TestCase):
         self.assertEqual(request.path, "/path/to/test/")
 
     def test_size_exceeded(self):
+        async def recieve():
+            return {"type": "http.request", "body": b""}
+
+        body_wrapper = RequestBodyWrapper(recieve)
+
         with override_settings(DATA_UPLOAD_MAX_MEMORY_SIZE=1):
             with pytest.raises(RequestDataTooBig):
                 AsgiRequest(
@@ -179,8 +214,8 @@ class RequestTests(unittest.TestCase):
                         "path": "/",
                         "headers": {"host": b"example.com", "content-length": b"1000"},
                     },
-                    b"",
-                )
+                    body_wrapper,
+                ).body
 
 
 ### Handler tests
@@ -192,9 +227,11 @@ class MockHandler(AsgiHandler):
     ripped out.
     """
 
-    request_class = MagicMock()
-
     def get_response(self, request):
+        # Access request body to ensure it is read() in sync context.
+        request.body
+        # Capture request to inspect later.
+        self.request = request
         return HttpResponse("fake")
 
 
@@ -208,7 +245,8 @@ async def test_handler_basic():
     await handler.send_input({"type": "http.request"})
     await handler.receive_output(1)  # response start
     await handler.receive_output(1)  # response body
-    MockHandler.request_class.assert_called_with(scope, b"")
+
+    assert handler.instance.request.body == b""
 
 
 @pytest.mark.asyncio
@@ -223,7 +261,8 @@ async def test_handler_body_single():
     )
     await handler.receive_output(1)  # response start
     await handler.receive_output(1)  # response body
-    MockHandler.request_class.assert_called_with(scope, b"chunk one \x01 chunk two")
+
+    assert handler.instance.request.body == b"chunk one \x01 chunk two"
 
 
 @pytest.mark.asyncio
@@ -242,7 +281,8 @@ async def test_handler_body_multiple():
     await handler.send_input({"type": "http.request", "body": b"chunk two"})
     await handler.receive_output(1)  # response start
     await handler.receive_output(1)  # response body
-    MockHandler.request_class.assert_called_with(scope, b"chunk one \x01 chunk two")
+
+    assert handler.instance.request.body == b"chunk one \x01 chunk two"
 
 
 @pytest.mark.asyncio
@@ -258,7 +298,8 @@ async def test_handler_body_ignore_extra():
     await handler.send_input({"type": "http.request", "body": b" \x01 "})
     await handler.receive_output(1)  # response start
     await handler.receive_output(1)  # response body
-    MockHandler.request_class.assert_called_with(scope, b"chunk one")
+
+    assert handler.instance.request.body == b"chunk one"
 
 
 @pytest.mark.django_db(transaction=True)
