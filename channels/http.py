@@ -118,11 +118,8 @@ class AsgiRequest(http.HttpRequest):
                 pass
         # Body handling
         # TODO: chunked bodies
-
         self._request_body_wrapper = body
-        #         assert isinstance(self._body, bytes), "Body is not bytes"
-        #         # Add a stream-a-like for the body
-        #         self._stream = BytesIO(self._body)
+
         # Other bits
         self.resolver_match = None
 
