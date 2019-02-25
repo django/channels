@@ -194,7 +194,7 @@ class RequestTests(unittest.TestCase):
                 "path": "/test/",
                 "root_path": "/path/to/",
             },
-            b"",
+            None,  # Dummy value.
         )
 
         self.assertEqual(request.path, "/path/to/test/")
@@ -216,6 +216,68 @@ class RequestTests(unittest.TestCase):
                     },
                     body_wrapper,
                 ).body
+
+    def test_size_check_ignores_files(self):
+        body = (
+            b"--BOUNDARY\r\n"
+            + b'Content-Disposition: form-data; name="title"\r\n\r\n'
+            + b"My First Book\r\n"
+            + b"--BOUNDARY\r\n"
+            + b'Content-Disposition: form-data; name="pdf"; filename="book.pdf"\r\n\r\n'
+            + b"FAKEPDFBYTESGOHERE"
+            + b"--BOUNDARY--"
+        )
+
+        async def recieve():
+            return {"type": "http.request", "body": body}
+
+        body_wrapper = RequestBodyWrapper(recieve)
+
+        with override_settings(DATA_UPLOAD_MAX_MEMORY_SIZE=10):
+            AsgiRequest(
+                {
+                    "http_version": "1.1",
+                    "method": "POST",
+                    "path": "/test/",
+                    "headers": {
+                        "content-type": b"multipart/form-data; boundary=BOUNDARY",
+                        "content-length": str(len(body)).encode("ascii"),
+                    },
+                },
+                body_wrapper,
+            ).POST
+
+    def test_size_check_handles_post_whilst_ignoring_files(self):
+        body = (
+            b"--BOUNDARY\r\n"
+            + b'Content-Disposition: form-data; name="title"\r\n\r\n'
+            + b"My First Book\r\n"
+            + b"--BOUNDARY\r\n"
+            + b'Content-Disposition: form-data; name="pdf"; filename="book.pdf"\r\n\r\n'
+            + b"FAKEPDFBYTESGOHERETHISISREALLYLONGBUTNOTUSEDTOCOMPUTETHESIZEOFTHEREQUEST"
+            + b"--BOUNDARY--"
+        )
+
+        async def recieve():
+            return {"type": "http.request", "body": body}
+
+        body_wrapper = RequestBodyWrapper(recieve)
+
+        request = AsgiRequest(
+            {
+                "http_version": "1.1",
+                "method": "POST",
+                "path": "/test/",
+                "headers": {
+                    "content-type": b"multipart/form-data; boundary=BOUNDARY",
+                    "content-length": str(len(body)).encode("ascii"),
+                },
+            },
+            body_wrapper,
+        )
+        with override_settings(DATA_UPLOAD_MAX_MEMORY_SIZE=1):
+            with pytest.raises(RequestDataTooBig):
+                request.POST
 
 
 ### Handler tests
