@@ -3,7 +3,7 @@ import codecs
 import logging
 import sys
 import traceback
-from io import BytesIO
+from io import BytesIO, SEEK_END
 
 from django import http
 from django.conf import settings
@@ -117,8 +117,7 @@ class AsgiRequest(http.HttpRequest):
             except (ValueError, TypeError):
                 pass
         # Body handling
-        # TODO: chunked bodies
-        self._request_body_wrapper = body
+        self._stream = body
 
         # Other bits
         self.resolver_match = None
@@ -134,15 +133,10 @@ class AsgiRequest(http.HttpRequest):
                 raise RequestDataTooBig(
                     "Request body exceeded settings.DATA_UPLOAD_MAX_MEMORY_SIZE."
                 )
-            self._body = self._request_body_wrapper.read()
+            self._body = self.read()
             self._stream = BytesIO(self._body)
 
         return self._body
-
-    def read(self, *args, **kwargs):
-        if not hasattr(self, "_body"):
-            self.body
-        return super().read(*args, **kwargs)
 
     @cached_property
     def GET(self):
@@ -177,18 +171,34 @@ class AsgiRequest(http.HttpRequest):
 class RequestBodyWrapper:
     def __init__(self, receive):
         self.receive = receive
+        self.buffer = BytesIO()
+        self.more_body = True
+
+    def _read_enough(self, size):
+        if size <= 0:
+            return False
+        p = self.buffer.tell()
+        len = self.buffer.seek(0, SEEK_END)
+        self.buffer.seek(p)
+        return (len - p) > size
+
+    def _write(self, bytes):
+        p = self.buffer.tell()
+        self.buffer.seek(0, SEEK_END)
+        written = self.buffer.write(bytes)
+        self.buffer.seek(p)
+        return written
 
     @async_to_sync
-    async def read(self):
-        body = b""
-        while True:
+    async def read(self, size=-1):
+        while self.more_body:
             message = await self.receive()
-            # See if the message has body, and if it's the end, launch into
-            # handling (and a synchronous subthread)
+            self.more_body = message.get("more_body", False)
             if "body" in message:
-                body += message["body"]
-            if not message.get("more_body", False):
-                return body
+                self._write(message["body"])
+                if self._read_enough(size):
+                   break
+        return self.buffer.read(size)
 
 
 class AsgiHandler(base.BaseHandler):
