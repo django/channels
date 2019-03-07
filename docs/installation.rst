@@ -4,6 +4,10 @@ Installation
 Channels is available on PyPI - to install it, just run::
 
     pip install -U channels
+    
+If installation fails on MacOS, you should install ``xcode-select``
+
+    xcode-select --install
 
 Once that's done, you should add ``channels`` to your
 ``INSTALLED_APPS`` setting::
