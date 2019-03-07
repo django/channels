@@ -12,6 +12,8 @@ class AsyncHttpConsumer(AsyncConsumer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.body = []
+        self.headers_sent = False
+        self.more_body = True
 
     async def send_headers(self, *, status=200, headers=None):
         """
@@ -27,6 +29,8 @@ class AsyncHttpConsumer(AsyncConsumer):
         elif isinstance(headers, dict):
             headers = list(headers.items())
 
+        self.headers_sent = True
+
         await self.send(
             {"type": "http.response.start", "status": status, "headers": headers}
         )
@@ -40,9 +44,12 @@ class AsyncHttpConsumer(AsyncConsumer):
         the channel will be ignored.
         """
         assert isinstance(body, bytes), "Body is not bytes"
-        await self.send(
-            {"type": "http.response.body", "body": body, "more_body": more_body}
-        )
+
+        if self.more_body:
+            self.more_body = more_body
+            await self.send(
+                {"type": "http.response.body", "body": body, "more_body": more_body}
+            )
 
     async def send_response(self, status, body, **kwargs):
         """
@@ -70,6 +77,19 @@ class AsyncHttpConsumer(AsyncConsumer):
         """
         pass
 
+    async def close(self, body=b"", status=500, headers=None):
+        """
+        Closes the HTTP response from the server end.
+        """
+        if not self.more_body:
+            # HTTP Response is already closed, nothing to do.
+            return
+
+        if not self.headers_sent:
+            await self.send_headers(status=status, headers=headers)
+
+        await self.send_body(body)
+
     async def http_request(self, message):
         """
         Async entrypoint - concatenates body fragments and hands off control
@@ -80,10 +100,15 @@ class AsyncHttpConsumer(AsyncConsumer):
         if not message.get("more_body"):
             try:
                 await self.handle(b"".join(self.body))
-            finally:
-                await self.disconnect()
-                raise StopConsumer()
+            except StopConsumer:
+                await self.close(status=200)
+            except:
+                # TODO This is just a patch, after bubbling up the exception no body is calling http_disconnect.
+                await self.close(body=b"Internal Server Error", status=500)
+                raise
 
+    # TODO This should be called by daphne whenever any exception bubbles up (As it does with websockets)
+    # IMHO this should be parallel to websocket_disconnect, removing the consumer from potential channel_layer groups.
     async def http_disconnect(self, message):
         """
         Let the user do their cleanup and close the consumer.
