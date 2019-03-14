@@ -98,7 +98,7 @@ Create the route for the room view in ``chat/urls.py``::
     
     urlpatterns = [
         url(r'^$', views.index, name='index'),
-        url(r'^(?P<room_name>[^/]+)/$', views.room, name='room'),
+        url(r'^chat/(?P<room_name>[^/]+)/$', views.room, name='room'),
     ]
 
 Start the Channels development server::
