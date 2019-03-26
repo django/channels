@@ -1,9 +1,12 @@
+import asyncio
 import cgi
 import codecs
+import io
 import logging
 import sys
+import queue
+import threading
 import traceback
-from io import BytesIO
 
 from django import http
 from django.conf import settings
@@ -18,6 +21,115 @@ from asgiref.sync import async_to_sync, sync_to_async
 from channels.exceptions import RequestAborted, RequestTimeout
 
 logger = logging.getLogger("django.request")
+
+
+class RequestBodyStream(io.RawIOBase):
+    """
+    Stream for reading chunks from the queue. Methods 'awrite' and 'read'
+    synchronized using 'threading.Barrier' and can block threads.
+    This stream is readable and writable (only asynchronously), but it's
+    unseekable and cannot be truncated.
+    """
+
+    # Max chunk size per iteration that we use to support the iterator
+    # protocol.
+    MAX_CHUNK_SIZE = 65536
+
+    def __init__(self):
+        super().__init__()
+
+        # If this event is set, it means that reading from this stream has
+        # been started. If this does not happen before the stream is closed,
+        # this flag will be set in the 'close' method
+        self.ready_for_writing = threading.Event()
+
+        # Queue to transfer chunks between 'read' and 'awrite' calls.
+        self._queue = queue.Queue(maxsize=2)
+        # Lock to synchronize 'read' and 'awrite' calls.
+        self._barrier = threading.Barrier(2)
+        # Buffer into which bytes will be read from the queue.
+        self._readbuffer = b""
+        # The number of bytes that have already been read.
+        self._offset = 0
+        # Flag indicating that not all chunks are read from the queue.
+        self._more_body = True
+
+    def close(self):
+        """
+        This non-blocking method interrupts writing and reading.
+        After that, the 'awrite' and 'read' threads will be released from blocking.
+        """
+
+        super().close()
+        # Unblock waiters if the reading has not started yet.
+        self._barrier.abort()
+        self.ready_for_writing.set()
+
+    def readable(self):
+        return True
+
+    @sync_to_async
+    def awrite(self, b: bytes):
+        if self.closed:
+            raise ValueError("I/O operation on closed stream.")
+
+        self._queue.put_nowait(b)
+        try:
+            # Wait until the 'read' method processes the chunk.
+            self._barrier.wait()
+        except threading.BrokenBarrierError:
+            # Stream was closed in advance. Stream cannot be
+            # reopened, so we do nothing.
+            assert self.closed
+
+        return len(b)
+
+    def read(self, size=-1):
+        """
+        Read and return up to n bytes.
+        If the argument is omitted, None, or negative, data is read and
+        returned until the end of the stream is reached.
+        """
+
+        if self.closed:
+            raise ValueError("I/O operation on closed stream.")
+
+        # Notify that we are starting to read chunks from the queue.
+        if not self.ready_for_writing.is_set():
+            self.ready_for_writing.set()
+
+        if size is None:
+            size = -1
+
+        while self._more_body:
+            if len(self._readbuffer) >= size >= 0:
+                break
+            try:
+                # Wait chunks that will come in the 'awrite' method
+                self._barrier.wait()
+            except threading.BrokenBarrierError:
+                # Stream was closed in advance. Stream cannot be
+                # reopened, so we finish reading from the queue.
+                assert self.closed
+                self._more_body = False
+            chunk = self._queue.get_nowait()
+            if not chunk:
+                # Feed is over.
+                self._more_body = False
+            self._readbuffer += chunk or b""
+            self._queue.task_done()
+
+        result = self._readbuffer if size < 0 else self._readbuffer[:size]
+        self._offset += len(result)
+        self._readbuffer = b"" if size < 0 else self._readbuffer[size:]
+        return result
+
+    def __iter__(self):
+        while True:
+            buffer = self.read(self.MAX_CHUNK_SIZE)
+            if not buffer:
+                break
+            yield buffer
 
 
 class AsgiRequest(http.HttpRequest):
@@ -116,8 +228,6 @@ class AsgiRequest(http.HttpRequest):
                 self._content_length = int(self.META["CONTENT_LENGTH"])
             except (ValueError, TypeError):
                 pass
-        # Body handling
-        # TODO: chunked bodies
 
         # Limit the maximum request data size that will be handled in-memory.
         if (
@@ -128,10 +238,15 @@ class AsgiRequest(http.HttpRequest):
                 "Request body exceeded settings.DATA_UPLOAD_MAX_MEMORY_SIZE."
             )
 
+        if isinstance(body, io.IOBase):
+            # Chunked body handling.
+            self._stream = body
+            return
+
         self._body = body
         assert isinstance(self._body, bytes), "Body is not bytes"
         # Add a stream-a-like for the body
-        self._stream = BytesIO(self._body)
+        self._stream = io.BytesIO(self._body)
         # Other bits
         self.resolver_match = None
 
@@ -198,25 +313,44 @@ class AsgiHandler(base.BaseHandler):
         threadpool.
         """
         self.send = async_to_sync(send)
-        body = b""
-        while True:
-            message = await receive()
+        self.receive = receive
+
+        with RequestBodyStream() as stream:
+            # Run in the thread pool executor the task that writes to stream.
+            task = asyncio.get_event_loop().create_task(self._receive_chunks(stream))
+            # Process messages in a separate thread.
+            await self.handle(stream)
+            # The task must be completed with the closure of the stream.
+            assert task.done()
+
+    async def _receive_chunks(self, stream):
+        """Receive chunks and write them to the stream."""
+
+        # Wait until the reading starts from the stream.
+        stream.ready_for_writing.wait()
+
+        while not stream.closed:
+            message = await self.receive()
             if message["type"] == "http.disconnect":
-                # Once they disconnect, that's it. GOOD DAY SIR. I SAID GOOD. DAY.
-                return
-            else:
-                # See if the message has body, and if it's the end, launch into
-                # handling (and a synchronous subthread)
-                if "body" in message:
-                    body += message["body"]
-                if not message.get("more_body", False):
-                    await self.handle(body)
-                    return
+                # The request body is no longer needed, we can abort streaming.
+                break
+            body = message.get("body")
+            if body:
+                await stream.awrite(body)
+            if not message.get("more_body", False):
+                break
+
+        if not stream.closed:
+            # Notify that it was the last chunk.
+            await stream.awrite(b"")
 
     @sync_to_async
     def handle(self, body):
         """
         Synchronous message processing.
+
+        Args:
+            body: Chunked readable stream or raw bytes.
         """
         # Set script prefix from message root_path, turning None into empty string
         script_prefix = self.scope.get("root_path", "") or ""
@@ -247,6 +381,9 @@ class AsgiHandler(base.BaseHandler):
             # Fix chunk size on file responses
             if isinstance(response, FileResponse):
                 response.block_size = 1024 * 512
+        # Cancel any operation with the stream and close it.
+        if isinstance(body, io.IOBase):
+            body.close()
         # Transform response into messages, which we yield back to caller
         for response_message in self.encode_response(response):
             self.send(response_message)

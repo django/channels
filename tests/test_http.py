@@ -192,9 +192,10 @@ class MockHandler(AsgiHandler):
     ripped out.
     """
 
-    request_class = MagicMock()
-
     def get_response(self, request):
+        # Remember scope and body to check out later.
+        self.request_scope = request.scope
+        self.request_body = request.body
         return HttpResponse("fake")
 
 
@@ -208,7 +209,8 @@ async def test_handler_basic():
     await handler.send_input({"type": "http.request"})
     await handler.receive_output(1)  # response start
     await handler.receive_output(1)  # response body
-    MockHandler.request_class.assert_called_with(scope, b"")
+    assert handler.instance.request_scope == scope
+    assert handler.instance.request_body == b""
 
 
 @pytest.mark.asyncio
@@ -223,7 +225,8 @@ async def test_handler_body_single():
     )
     await handler.receive_output(1)  # response start
     await handler.receive_output(1)  # response body
-    MockHandler.request_class.assert_called_with(scope, b"chunk one \x01 chunk two")
+    assert handler.instance.request_scope == scope
+    assert handler.instance.request_body == b"chunk one \x01 chunk two"
 
 
 @pytest.mark.asyncio
@@ -242,7 +245,8 @@ async def test_handler_body_multiple():
     await handler.send_input({"type": "http.request", "body": b"chunk two"})
     await handler.receive_output(1)  # response start
     await handler.receive_output(1)  # response body
-    MockHandler.request_class.assert_called_with(scope, b"chunk one \x01 chunk two")
+    assert handler.instance.request_scope == scope
+    assert handler.instance.request_body == b"chunk one \x01 chunk two"
 
 
 @pytest.mark.asyncio
@@ -258,7 +262,8 @@ async def test_handler_body_ignore_extra():
     await handler.send_input({"type": "http.request", "body": b" \x01 "})
     await handler.receive_output(1)  # response start
     await handler.receive_output(1)  # response body
-    MockHandler.request_class.assert_called_with(scope, b"chunk one")
+    assert handler.instance.request_scope == scope
+    assert handler.instance.request_body == b"chunk one"
 
 
 @pytest.mark.django_db(transaction=True)
