@@ -1,6 +1,6 @@
 import re
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from django.core.exceptions import RequestDataTooBig

@@ -3,8 +3,8 @@ import cgi
 import codecs
 import io
 import logging
-import sys
 import queue
+import sys
 import threading
 import traceback
 
