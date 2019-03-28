@@ -119,6 +119,9 @@ connected client, and dispatched to a named method on the consumer. The name
 of the method will be the ``type`` of the event with periods replaced by
 underscores - so, for example, an event coming in over the channel layer
 with a ``type`` of ``chat.join`` will be handled by the method ``chat_join``.
+By default, not handling a message type will raise a ``ValueError``. If you
+want to handle all messages, even of a ``type`` you have not implemented, you
+can override the ``default_handler`` method.
 
 .. note::
 

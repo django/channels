@@ -72,7 +72,11 @@ class AsyncConsumer:
         if handler:
             await handler(message)
         else:
-            raise ValueError("No handler for message type %s" % message["type"])
+            await self.default_handler(message)
+
+    async def default_handler(self, message):
+        """Overrideable handler for messages of un-implemented type."""
+        raise ValueError("No handler for message type %s" % message["type"])
 
     async def send(self, message):
         """
@@ -104,7 +108,11 @@ class SyncConsumer(AsyncConsumer):
         if handler:
             handler(message)
         else:
-            raise ValueError("No handler for message type %s" % message["type"])
+            self.default_handler(message)
+
+    def default_handler(self, message):
+        """Overrideable handler for messages of un-implemented type."""
+        raise ValueError("No handler for message type %s" % message["type"])
 
     def send(self, message):
         """
