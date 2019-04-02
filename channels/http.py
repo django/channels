@@ -1,9 +1,9 @@
 import cgi
 import codecs
+import io
 import logging
 import sys
 import traceback
-from io import BytesIO, SEEK_END
 
 from django import http
 from django.conf import settings
@@ -30,11 +30,10 @@ class AsgiRequest(http.HttpRequest):
     # body and aborts.
     body_receive_timeout = 60
 
-    def __init__(self, scope, body):
+    def __init__(self, scope, stream):
         self.scope = scope
         self._content_length = 0
         self._post_parse_error = False
-        self._read_started = False
         self.resolver_match = None
         self.script_name = self.scope.get("root_path", "")
         if self.script_name and scope["path"].startswith(self.script_name):
@@ -117,8 +116,8 @@ class AsgiRequest(http.HttpRequest):
             except (ValueError, TypeError):
                 pass
         # Body handling
-        self._stream = body
-
+        self._stream = stream
+        self._read_started = False
         # Other bits
         self.resolver_match = None
 
@@ -131,7 +130,6 @@ class AsgiRequest(http.HttpRequest):
 
     def _get_post(self):
         if not hasattr(self, "_post"):
-            self._read_started = False
             self._load_post_and_files()
         return self._post
 
@@ -140,7 +138,6 @@ class AsgiRequest(http.HttpRequest):
 
     def _get_files(self):
         if not hasattr(self, "_files"):
-            self._read_started = False
             self._load_post_and_files()
         return self._files
 
@@ -152,37 +149,42 @@ class AsgiRequest(http.HttpRequest):
         return http.parse_cookie(self.META.get("HTTP_COOKIE", ""))
 
 
-class RequestBodyWrapper:
+class AsgiRequestIO(io.RawIOBase):
+    """Raw I/O implementation for stream request bodies."""
+
     def __init__(self, receive):
+        io.RawIOBase.__init__(self)
         self.receive = receive
-        self.buffer = BytesIO()
-        self.more_body = True
+        self._buffer = b""
+        self._more_body = True
 
-    def _read_enough(self, size):
-        if size <= 0:
-            return False
-        p = self.buffer.tell()
-        len = self.buffer.seek(0, SEEK_END)
-        self.buffer.seek(p)
-        return (len - p) > size
+    def readable(self):
+        return True
 
-    def _write(self, bytes):
-        p = self.buffer.tell()
-        self.buffer.seek(0, SEEK_END)
-        written = self.buffer.write(bytes)
-        self.buffer.seek(p)
-        return written
+    def read(self, size=-1):
+        """
+        Read up to size bytes from the object and return them.
+        Fewer than size bytes may be returned.
+        """
 
-    @async_to_sync
-    async def read(self, size=-1):
-        while self.more_body:
-            message = await self.receive()
-            self.more_body = message.get("more_body", False)
+        self._checkClosed()
+
+        if size is None or size < 0:
+            # As a convenience, if size is unspecified or -1, readall() is called.
+            return io.RawIOBase.readall(self)
+
+        if size == 0:
+            return b""
+
+        while not self._buffer and self._more_body:
+            message = self.receive()
+            self._more_body = message.get("more_body", False)
             if "body" in message:
-                self._write(message["body"])
-                if self._read_enough(size):
-                   break
-        return self.buffer.read(size)
+                self._buffer = message["body"]
+
+        data = self._buffer[:size]
+        self._buffer = self._buffer[size:]
+        return data
 
 
 class AsgiHandler(base.BaseHandler):
@@ -219,9 +221,8 @@ class AsgiHandler(base.BaseHandler):
         """
         self.send = async_to_sync(send)
 
-        body = RequestBodyWrapper(receive)
-        await self.handle(body)
-        return
+        body_stream = AsgiRequestIO(async_to_sync(receive))
+        await self.handle(body_stream)
 
     @sync_to_async
     def handle(self, body):
@@ -245,7 +246,7 @@ class AsgiHandler(base.BaseHandler):
             )
             response = http.HttpResponseBadRequest()
         except RequestTimeout:
-            # Parsing the rquest failed, so the response is a Request Timeout error
+            # Parsing the request failed, so the response is a Request Timeout error
             response = HttpResponse("408 Request Timeout (upload too slow)", status=408)
         except RequestAborted:
             # Client closed connection on us mid request. Abort!
