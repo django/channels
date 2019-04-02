@@ -1,3 +1,5 @@
+import io
+import itertools
 import re
 import unittest
 from unittest.mock import MagicMock, patch
@@ -9,7 +11,7 @@ from django.test import override_settings
 
 from asgiref.testing import ApplicationCommunicator
 from channels.consumer import AsyncConsumer
-from channels.http import AsgiHandler, AsgiRequest, RequestBodyWrapper
+from channels.http import AsgiHandler, AsgiRequest, AsgiRequestIO
 from channels.sessions import SessionMiddlewareStack
 from channels.testing import HttpCommunicator
 
@@ -26,13 +28,10 @@ class RequestTests(unittest.TestCase):
         with all optional fields omitted.
         """
 
-        async def recieve():
-            return {}
-
-        body_wrapper = RequestBodyWrapper(recieve)
+        body_stream = AsgiRequestIO(lambda: {})
 
         request = AsgiRequest(
-            {"http_version": "1.1", "method": "GET", "path": "/test/"}, body_wrapper
+            {"http_version": "1.1", "method": "GET", "path": "/test/"}, body_stream
         )
         self.assertEqual(request.path, "/test/")
         self.assertEqual(request.method, "GET")
@@ -52,10 +51,7 @@ class RequestTests(unittest.TestCase):
         Tests a more fully-featured GET request
         """
 
-        async def recieve():
-            return {}
-
-        body_wrapper = RequestBodyWrapper(recieve)
+        body_stream = AsgiRequestIO(lambda: {})
 
         request = AsgiRequest(
             {
@@ -70,7 +66,7 @@ class RequestTests(unittest.TestCase):
                 "client": ["10.0.0.1", 1234],
                 "server": ["10.0.0.2", 80],
             },
-            body_wrapper,
+            body_stream,
         )
         self.assertEqual(request.path, "/test2/")
         self.assertEqual(request.method, "GET")
@@ -92,10 +88,10 @@ class RequestTests(unittest.TestCase):
         Tests a POST body.
         """
 
-        async def recieve():
+        def receive():
             return {"type": "http.request", "body": b"djangoponies=are+awesome"}
 
-        body_wrapper = RequestBodyWrapper(recieve)
+        body_stream = AsgiRequestIO(receive)
 
         request = AsgiRequest(
             {
@@ -109,7 +105,7 @@ class RequestTests(unittest.TestCase):
                     "content-length": b"18",
                 },
             },
-            body_wrapper,
+            body_stream,
         )
         self.assertEqual(request.path, "/test2/")
         self.assertEqual(request.method, "POST")
@@ -139,10 +135,10 @@ class RequestTests(unittest.TestCase):
             + b"--BOUNDARY--"
         )
 
-        async def recieve():
+        def receive():
             return {"type": "http.request", "body": body}
 
-        body_wrapper = RequestBodyWrapper(recieve)
+        body_stream = AsgiRequestIO(receive)
 
         request = AsgiRequest(
             {
@@ -154,24 +150,79 @@ class RequestTests(unittest.TestCase):
                     "content-length": str(len(body)).encode("ascii"),
                 },
             },
-            body_wrapper,
+            body_stream,
         )
         self.assertEqual(request.method, "POST")
         self.assertEqual(len(request.body), len(body))
         self.assertTrue(request.META["CONTENT_TYPE"].startswith("multipart/form-data"))
+        self.assertTrue(request._read_started)
         self.assertFalse(request._post_parse_error)
         self.assertEqual(request.POST["title"], "My First Book")
         self.assertEqual(request.FILES["pdf"].read(), b"FAKEPDFBYTESGOHERE")
+
+    def test_chunked_post_files(self):
+        """
+        Tests POSTing chunked files using multipart form data.
+        """
+
+        chunks = [
+            b"--BOUNDARY\r\n",
+            b'Content-Disposition: form-data; name="title"\r\n',
+            b"\r\n",
+            b"My First Book\r\n",
+            b"",
+            b"--BOUNDARY\r\n",
+            b'Content-Disposition: form-data; name="pdf"; filename="book.pdf"\r\n',
+            b"\r\n",
+            b"FAKEPDFBYTESGOHERE",
+            b"--BOUNDARY--\r\n",
+            b"",
+            b'Content-Disposition: form-data; name="txt"; filename="text.txt"\r\n\r\n',
+            b"",
+            b"FAKETEXT",
+            b"--BOUNDARY--\r\n"
+        ]
+        body = b"".join(chunks)
+
+        def receive():
+            return {
+                "type": "http.request",
+                "body": chunks.pop(0),
+                "more_body": bool(chunks),
+            }
+
+        body_stream = AsgiRequestIO(receive)
+
+        request = AsgiRequest(
+            {
+                "http_version": "1.1",
+                "method": "POST",
+                "path": "/test/",
+                "headers": {
+                    "content-type": b"multipart/form-data; boundary=BOUNDARY",
+                    "content-length": str(len(body)).encode("ascii"),
+                },
+            },
+            body_stream,
+        )
+
+        self.assertEqual(request.method, "POST")
+        self.assertTrue(request.META["CONTENT_TYPE"].startswith("multipart/form-data"))
+        self.assertEqual(request.FILES["pdf"].read(), b"FAKEPDFBYTESGOHERE")
+        self.assertTrue(request._read_started)
+        self.assertFalse(request._post_parse_error)
+        self.assertEqual(request.FILES["txt"].read(), b"FAKETEXT")
+        self.assertEqual(request.POST["title"], "My First Book")
 
     def test_stream(self):
         """
         Tests the body stream is emulated correctly.
         """
 
-        async def recieve():
+        def receive():
             return {"type": "http.request", "body": b"onetwothree"}
 
-        body_wrapper = RequestBodyWrapper(recieve)
+        body_stream = AsgiRequestIO(receive)
 
         request = AsgiRequest(
             {
@@ -180,7 +231,7 @@ class RequestTests(unittest.TestCase):
                 "path": "/",
                 "headers": {"host": b"example.com", "content-length": b"11"},
             },
-            body_wrapper,
+            body_stream,
         )
         self.assertEqual(request.method, "PUT")
         self.assertEqual(request.read(3), b"one")
@@ -199,11 +250,11 @@ class RequestTests(unittest.TestCase):
 
         self.assertEqual(request.path, "/path/to/test/")
 
-    def test_size_exceeded(self):
-        async def recieve():
+    def test_max_memory_size_exceeded(self):
+        def receive():
             return {"type": "http.request", "body": b""}
 
-        body_wrapper = RequestBodyWrapper(recieve)
+        body_stream = AsgiRequestIO(receive)
 
         with override_settings(DATA_UPLOAD_MAX_MEMORY_SIZE=1):
             with pytest.raises(RequestDataTooBig):
@@ -214,70 +265,97 @@ class RequestTests(unittest.TestCase):
                         "path": "/",
                         "headers": {"host": b"example.com", "content-length": b"1000"},
                     },
-                    body_wrapper,
+                    body_stream,
                 ).body
 
     def test_size_check_ignores_files(self):
+        name = b'Title'
+        title = b'My first book'
+        file_data = b"FAKEPDFBYTESGOHERETHISISREALLYLONGBUTNOTUSEDTOCOMPUTETHESIZEOFTHEREQUEST"
         body = (
             b"--BOUNDARY\r\n"
-            + b'Content-Disposition: form-data; name="title"\r\n\r\n'
-            + b"My First Book\r\n"
+            + b'Content-Disposition: form-data; name="'
+            + name
+            + b'"\r\n\r\n'
+            + title
+            + b"\r\n"
             + b"--BOUNDARY\r\n"
             + b'Content-Disposition: form-data; name="pdf"; filename="book.pdf"\r\n\r\n'
-            + b"FAKEPDFBYTESGOHERE"
+            + file_data
             + b"--BOUNDARY--"
         )
 
-        async def recieve():
+        def receive():
             return {"type": "http.request", "body": body}
 
-        body_wrapper = RequestBodyWrapper(recieve)
-
-        with override_settings(DATA_UPLOAD_MAX_MEMORY_SIZE=10):
-            AsgiRequest(
-                {
-                    "http_version": "1.1",
-                    "method": "POST",
-                    "path": "/test/",
-                    "headers": {
-                        "content-type": b"multipart/form-data; boundary=BOUNDARY",
-                        "content-length": str(len(body)).encode("ascii"),
-                    },
-                },
-                body_wrapper,
-            ).POST
-
-    def test_size_check_handles_post_whilst_ignoring_files(self):
-        body = (
-            b"--BOUNDARY\r\n"
-            + b'Content-Disposition: form-data; name="title"\r\n\r\n'
-            + b"My First Book\r\n"
-            + b"--BOUNDARY\r\n"
-            + b'Content-Disposition: form-data; name="pdf"; filename="book.pdf"\r\n\r\n'
-            + b"FAKEPDFBYTESGOHERETHISISREALLYLONGBUTNOTUSEDTOCOMPUTETHESIZEOFTHEREQUEST"
-            + b"--BOUNDARY--"
-        )
-
-        async def recieve():
-            return {"type": "http.request", "body": body}
-
-        body_wrapper = RequestBodyWrapper(recieve)
-
-        request = AsgiRequest(
-            {
-                "http_version": "1.1",
-                "method": "POST",
-                "path": "/test/",
-                "headers": {
-                    "content-type": b"multipart/form-data; boundary=BOUNDARY",
-                    "content-length": str(len(body)).encode("ascii"),
-                },
+        scope = {
+            "http_version": "1.1",
+            "method": "POST",
+            "path": "/test/",
+            "headers": {
+                "content-type": b"multipart/form-data; boundary=BOUNDARY",
+                "content-length": str(len(body)).encode("ascii"),
             },
-            body_wrapper,
-        )
-        with override_settings(DATA_UPLOAD_MAX_MEMORY_SIZE=1):
+        }
+
+        # Check the size in which the body of the files certainly does not
+        # fit into the 'DATA_UPLOAD_MAX_MEMORY_SIZE' setting. But this size
+        # is greater than the size of the fields of the POST request and
+        # should not lead to an exception.
+        allowable_size = len(file_data) - 10
+        with override_settings(DATA_UPLOAD_MAX_MEMORY_SIZE=allowable_size):
+            AsgiRequest(scope, AsgiRequestIO(receive)).POST
+
+        exceptional_size = len(name + title) - 10
+        with override_settings(DATA_UPLOAD_MAX_MEMORY_SIZE=exceptional_size):
             with pytest.raises(RequestDataTooBig):
-                request.POST
+                AsgiRequest(scope, AsgiRequestIO(receive)).POST
+
+
+    def test_size_check_ignores_chunked_files(self):
+        name = b'Title'
+        title = b'My first book'
+        file_data = b"FAKEPDFBYTESGOHERETHISISREALLYLONGBUTNOTUSEDTOCOMPUTETHESIZEOFTHEREQUEST"
+        chunks = [
+            b"--BOUNDARY\r\n",
+            b'Content-Disposition: form-data; name="',
+            name,
+            b'"\r\n\r\n',
+            title[:10],
+            title[10:],
+            b"\r\n",
+            b"--BOUNDARY\r\n",
+            b'Content-Disposition: form-data; name="pdf"; filename="book.pdf"\r\n\r\n',
+            file_data[:50],
+            file_data[50:],
+            b"--BOUNDARY--",
+        ]
+        body = b"".join(chunks)
+
+        def receive():
+            return {
+                "type": "http.request",
+                "body": chunks.pop(0),
+                "more_body": bool(chunks),
+            }
+
+        scope = {
+            "http_version": "1.1",
+            "method": "POST",
+            "path": "/test/",
+            "headers": {
+                "content-type": b"multipart/form-data; boundary=BOUNDARY",
+                "content-length": str(len(body)).encode("ascii"),
+            },
+        }
+
+        # Check the size in which the body of the files certainly does not
+        # fit into the 'DATA_UPLOAD_MAX_MEMORY_SIZE' setting. But this size
+        # is greater than the size of the fields of the POST request and
+        # should not lead to an exception.
+        allowable_size = len(file_data) - 10
+        with override_settings(DATA_UPLOAD_MAX_MEMORY_SIZE=allowable_size):
+            AsgiRequest(scope, AsgiRequestIO(receive)).POST
 
 
 ### Handler tests
@@ -308,6 +386,7 @@ async def test_handler_basic():
     await handler.receive_output(1)  # response start
     await handler.receive_output(1)  # response body
 
+    assert handler.instance.request.scope == scope
     assert handler.instance.request.body == b""
 
 
@@ -324,6 +403,7 @@ async def test_handler_body_single():
     await handler.receive_output(1)  # response start
     await handler.receive_output(1)  # response body
 
+    assert handler.instance.request.scope == scope
     assert handler.instance.request.body == b"chunk one \x01 chunk two"
 
 
@@ -344,6 +424,7 @@ async def test_handler_body_multiple():
     await handler.receive_output(1)  # response start
     await handler.receive_output(1)  # response body
 
+    assert handler.instance.request.scope == scope
     assert handler.instance.request.body == b"chunk one \x01 chunk two"
 
 
@@ -361,6 +442,7 @@ async def test_handler_body_ignore_extra():
     await handler.receive_output(1)  # response start
     await handler.receive_output(1)  # response body
 
+    assert handler.instance.request.scope == scope
     assert handler.instance.request.body == b"chunk one"
 
 
