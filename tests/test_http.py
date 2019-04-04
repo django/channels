@@ -28,10 +28,9 @@ class RequestTests(unittest.TestCase):
         with all optional fields omitted.
         """
 
-        body_stream = AsgiRequestIO(lambda: {})
-
         request = AsgiRequest(
-            {"http_version": "1.1", "method": "GET", "path": "/test/"}, body_stream
+            {"http_version": "1.1", "method": "GET", "path": "/test/"},
+            AsgiRequestIO(lambda: {}),
         )
         self.assertEqual(request.path, "/test/")
         self.assertEqual(request.method, "GET")
@@ -51,8 +50,6 @@ class RequestTests(unittest.TestCase):
         Tests a more fully-featured GET request
         """
 
-        body_stream = AsgiRequestIO(lambda: {})
-
         request = AsgiRequest(
             {
                 "http_version": "1.1",
@@ -66,7 +63,7 @@ class RequestTests(unittest.TestCase):
                 "client": ["10.0.0.1", 1234],
                 "server": ["10.0.0.2", 80],
             },
-            body_stream,
+            AsgiRequestIO(lambda: {}),
         )
         self.assertEqual(request.path, "/test2/")
         self.assertEqual(request.method, "GET")
@@ -91,8 +88,6 @@ class RequestTests(unittest.TestCase):
         def receive():
             return {"type": "http.request", "body": b"djangoponies=are+awesome"}
 
-        body_stream = AsgiRequestIO(receive)
-
         request = AsgiRequest(
             {
                 "http_version": "1.1",
@@ -105,7 +100,7 @@ class RequestTests(unittest.TestCase):
                     "content-length": b"18",
                 },
             },
-            body_stream,
+            AsgiRequestIO(receive),
         )
         self.assertEqual(request.path, "/test2/")
         self.assertEqual(request.method, "POST")
@@ -138,8 +133,6 @@ class RequestTests(unittest.TestCase):
         def receive():
             return {"type": "http.request", "body": body}
 
-        body_stream = AsgiRequestIO(receive)
-
         request = AsgiRequest(
             {
                 "http_version": "1.1",
@@ -150,7 +143,7 @@ class RequestTests(unittest.TestCase):
                     "content-length": str(len(body)).encode("ascii"),
                 },
             },
-            body_stream,
+            AsgiRequestIO(receive),
         )
         self.assertEqual(request.method, "POST")
         self.assertEqual(len(request.body), len(body))
@@ -191,8 +184,6 @@ class RequestTests(unittest.TestCase):
                 "more_body": bool(chunks),
             }
 
-        body_stream = AsgiRequestIO(receive)
-
         request = AsgiRequest(
             {
                 "http_version": "1.1",
@@ -203,7 +194,7 @@ class RequestTests(unittest.TestCase):
                     "content-length": str(len(body)).encode("ascii"),
                 },
             },
-            body_stream,
+            AsgiRequestIO(receive),
         )
 
         self.assertEqual(request.method, "POST")
@@ -222,8 +213,6 @@ class RequestTests(unittest.TestCase):
         def receive():
             return {"type": "http.request", "body": b"onetwothree"}
 
-        body_stream = AsgiRequestIO(receive)
-
         request = AsgiRequest(
             {
                 "http_version": "1.1",
@@ -231,7 +220,7 @@ class RequestTests(unittest.TestCase):
                 "path": "/",
                 "headers": {"host": b"example.com", "content-length": b"11"},
             },
-            body_stream,
+            AsgiRequestIO(receive),
         )
         self.assertEqual(request.method, "PUT")
         self.assertEqual(request.read(3), b"one")
@@ -254,8 +243,6 @@ class RequestTests(unittest.TestCase):
         def receive():
             return {"type": "http.request", "body": b""}
 
-        body_stream = AsgiRequestIO(receive)
-
         with override_settings(DATA_UPLOAD_MAX_MEMORY_SIZE=1):
             with pytest.raises(RequestDataTooBig):
                 AsgiRequest(
@@ -265,7 +252,7 @@ class RequestTests(unittest.TestCase):
                         "path": "/",
                         "headers": {"host": b"example.com", "content-length": b"1000"},
                     },
-                    body_stream,
+                    AsgiRequestIO(receive),
                 ).body
 
     def test_size_check_ignores_files(self):
