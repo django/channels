@@ -221,8 +221,8 @@ class AsgiHandler(base.BaseHandler):
         """
         self.send = async_to_sync(send)
 
-        body_stream = AsgiRequestIO(async_to_sync(receive))
-        await self.handle(body_stream)
+        stream = AsgiRequestIO(async_to_sync(receive))
+        await self.handle(stream)
 
     @sync_to_async
     def handle(self, body):

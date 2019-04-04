@@ -1,8 +1,6 @@
-import io
-import itertools
 import re
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 from django.core.exceptions import RequestDataTooBig
@@ -28,10 +26,9 @@ class RequestTests(unittest.TestCase):
         with all optional fields omitted.
         """
 
-        body_stream = AsgiRequestIO(lambda: {})
-
         request = AsgiRequest(
-            {"http_version": "1.1", "method": "GET", "path": "/test/"}, body_stream
+            {"http_version": "1.1", "method": "GET", "path": "/test/"},
+            AsgiRequestIO(lambda: {}),
         )
         self.assertEqual(request.path, "/test/")
         self.assertEqual(request.method, "GET")
@@ -51,8 +48,6 @@ class RequestTests(unittest.TestCase):
         Tests a more fully-featured GET request
         """
 
-        body_stream = AsgiRequestIO(lambda: {})
-
         request = AsgiRequest(
             {
                 "http_version": "1.1",
@@ -66,7 +61,7 @@ class RequestTests(unittest.TestCase):
                 "client": ["10.0.0.1", 1234],
                 "server": ["10.0.0.2", 80],
             },
-            body_stream,
+            AsgiRequestIO(lambda: {}),
         )
         self.assertEqual(request.path, "/test2/")
         self.assertEqual(request.method, "GET")
@@ -91,8 +86,6 @@ class RequestTests(unittest.TestCase):
         def receive():
             return {"type": "http.request", "body": b"djangoponies=are+awesome"}
 
-        body_stream = AsgiRequestIO(receive)
-
         request = AsgiRequest(
             {
                 "http_version": "1.1",
@@ -105,7 +98,7 @@ class RequestTests(unittest.TestCase):
                     "content-length": b"18",
                 },
             },
-            body_stream,
+            AsgiRequestIO(receive),
         )
         self.assertEqual(request.path, "/test2/")
         self.assertEqual(request.method, "POST")
@@ -138,8 +131,6 @@ class RequestTests(unittest.TestCase):
         def receive():
             return {"type": "http.request", "body": body}
 
-        body_stream = AsgiRequestIO(receive)
-
         request = AsgiRequest(
             {
                 "http_version": "1.1",
@@ -150,7 +141,7 @@ class RequestTests(unittest.TestCase):
                     "content-length": str(len(body)).encode("ascii"),
                 },
             },
-            body_stream,
+            AsgiRequestIO(receive),
         )
         self.assertEqual(request.method, "POST")
         self.assertEqual(len(request.body), len(body))
@@ -180,7 +171,7 @@ class RequestTests(unittest.TestCase):
             b'Content-Disposition: form-data; name="txt"; filename="text.txt"\r\n\r\n',
             b"",
             b"FAKETEXT",
-            b"--BOUNDARY--\r\n"
+            b"--BOUNDARY--\r\n",
         ]
         body = b"".join(chunks)
 
@@ -190,8 +181,6 @@ class RequestTests(unittest.TestCase):
                 "body": chunks.pop(0),
                 "more_body": bool(chunks),
             }
-
-        body_stream = AsgiRequestIO(receive)
 
         request = AsgiRequest(
             {
@@ -203,7 +192,7 @@ class RequestTests(unittest.TestCase):
                     "content-length": str(len(body)).encode("ascii"),
                 },
             },
-            body_stream,
+            AsgiRequestIO(receive),
         )
 
         self.assertEqual(request.method, "POST")
@@ -222,8 +211,6 @@ class RequestTests(unittest.TestCase):
         def receive():
             return {"type": "http.request", "body": b"onetwothree"}
 
-        body_stream = AsgiRequestIO(receive)
-
         request = AsgiRequest(
             {
                 "http_version": "1.1",
@@ -231,7 +218,7 @@ class RequestTests(unittest.TestCase):
                 "path": "/",
                 "headers": {"host": b"example.com", "content-length": b"11"},
             },
-            body_stream,
+            AsgiRequestIO(receive),
         )
         self.assertEqual(request.method, "PUT")
         self.assertEqual(request.read(3), b"one")
@@ -254,8 +241,6 @@ class RequestTests(unittest.TestCase):
         def receive():
             return {"type": "http.request", "body": b""}
 
-        body_stream = AsgiRequestIO(receive)
-
         with override_settings(DATA_UPLOAD_MAX_MEMORY_SIZE=1):
             with pytest.raises(RequestDataTooBig):
                 AsgiRequest(
@@ -265,13 +250,15 @@ class RequestTests(unittest.TestCase):
                         "path": "/",
                         "headers": {"host": b"example.com", "content-length": b"1000"},
                     },
-                    body_stream,
+                    AsgiRequestIO(receive),
                 ).body
 
     def test_size_check_ignores_files(self):
-        name = b'Title'
-        title = b'My first book'
-        file_data = b"FAKEPDFBYTESGOHERETHISISREALLYLONGBUTNOTUSEDTOCOMPUTETHESIZEOFTHEREQUEST"
+        name = b"Title"
+        title = b"My first book"
+        file_data = (
+            b"FAKEPDFBYTESGOHERETHISISREALLYLONGBUTNOTUSEDTOCOMPUTETHESIZEOFTHEREQUEST"
+        )
         body = (
             b"--BOUNDARY\r\n"
             + b'Content-Disposition: form-data; name="'
@@ -311,11 +298,12 @@ class RequestTests(unittest.TestCase):
             with pytest.raises(RequestDataTooBig):
                 AsgiRequest(scope, AsgiRequestIO(receive)).POST
 
-
     def test_size_check_ignores_chunked_files(self):
-        name = b'Title'
-        title = b'My first book'
-        file_data = b"FAKEPDFBYTESGOHERETHISISREALLYLONGBUTNOTUSEDTOCOMPUTETHESIZEOFTHEREQUEST"
+        name = b"Title"
+        title = b"My first book"
+        file_data = (
+            b"FAKEPDFBYTESGOHERETHISISREALLYLONGBUTNOTUSEDTOCOMPUTETHESIZEOFTHEREQUEST"
+        )
         chunks = [
             b"--BOUNDARY\r\n",
             b'Content-Disposition: form-data; name="',
@@ -358,7 +346,7 @@ class RequestTests(unittest.TestCase):
             AsgiRequest(scope, AsgiRequestIO(receive)).POST
 
 
-### Handler tests
+# Handler tests
 
 
 class MockHandler(AsgiHandler):
@@ -367,12 +355,18 @@ class MockHandler(AsgiHandler):
     ripped out.
     """
 
-    def get_response(self, request):
+    @staticmethod
+    def fake_get_response(request):
+        """
+        Mocked 'get_response' method for AsgiHandler-AsgiRequest tests
+        with GET requests.
+        """
+        assert request.method == "GET"
         # Access request body to ensure it is read() in sync context.
-        request.body
-        # Capture request to inspect later.
-        self.request = request
+        _ = request.body
         return HttpResponse("fake")
+
+    get_response = Mock(side_effect=lambda r: MockHandler.fake_get_response(r))
 
 
 @pytest.mark.asyncio
@@ -386,8 +380,9 @@ async def test_handler_basic():
     await handler.receive_output(1)  # response start
     await handler.receive_output(1)  # response body
 
-    assert handler.instance.request.scope == scope
-    assert handler.instance.request.body == b""
+    request, = MockHandler.get_response.call_args[0]
+    assert request.scope == scope
+    assert request.body == b""
 
 
 @pytest.mark.asyncio
@@ -403,8 +398,9 @@ async def test_handler_body_single():
     await handler.receive_output(1)  # response start
     await handler.receive_output(1)  # response body
 
-    assert handler.instance.request.scope == scope
-    assert handler.instance.request.body == b"chunk one \x01 chunk two"
+    request, = MockHandler.get_response.call_args[0]
+    assert request.scope == scope
+    assert request.body == b"chunk one \x01 chunk two"
 
 
 @pytest.mark.asyncio
@@ -424,8 +420,9 @@ async def test_handler_body_multiple():
     await handler.receive_output(1)  # response start
     await handler.receive_output(1)  # response body
 
-    assert handler.instance.request.scope == scope
-    assert handler.instance.request.body == b"chunk one \x01 chunk two"
+    request, = MockHandler.get_response.call_args[0]
+    assert request.scope == scope
+    assert request.body == b"chunk one \x01 chunk two"
 
 
 @pytest.mark.asyncio
@@ -442,8 +439,9 @@ async def test_handler_body_ignore_extra():
     await handler.receive_output(1)  # response start
     await handler.receive_output(1)  # response body
 
-    assert handler.instance.request.scope == scope
-    assert handler.instance.request.body == b"chunk one"
+    request, = MockHandler.get_response.call_args[0]
+    assert request.scope == scope
+    assert request.body == b"chunk one"
 
 
 @pytest.mark.django_db(transaction=True)
