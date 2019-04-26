@@ -144,21 +144,20 @@ Put the following code in ``chat/templates/chat/index.html``::
     </head>
     <body>
         What chat room would you like to enter?<br/>
-        <input id="room-name-input" type="text" size="100"/><br/>
-        <input id="room-name-submit" type="button" value="Enter"/>
+        <form method="post" id="room-form">
+            <input id="room-name-input" type="text" required autofocus /><br/>
+            <input type="submit" value="Enter"/>
+        </form>
         
         <script>
-            document.querySelector('#room-name-input').focus();
-            document.querySelector('#room-name-input').onkeyup = function(e) {
-                if (e.keyCode === 13) {  // enter, return
-                    document.querySelector('#room-name-submit').click();
-                }
-            };
+            const roomNameInput = document.getElementById("room-name-input");
+            const roomForm = document.getElementById("room-form");
 
-            document.querySelector('#room-name-submit').onclick = function(e) {
-                var roomName = document.querySelector('#room-name-input').value;
-                window.location.pathname = '/chat/' + roomName + '/';
-            };
+            roomForm.addEventListener("submit", event => {
+                event.preventDefault();
+                const roomName = roomNameInput.value;
+                window.location.pathname = `/chat/${roomName}/`;
+            });
         </script>
     </body>
     </html>
