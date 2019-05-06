@@ -1,5 +1,3 @@
-from concurrent.futures import ThreadPoolExecutor
-
 from django.db import connections
 
 from asgiref.sync import SyncToAsync
@@ -23,13 +21,6 @@ class DatabaseSyncToAsync(SyncToAsync):
     SyncToAsync version that cleans up old database connections.
     """
 
-    executor = ThreadPoolExecutor(
-        # TODO
-        # max_workers=settings.N_SYNC_DATABASE_CONNECTIONS,
-        thread_name_prefix="our-database-sync-to-async-",
-        initializer=_inherit_main_thread_connections,
-    )
-
     def _close_old_connections(self):
         """Like django.db.close_old_connections, but skipping in_atomic_block."""
         for conn in connections.all():
@@ -38,6 +29,7 @@ class DatabaseSyncToAsync(SyncToAsync):
             conn.close_if_unusable_or_obsolete()
 
     def thread_handler(self, loop, *args, **kwargs):
+        _inherit_main_thread_connections()
         self._close_old_connections()
         try:
             return super().thread_handler(loop, *args, **kwargs)
