@@ -43,11 +43,11 @@ class DatabaseSyncToAsyncForTests(SyncToAsync):
 
     def thread_handler(self, loop, *args, **kwargs):
         self._inherit_main_thread_connections()
-        close_old_connections()
+        self._close_old_connections()
         try:
             return super().thread_handler(loop, *args, **kwargs)
         finally:
-            close_old_connections()
+            self._close_old_connections()
 
 
 # The class is TitleCased, but we want to encourage use as a callable/decorator
