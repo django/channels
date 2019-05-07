@@ -1,5 +1,4 @@
-from django.db import connections
-from django.db import close_old_connections
+from django.db import close_old_connections, connections
 
 from asgiref.sync import SyncToAsync
 
