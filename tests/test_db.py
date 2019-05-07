@@ -11,15 +11,17 @@ pytest_plugins = ["pytester"]
 ))
 @pytest.mark.parametrize("conn_max_age", (0, 600))
 async def test_database_sync_to_async(db_engine, conn_max_age, testdir):
+    if db_engine == "django.db.backends.postgresql":
+        pytest.importorskip("psycopg2")
+
     testdir.makeconftest(
         """
         from django.conf import settings
 
-
         settings.configure(
             DATABASES={
                 "default": {
-                    "ENGINE": "%s",
+                    "ENGINE": %r,
                     "CONN_MAX_AGE": %d,
                 }
             },
