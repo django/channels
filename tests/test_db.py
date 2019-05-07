@@ -24,6 +24,7 @@ async def test_database_sync_to_async(db_engine, conn_max_age, use_fix, testdir)
                 "default": {
                     "ENGINE": %r,
                     "CONN_MAX_AGE": %d,
+                    "NAME": "channels_tests",
                 }
             },
             INSTALLED_APPS=[
