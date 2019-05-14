@@ -19,11 +19,11 @@ class StaticFilesWrapper:
         self.application = application
         self.base_url = urlparse(self.get_base_url())
 
-    def get_base_url(self):
+    def get_base_url(self) -> str:
         utils.check_settings()
         return settings.STATIC_URL
 
-    def _should_handle(self, path):
+    def _should_handle(self, path) -> bool:
         """
         Checks if the path should be handled. Ignores the path if:
 

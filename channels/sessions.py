@@ -1,6 +1,7 @@
-import datetime
 import time
+from datetime import datetime, timedelta
 from importlib import import_module
+from typing import Union, Dict, Any
 
 from django.conf import settings
 from django.contrib.sessions.backends.base import UpdateError
@@ -48,17 +49,17 @@ class CookieMiddleware:
 
     @classmethod
     def set_cookie(
-        cls,
-        message,
-        key,
-        value="",
-        max_age=None,
-        expires=None,
-        path="/",
-        domain=None,
-        secure=False,
-        httponly=False,
-    ):
+            cls,
+            message: Dict[str, Any],
+            key: str,
+            value: str = "",
+            max_age: int = None,
+            expires: Union[datetime, str] = None,
+            path: str = "/",
+            domain: str = None,
+            secure: bool = False,
+            httponly: bool = False,
+    ) -> None:
         """
         Sets a cookie in the passed HTTP response message.
 
@@ -72,14 +73,14 @@ class CookieMiddleware:
         cookies = SimpleCookie()
         cookies[key] = value
         if expires is not None:
-            if isinstance(expires, datetime.datetime):
+            if isinstance(expires, datetime):
                 if timezone.is_aware(expires):
                     expires = timezone.make_naive(expires, timezone.utc)
                 delta = expires - expires.utcnow()
                 # Add one second so the date matches exactly (a fraction of
                 # time gets lost between converting to a timedelta and
                 # then the date string).
-                delta = delta + datetime.timedelta(seconds=1)
+                delta = delta + timedelta(seconds=1)
                 # Just set max_age - the max_age logic will set expires.
                 expires = None
                 max_age = max(0, delta.days * 86400 + delta.seconds)
@@ -107,7 +108,7 @@ class CookieMiddleware:
             )
 
     @classmethod
-    def delete_cookie(cls, message, key, path="/", domain=None):
+    def delete_cookie(cls, message: dict, key: str, path: str = "/", domain: str = None):
         """
         Deletes a cookie in a response.
         """
@@ -119,30 +120,6 @@ class CookieMiddleware:
             domain=domain,
             expires="Thu, 01-Jan-1970 00:00:00 GMT",
         )
-
-
-class SessionMiddleware:
-    """
-    Class that adds Django sessions (from HTTP cookies) to the
-    scope. Works with HTTP or WebSocket protocol types (or anything that
-    provides a "headers" entry in the scope).
-
-    Requires the CookieMiddleware to be higher up in the stack.
-    """
-
-    # Message types that trigger a session save if it's modified
-    save_message_types = ["http.response.start"]
-
-    # Message types that can carry session cookies back
-    cookie_response_message_types = ["http.response.start"]
-
-    def __init__(self, inner):
-        self.inner = inner
-        self.cookie_name = settings.SESSION_COOKIE_NAME
-        self.session_store = import_module(settings.SESSION_ENGINE).SessionStore
-
-    def __call__(self, scope):
-        return SessionMiddlewareInstance(scope, self)
 
 
 class SessionMiddlewareInstance:
@@ -182,7 +159,7 @@ class SessionMiddlewareInstance:
         self.real_send = send
         return await self.inner(receive, self.send)
 
-    async def send(self, message):
+    async def send(self, message: Dict[str, Any]):
         """
         Overridden send that also does session saves/cookies.
         """
@@ -194,9 +171,9 @@ class SessionMiddlewareInstance:
             # changed data, save it. We also save if it's empty as we might
             # not be able to send a cookie-delete along with this message.
             if (
-                message["type"] in self.middleware.save_message_types
-                and message.get("status", 200) != 500
-                and (modified or settings.SESSION_SAVE_EVERY_REQUEST)
+                    message["type"] in self.middleware.save_message_types
+                    and message.get("status", 200) != 500
+                    and (modified or settings.SESSION_SAVE_EVERY_REQUEST)
             ):
                 self.save_session()
                 # If this is a message type that can transport cookies back to the
@@ -235,7 +212,7 @@ class SessionMiddlewareInstance:
         # Pass up the send
         return await self.real_send(message)
 
-    def save_session(self):
+    def save_session(self) -> None:
         """
         Saves the current session.
         """
@@ -247,6 +224,30 @@ class SessionMiddlewareInstance:
                 "request completed. The user may have logged "
                 "out in a concurrent request, for example."
             )
+
+
+class SessionMiddleware:
+    """
+    Class that adds Django sessions (from HTTP cookies) to the
+    scope. Works with HTTP or WebSocket protocol types (or anything that
+    provides a "headers" entry in the scope).
+
+    Requires the CookieMiddleware to be higher up in the stack.
+    """
+
+    # Message types that trigger a session save if it's modified
+    save_message_types = ["http.response.start"]
+
+    # Message types that can carry session cookies back
+    cookie_response_message_types = ["http.response.start"]
+
+    def __init__(self, inner):
+        self.inner = inner
+        self.cookie_name = settings.SESSION_COOKIE_NAME
+        self.session_store = import_module(settings.SESSION_ENGINE).SessionStore
+
+    def __call__(self, scope) -> SessionMiddlewareInstance:
+        return SessionMiddlewareInstance(scope, self)
 
 
 # Shortcut to include cookie middleware

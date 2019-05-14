@@ -36,7 +36,7 @@ class AsyncConsumer:
     def __init__(self, scope):
         self.scope = scope
 
-    async def __call__(self, receive, send):
+    async def __call__(self, receive, send) -> None:
         """
         Dispatches incoming messages to type-based handlers asynchronously.
         """
@@ -64,7 +64,7 @@ class AsyncConsumer:
             # Exit cleanly
             pass
 
-    async def dispatch(self, message):
+    async def dispatch(self, message) -> None:
         """
         Works out what to do with a message.
         """
@@ -74,7 +74,7 @@ class AsyncConsumer:
         else:
             raise ValueError("No handler for message type %s" % message["type"])
 
-    async def send(self, message):
+    async def send(self, message) -> None:
         """
         Overrideable/callable-by-subclasses send method.
         """
@@ -95,7 +95,7 @@ class SyncConsumer(AsyncConsumer):
     _sync = True
 
     @database_sync_to_async
-    def dispatch(self, message):
+    def dispatch(self, message) -> None:
         """
         Dispatches incoming messages to type-based handlers asynchronously.
         """

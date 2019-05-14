@@ -1,5 +1,7 @@
-from channels.consumer import AsyncConsumer
+from _ast import Dict
+from typing import Any, Optional, List
 
+from channels.consumer import AsyncConsumer
 from ..exceptions import StopConsumer
 
 
@@ -13,7 +15,7 @@ class AsyncHttpConsumer(AsyncConsumer):
         super().__init__(*args, **kwargs)
         self.body = []
 
-    async def send_headers(self, *, status=200, headers=None):
+    async def send_headers(self, *, status: int = 200, headers: Optional[Dict, List] = None):
         """
         Sets the HTTP response status and headers. Headers may be provided as
         a list of tuples or as a dictionary.
@@ -31,7 +33,7 @@ class AsyncHttpConsumer(AsyncConsumer):
             {"type": "http.response.start", "status": status, "headers": headers}
         )
 
-    async def send_body(self, body, *, more_body=False):
+    async def send_body(self, body: bytes, *, more_body=False) -> None:
         """
         Sends a response body to the client. The method expects a bytestring.
 
@@ -44,7 +46,7 @@ class AsyncHttpConsumer(AsyncConsumer):
             {"type": "http.response.body", "body": body, "more_body": more_body}
         )
 
-    async def send_response(self, status, body, **kwargs):
+    async def send_response(self, status: int, body: bytes, **kwargs) -> None:
         """
         Sends a response to the client. This is a thin wrapper over
         ``self.send_headers`` and ``self.send_body``, and everything said
@@ -53,7 +55,7 @@ class AsyncHttpConsumer(AsyncConsumer):
         await self.send_headers(status=status, **kwargs)
         await self.send_body(body)
 
-    async def handle(self, body):
+    async def handle(self, body: bytes) -> None:
         """
         Receives the request body as a bytestring. Response may be composed
         using the ``self.send*`` methods; the return value of this method is
@@ -70,7 +72,7 @@ class AsyncHttpConsumer(AsyncConsumer):
         """
         pass
 
-    async def http_request(self, message):
+    async def http_request(self, message: Dict[str, Any]) -> None:
         """
         Async entrypoint - concatenates body fragments and hands off control
         to ``self.handle`` when the body has been completely received.
@@ -84,7 +86,7 @@ class AsyncHttpConsumer(AsyncConsumer):
                 await self.disconnect()
                 raise StopConsumer()
 
-    async def http_disconnect(self, message):
+    async def http_disconnect(self, message: Dict[str, Any]) -> None:
         """
         Let the user do their cleanup and close the consumer.
         """

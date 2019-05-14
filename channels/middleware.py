@@ -32,10 +32,18 @@ class BaseMiddleware:
         # Partially bind it to our coroutine entrypoint along with the scope
         return partial(self.coroutine_call, inner_instance, scope)
 
-    async def coroutine_call(self, inner_instance, scope, receive, send):
+    async def coroutine_call(self, inner_instance, scope, receive, send) -> None:
         """
         ASGI coroutine; where we can resolve items in the scope
         (but you can't modify it at the top level here!)
         """
         await self.resolve_scope(scope)
         await inner_instance(receive, send)
+
+    def populate_scope(self, scope) -> None:
+        raise NotImplementedError(
+            '{} is missing the implementation of the method `populate_scope()`'.format(self.__class__.__name__))
+
+    def resolve_scope(self, scope) -> None:
+        raise NotImplementedError(
+            '{} is missing the implementation of the method `resolve_scope()`'.format(self.__class__.__name__))

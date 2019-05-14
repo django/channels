@@ -1,3 +1,4 @@
+from typing import Optional, Dict, Any
 from urllib.parse import urlparse
 
 from django.conf import settings
@@ -16,7 +17,7 @@ class OriginValidator:
         self.application = application
         self.allowed_origins = allowed_origins
 
-    def __call__(self, scope):
+    def __call__(self, scope: Dict[str, Any]):
         # Make sure the scope is of type websocket
         if scope["type"] != "websocket":
             raise ValueError(
@@ -39,7 +40,7 @@ class OriginValidator:
             # Deny the connection
             return WebsocketDenier(scope)
 
-    def valid_origin(self, parsed_origin):
+    def valid_origin(self, parsed_origin) -> bool:
         """
         Checks parsed origin is None.
 
@@ -52,7 +53,7 @@ class OriginValidator:
             return False
         return self.validate_origin(parsed_origin)
 
-    def validate_origin(self, parsed_origin):
+    def validate_origin(self, parsed_origin) -> bool:
         """
         Validate the given origin for this site.
 
@@ -74,7 +75,7 @@ class OriginValidator:
             for pattern in self.allowed_origins
         )
 
-    def match_allowed_origin(self, parsed_origin, pattern):
+    def match_allowed_origin(self, parsed_origin, pattern) -> bool:
         """
         Returns ``True`` if the origin is either an exact match or a match
         to the wildcard pattern. Compares scheme, domain, port of origin and pattern.
@@ -106,14 +107,14 @@ class OriginValidator:
         pattern_port = self.get_origin_port(parsed_pattern)
         # Compares hostname, scheme, ports of pattern and origin
         if (
-            parsed_pattern.scheme == parsed_origin.scheme
-            and origin_port == pattern_port
-            and is_same_domain(parsed_origin.hostname, parsed_pattern.hostname)
+                parsed_pattern.scheme == parsed_origin.scheme
+                and origin_port == pattern_port
+                and is_same_domain(parsed_origin.hostname, parsed_pattern.hostname)
         ):
             return True
         return False
 
-    def get_origin_port(self, origin):
+    def get_origin_port(self, origin) -> Optional[int]:
         """
         Returns the origin.port or port for this schema by default.
         Otherwise, it returns None.
@@ -132,7 +133,7 @@ class OriginValidator:
             return None
 
 
-def AllowedHostsOriginValidator(application):
+def AllowedHostsOriginValidator(application) -> OriginValidator:
     """
     Factory function which returns an OriginValidator configured to use
     settings.ALLOWED_HOSTS.
@@ -148,5 +149,5 @@ class WebsocketDenier(AsyncWebsocketConsumer):
     Simple application which denies all requests to it.
     """
 
-    async def connect(self):
+    async def connect(self) -> None:
         await self.close()

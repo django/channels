@@ -3,7 +3,7 @@ import types
 from concurrent.futures import CancelledError
 
 
-def name_that_thing(thing):
+def name_that_thing(thing) -> str:
     """
     Returns either the function/class path or just the object's repr
     """
@@ -16,7 +16,7 @@ def name_that_thing(thing):
     # Other named thing
     if hasattr(thing, "__name__"):
         if hasattr(thing, "__class__") and not isinstance(
-            thing, (types.FunctionType, types.MethodType)
+                thing, (types.FunctionType, types.MethodType)
         ):
             if thing.__class__ is not type and not issubclass(thing.__class__, type):
                 return name_that_thing(thing.__class__)
@@ -30,7 +30,7 @@ def name_that_thing(thing):
     return repr(thing)
 
 
-async def await_many_dispatch(consumer_callables, dispatch):
+async def await_many_dispatch(consumer_callables, dispatch) -> None:
     """
     Given a set of consumer callables, awaits on them all and passes results
     from them to the dispatch awaitable as they come in.

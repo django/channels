@@ -1,3 +1,5 @@
+from typing import Dict, Any
+
 from django.conf import settings
 from django.contrib.auth import (
     BACKEND_SESSION_KEY,
@@ -53,7 +55,7 @@ def get_user(scope):
 
 
 @database_sync_to_async
-def login(scope, user, backend=None):
+def login(scope: Dict[str, Any], user, backend=None) -> None:
     """
     Persist a user id and a backend in the request.
     This way a user doesn't have to re-authenticate on every request.
@@ -75,10 +77,7 @@ def login(scope, user, backend=None):
         session_auth_hash = user.get_session_auth_hash()
     if SESSION_KEY in session:
         if _get_user_session_key(session) != user.pk or (
-            session_auth_hash
-            and not constant_time_compare(
-                session.get(HASH_SESSION_KEY, ""), session_auth_hash
-            )
+                session_auth_hash and not constant_time_compare(session.get(HASH_SESSION_KEY, ""), session_auth_hash)
         ):
             # To avoid reusing another user's session, create a new, empty
             # session if the existing session corresponds to a different
@@ -106,7 +105,7 @@ def login(scope, user, backend=None):
 
 
 @database_sync_to_async
-def logout(scope):
+def logout(scope) -> None:
     """
     Remove the authenticated user's ID from the request and flush their session data.
     """
@@ -152,7 +151,7 @@ class AuthMiddleware(BaseMiddleware):
     Requires SessionMiddleware to function.
     """
 
-    def populate_scope(self, scope):
+    def populate_scope(self, scope: Dict[str, Any]) -> None:
         # Make sure we have a session
         if "session" not in scope:
             raise ValueError(
@@ -162,7 +161,7 @@ class AuthMiddleware(BaseMiddleware):
         if "user" not in scope:
             scope["user"] = UserLazyObject()
 
-    async def resolve_scope(self, scope):
+    async def resolve_scope(self, scope: Dict[str, Any]) -> None:
         scope["user"]._wrapped = await get_user(scope)
 
 

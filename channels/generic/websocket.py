@@ -1,4 +1,5 @@
 import json
+from typing import List, Union
 
 from asgiref.sync import async_to_sync
 
@@ -17,7 +18,7 @@ class WebsocketConsumer(SyncConsumer):
     WebSocket handling model that other applications can build on.
     """
 
-    groups = None
+    groups: List[str] = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -42,16 +43,16 @@ class WebsocketConsumer(SyncConsumer):
         except DenyConnection:
             self.close()
 
-    def connect(self):
+    def connect(self) -> None:
         self.accept()
 
-    def accept(self, subprotocol=None):
+    def accept(self, subprotocol=None) -> None:
         """
         Accepts an incoming socket
         """
         super().send({"type": "websocket.accept", "subprotocol": subprotocol})
 
-    def websocket_receive(self, message):
+    def websocket_receive(self, message) -> None:
         """
         Called when a WebSocket frame is received. Decodes it and passes it
         to receive().
@@ -61,13 +62,13 @@ class WebsocketConsumer(SyncConsumer):
         else:
             self.receive(bytes_data=message["bytes"])
 
-    def receive(self, text_data=None, bytes_data=None):
+    def receive(self, text_data: str = None, bytes_data: bytes = None):
         """
         Called with a decoded WebSocket frame.
         """
         pass
 
-    def send(self, text_data=None, bytes_data=None, close=False):
+    def send(self, text_data: str = None, bytes_data: bytes = None, close: bool = False):
         """
         Sends a reply back down the WebSocket
         """
