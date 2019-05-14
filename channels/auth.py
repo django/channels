@@ -1,4 +1,4 @@
-from typing import Dict, Any, Union
+from typing import Dict, Any, Union, Awaitable
 
 from django.conf import settings
 from django.contrib.auth import (
@@ -22,7 +22,7 @@ from channels.sessions import CookieMiddleware, SessionMiddleware
 
 
 @database_sync_to_async
-def get_user(scope: Dict[str, Any]) -> Union[User, AnonymousUser]:
+def get_user(scope: Dict[str, Any]) -> Awaitable[Union[User, AnonymousUser]]:
     """
     Return the user model instance associated with the given scope.
     If no user is retrieved, return an instance of `AnonymousUser`.
