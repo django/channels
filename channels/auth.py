@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Dict, Any, Union
 
 from django.conf import settings
 from django.contrib.auth import (
@@ -11,7 +11,7 @@ from django.contrib.auth import (
     user_logged_in,
     user_logged_out,
 )
-from django.contrib.auth.models import AnonymousUser
+from django.contrib.auth.models import AnonymousUser, User
 from django.utils.crypto import constant_time_compare
 from django.utils.functional import LazyObject
 from django.utils.translation import LANGUAGE_SESSION_KEY
@@ -22,7 +22,7 @@ from channels.sessions import CookieMiddleware, SessionMiddleware
 
 
 @database_sync_to_async
-def get_user(scope):
+def get_user(scope: Dict[str, Any]) -> Union[User, AnonymousUser]:
     """
     Return the user model instance associated with the given scope.
     If no user is retrieved, return an instance of `AnonymousUser`.
@@ -105,7 +105,7 @@ def login(scope: Dict[str, Any], user, backend=None) -> None:
 
 
 @database_sync_to_async
-def logout(scope) -> None:
+def logout(scope: Dict[str, Any]) -> None:
     """
     Remove the authenticated user's ID from the request and flush their session data.
     """

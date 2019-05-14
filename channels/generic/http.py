@@ -1,5 +1,5 @@
 from _ast import Dict
-from typing import Any, Optional, List
+from typing import Any, Optional, List, Union
 
 from channels.consumer import AsyncConsumer
 from ..exceptions import StopConsumer
@@ -15,7 +15,7 @@ class AsyncHttpConsumer(AsyncConsumer):
         super().__init__(*args, **kwargs)
         self.body = []
 
-    async def send_headers(self, *, status: int = 200, headers: Optional[Dict, List] = None):
+    async def send_headers(self, *, status: int = 200, headers: Optional[Union[Dict, List]] = None):
         """
         Sets the HTTP response status and headers. Headers may be provided as
         a list of tuples or as a dictionary.
@@ -72,7 +72,7 @@ class AsyncHttpConsumer(AsyncConsumer):
         """
         pass
 
-    async def http_request(self, message: Dict[str, Any]) -> None:
+    async def http_request(self, message) -> None:
         """
         Async entrypoint - concatenates body fragments and hands off control
         to ``self.handle`` when the body has been completely received.
@@ -86,7 +86,7 @@ class AsyncHttpConsumer(AsyncConsumer):
                 await self.disconnect()
                 raise StopConsumer()
 
-    async def http_disconnect(self, message: Dict[str, Any]) -> None:
+    async def http_disconnect(self, message) -> None:
         """
         Let the user do their cleanup and close the consumer.
         """
