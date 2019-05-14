@@ -1,3 +1,4 @@
+from daphne.testing import DaphneProcess
 from django.core.exceptions import ImproperlyConfigured
 from django.db import connections
 from django.test.testcases import TransactionTestCase
@@ -5,7 +6,6 @@ from django.test.utils import modify_settings
 
 from channels.routing import get_default_application
 from channels.staticfiles import StaticFilesWrapper
-from daphne.testing import DaphneProcess
 
 
 class ChannelsLiveServerTestCase(TransactionTestCase):
@@ -22,14 +22,14 @@ class ChannelsLiveServerTestCase(TransactionTestCase):
     serve_static = True
 
     @property
-    def live_server_url(self):
+    def live_server_url(self) -> str:
         return "http://%s:%s" % (self.host, self._port)
 
     @property
-    def live_server_ws_url(self):
+    def live_server_ws_url(self) -> str:
         return "ws://%s:%s" % (self.host, self._port)
 
-    def _pre_setup(self):
+    def _pre_setup(self) -> None:
         for connection in connections.all():
             if self._is_in_memory_db(connection):
                 raise ImproperlyConfigured(
@@ -53,13 +53,13 @@ class ChannelsLiveServerTestCase(TransactionTestCase):
         self._server_process.ready.wait()
         self._port = self._server_process.port.value
 
-    def _post_teardown(self):
+    def _post_teardown(self) -> None:
         self._server_process.terminate()
         self._server_process.join()
         self._live_server_modified_settings.disable()
         super(ChannelsLiveServerTestCase, self)._post_teardown()
 
-    def _is_in_memory_db(self, connection):
+    def _is_in_memory_db(self, connection) -> bool:
         """
         Check if DatabaseWrapper holds in memory database.
         """
