@@ -72,7 +72,7 @@ class AsyncHttpConsumer(AsyncConsumer):
         """
         pass
 
-    async def http_request(self, message: Dict[str, Any]) -> None:
+    async def http_request(self, message) -> None:
         """
         Async entrypoint - concatenates body fragments and hands off control
         to ``self.handle`` when the body has been completely received.
@@ -86,7 +86,7 @@ class AsyncHttpConsumer(AsyncConsumer):
                 await self.disconnect()
                 raise StopConsumer()
 
-    async def http_disconnect(self, message: Dict[str, Any]) -> None:
+    async def http_disconnect(self, message) -> None:
         """
         Let the user do their cleanup and close the consumer.
         """
