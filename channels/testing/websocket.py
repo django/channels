@@ -1,5 +1,5 @@
 import json
-from typing import Tuple, Any, Optional, Dict
+from typing import Tuple, Any, Optional, Dict, List
 from urllib.parse import unquote, urlparse
 
 from asgiref.testing import ApplicationCommunicator
@@ -13,7 +13,7 @@ class WebsocketCommunicator(ApplicationCommunicator):
     (uninstantiated) along with the initial connection parameters.
     """
 
-    def __init__(self, application, path, headers=None, subprotocols=None):
+    def __init__(self, application, path:str, headers:List[Any]=None, subprotocols:List[str]=None):
         if not isinstance(path, str):
             raise TypeError("Expected str, got {}".format(type(path)))
         parsed = urlparse(path)
