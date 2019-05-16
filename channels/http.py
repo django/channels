@@ -4,7 +4,7 @@ import logging
 import sys
 import traceback
 from io import BytesIO
-from typing import Any, Dict, Callable
+from typing import Any, Dict, Callable, NoReturn
 
 from asgiref.sync import async_to_sync, sync_to_async
 from django import http
@@ -149,7 +149,7 @@ class AsgiRequest(http.HttpRequest):
             self._load_post_and_files()
         return self._post
 
-    def _set_post(self, post) -> None:
+    def _set_post(self, post) -> NoReturn:
         self._post = post
 
     def _get_files(self):
@@ -193,7 +193,7 @@ class AsgiHandler(base.BaseHandler):
         self.scope = scope
         self.load_middleware()
 
-    async def __call__(self, receive: Callable, send: Callable) -> None:
+    async def __call__(self, receive: Callable, send: Callable) -> NoReturn:
         """
         Async entrypoint - uses the sync_to_async wrapper to run things in a
         threadpool.
@@ -215,7 +215,7 @@ class AsgiHandler(base.BaseHandler):
                     return
 
     @sync_to_async
-    def handle(self, body: bytes) -> None:
+    def handle(self, body: bytes) -> NoReturn:
         """
         Synchronous message processing.
         """

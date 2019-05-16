@@ -1,4 +1,7 @@
-def monkeypatch_django()-> None:
+from typing import NoReturn
+
+
+def monkeypatch_django() -> NoReturn:
     """
     Monkeypatches support for us into parts of Django.
     """
@@ -7,6 +10,6 @@ def monkeypatch_django()-> None:
     from django.contrib.staticfiles.management.commands.runserver import (
         Command as StaticRunserverCommand,
     )
-    from .management.commands.runserver import Command as RunserverCommand
+    from channels.management.commands.runserver import Command as RunserverCommand
 
     StaticRunserverCommand.__bases__ = (RunserverCommand,)

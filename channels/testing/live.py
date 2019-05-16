@@ -1,3 +1,5 @@
+from typing import NoReturn
+
 from daphne.testing import DaphneProcess
 from django.core.exceptions import ImproperlyConfigured
 from django.db import connections
@@ -29,7 +31,7 @@ class ChannelsLiveServerTestCase(TransactionTestCase):
     def live_server_ws_url(self) -> str:
         return "ws://%s:%s" % (self.host, self._port)
 
-    def _pre_setup(self) -> None:
+    def _pre_setup(self) -> NoReturn:
         for connection in connections.all():
             if self._is_in_memory_db(connection):
                 raise ImproperlyConfigured(
@@ -53,7 +55,7 @@ class ChannelsLiveServerTestCase(TransactionTestCase):
         self._server_process.ready.wait()
         self._port = self._server_process.port.value
 
-    def _post_teardown(self) -> None:
+    def _post_teardown(self) -> NoReturn:
         self._server_process.terminate()
         self._server_process.join()
         self._live_server_modified_settings.disable()

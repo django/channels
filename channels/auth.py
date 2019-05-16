@@ -1,4 +1,4 @@
-from typing import Dict, Any, Union, Awaitable
+from typing import Dict, Any, Union, Awaitable, Optional, NoReturn
 
 from django.conf import settings
 from django.contrib.auth import (
@@ -11,7 +11,8 @@ from django.contrib.auth import (
     user_logged_in,
     user_logged_out,
 )
-from django.contrib.auth.models import AnonymousUser, User
+from django.contrib.auth.base_user import AbstractBaseUser
+from django.contrib.auth.models import AnonymousUser
 from django.utils.crypto import constant_time_compare
 from django.utils.functional import LazyObject
 from django.utils.translation import LANGUAGE_SESSION_KEY
@@ -22,7 +23,7 @@ from channels.sessions import CookieMiddleware, SessionMiddleware
 
 
 @database_sync_to_async
-def get_user(scope: Dict[str, Any]) -> Awaitable[Union[User, AnonymousUser]]:
+def get_user(scope: Dict[str, Any]) -> Awaitable[Union[AbstractBaseUser, AnonymousUser]]:
     """
     Return the user model instance associated with the given scope.
     If no user is retrieved, return an instance of `AnonymousUser`.
@@ -55,7 +56,7 @@ def get_user(scope: Dict[str, Any]) -> Awaitable[Union[User, AnonymousUser]]:
 
 
 @database_sync_to_async
-def login(scope: Dict[str, Any], user, backend=None) -> None:
+def login(scope: Dict[str, Any], user: Optional[Union[AbstractBaseUser, AnonymousUser]], backend=None) -> NoReturn:
     """
     Persist a user id and a backend in the request.
     This way a user doesn't have to re-authenticate on every request.
@@ -105,7 +106,7 @@ def login(scope: Dict[str, Any], user, backend=None) -> None:
 
 
 @database_sync_to_async
-def logout(scope: Dict[str, Any]) -> None:
+def logout(scope: Dict[str, Any]) -> NoReturn:
     """
     Remove the authenticated user's ID from the request and flush their session data.
     """
@@ -151,7 +152,7 @@ class AuthMiddleware(BaseMiddleware):
     Requires SessionMiddleware to function.
     """
 
-    def populate_scope(self, scope: Dict[str, Any]) -> None:
+    def populate_scope(self, scope: Dict[str, Any]) -> NoReturn:
         # Make sure we have a session
         if "session" not in scope:
             raise ValueError(
@@ -161,7 +162,7 @@ class AuthMiddleware(BaseMiddleware):
         if "user" not in scope:
             scope["user"] = UserLazyObject()
 
-    async def resolve_scope(self, scope: Dict[str, Any]) -> None:
+    async def resolve_scope(self, scope: Dict[str, Any]) -> NoReturn:
         scope["user"]._wrapped = await get_user(scope)
 
 

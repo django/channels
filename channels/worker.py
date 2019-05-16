@@ -1,4 +1,5 @@
 import asyncio
+from typing import NoReturn
 
 from asgiref.server import StatelessServer
 
@@ -16,7 +17,7 @@ class Worker(StatelessServer):
         if self.channel_layer is None:
             raise ValueError("Channel layer is not valid")
 
-    async def handle(self) -> None:
+    async def handle(self) -> NoReturn:
         """
         Listens on all the provided channels and handles the messages.
         """
@@ -29,7 +30,7 @@ class Worker(StatelessServer):
         # See if any of the listeners had an error (e.g. channel layer error)
         [listener.result() for listener in listeners]
 
-    async def listener(self, channel) -> None:
+    async def listener(self, channel) -> NoReturn:
         """
         Single-channel listener
         """

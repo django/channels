@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
 import importlib
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, NoReturn
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
@@ -122,7 +122,7 @@ class URLRouter:
                     " URLRouter instances instead." % (route,)
                 )
 
-    def __call__(self, scope: Dict[str, Any]) -> None:
+    def __call__(self, scope: Dict[str, Any]) -> NoReturn:
         # Get the path
         path = scope.get("path_remaining", scope.get("path", None))
         if path is None:

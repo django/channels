@@ -1,5 +1,5 @@
 import functools
-from typing import Any, Dict
+from typing import Any, Dict, NoReturn
 
 from asgiref.sync import async_to_sync
 
@@ -37,7 +37,7 @@ class AsyncConsumer:
     def __init__(self, scope: Dict[str, Any]):
         self.scope = scope
 
-    async def __call__(self, receive, send) -> None:
+    async def __call__(self, receive, send) -> NoReturn:
         """
         Dispatches incoming messages to type-based handlers asynchronously.
         """
@@ -65,7 +65,7 @@ class AsyncConsumer:
             # Exit cleanly
             pass
 
-    async def dispatch(self, message: Dict[str, Any]) -> None:
+    async def dispatch(self, message: Dict[str, Any]) -> NoReturn:
         """
         Works out what to do with a message.
         """
@@ -75,7 +75,7 @@ class AsyncConsumer:
         else:
             raise ValueError("No handler for message type %s" % message["type"])
 
-    async def send(self, message: Dict[str, Any]) -> None:
+    async def send(self, message: Dict[str, Any]) -> NoReturn:
         """
         Overrideable/callable-by-subclasses send method.
         """
@@ -96,7 +96,7 @@ class SyncConsumer(AsyncConsumer):
     _sync = True
 
     @database_sync_to_async
-    def dispatch(self, message: Dict[str, Any]) -> None:
+    def dispatch(self, message: Dict[str, Any]) -> NoReturn:
         """
         Dispatches incoming messages to type-based handlers asynchronously.
         """
@@ -107,7 +107,7 @@ class SyncConsumer(AsyncConsumer):
         else:
             raise ValueError("No handler for message type %s" % message["type"])
 
-    def send(self, message: Dict[str, Any])-> None:
+    def send(self, message: Dict[str, Any])-> NoReturn:
         """
         Overrideable/callable-by-subclasses send method.
         """

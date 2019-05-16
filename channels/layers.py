@@ -7,7 +7,7 @@ import re
 import string
 import time
 from copy import deepcopy
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, NoReturn
 
 from django.conf import settings
 from django.core.signals import setting_changed
@@ -27,7 +27,7 @@ class ChannelLayerManager:
         self.backends = {}
         setting_changed.connect(self._reset_backends)
 
-    def _reset_backends(self, setting, **kwargs) -> None:
+    def _reset_backends(self, setting, **kwargs) -> NoReturn:
         """
         Removes cached channel layers when the CHANNEL_LAYERS setting changes.
         """
@@ -268,7 +268,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
 
     ### Expire cleanup ###
 
-    def _clean_expired(self) -> None:
+    def _clean_expired(self) -> NoReturn:
         """
         Goes through all messages and groups and removes those that are expired.
         Any channel with an expired message is removed from all groups.
@@ -305,11 +305,11 @@ class InMemoryChannelLayer(BaseChannelLayer):
         self.channels = {}
         self.groups = {}
 
-    async def close(self) -> None:
+    async def close(self) -> NoReturn:
         # Nothing to go
         pass
 
-    def _remove_from_groups(self, channel: str) -> None:
+    def _remove_from_groups(self, channel: str) -> NoReturn:
         """
         Removes a channel from all groups. Used when a message on it expires.
         """
@@ -319,7 +319,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
 
     # Groups extension
 
-    async def group_add(self, group: str, channel: str) -> None:
+    async def group_add(self, group: str, channel: str) -> NoReturn:
         """
         Adds the channel name to a group.
         """
@@ -341,7 +341,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
             if not self.groups[group]:
                 del self.groups[group]
 
-    async def group_send(self, group: str, message: Dict[str, Any]) -> None:
+    async def group_send(self, group: str, message: Dict[str, Any]) -> NoReturn:
         # Check types
         assert isinstance(message, dict), "Message is not a dict"
         assert self.valid_group_name(group), "Invalid group name"

@@ -1,7 +1,7 @@
 import datetime
 import logging
 import sys
-from typing import Dict, Any, Union
+from typing import Dict, Any, Union, NoReturn
 
 from daphne.endpoints import build_endpoint_description_strings
 from daphne.server import Server
@@ -47,7 +47,7 @@ class Command(RunserverCommand):
             help="Specify the daphne websocket_handshake_timeout interval in seconds (default: 5)",
         )
 
-    def handle(self, *args, **options) -> None:
+    def handle(self, *args, **options) -> NoReturn:
         self.http_timeout = options.get("http_timeout", None)
         self.websocket_handshake_timeout = options.get("websocket_handshake_timeout", 5)
         # Check Channels is installed right
@@ -58,7 +58,7 @@ class Command(RunserverCommand):
         # Dispatch upward
         super().handle(*args, **options)
 
-    def inner_run(self, *args, **options) -> None:
+    def inner_run(self, *args, **options) -> NoReturn:
         # Maybe they want the wsgi one?
         if not options.get("use_asgi", True):
             if hasattr(RunserverCommand, "server_cls"):
@@ -129,7 +129,7 @@ class Command(RunserverCommand):
         else:
             return get_default_application()
 
-    def log_action(self, protocol: str, action: str, details: Dict[str, Any]) -> None:
+    def log_action(self, protocol: str, action: str, details: Dict[str, Any]) -> NoReturn:
         """
         Logs various different kinds of requests to the console.
         """

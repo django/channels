@@ -1,4 +1,4 @@
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, NoReturn
 from urllib.parse import urlparse
 
 from django.conf import settings
@@ -149,5 +149,5 @@ class WebsocketDenier(AsyncWebsocketConsumer):
     Simple application which denies all requests to it.
     """
 
-    async def connect(self) -> None:
+    async def connect(self) -> NoReturn:
         await self.close()

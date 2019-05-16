@@ -1,7 +1,7 @@
 import time
 from datetime import datetime, timedelta
 from importlib import import_module
-from typing import Union, Dict, Any, Optional, Callable, Awaitable
+from typing import Union, Dict, Any, Optional, Callable, Awaitable, NoReturn
 
 from django.conf import settings
 from django.contrib.sessions.backends.base import UpdateError
@@ -59,7 +59,7 @@ class CookieMiddleware:
             domain: Optional[str] = None,
             secure: bool = False,
             httponly: bool = False,
-    ) -> None:
+    ) -> NoReturn:
         """
         Sets a cookie in the passed HTTP response message.
 
@@ -212,7 +212,7 @@ class SessionMiddlewareInstance:
         # Pass up the send
         return await self.real_send(message)
 
-    def save_session(self) -> None:
+    def save_session(self) -> NoReturn:
         """
         Saves the current session.
         """
