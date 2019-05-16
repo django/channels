@@ -1,11 +1,11 @@
 import json
 
 import pytest
+from django.test import override_settings
 
 from channels.generic.http import AsyncHttpConsumer
-from channels.testing import HttpCommunicator
-from django.test import override_settings
 from channels.layers import get_channel_layer
+from channels.testing import HttpCommunicator
 
 
 @pytest.mark.asyncio
