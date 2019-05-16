@@ -1,4 +1,3 @@
-import asyncio
 import json
 
 import pytest
@@ -48,11 +47,11 @@ async def test_async_http_consumer_with_channel_layer():
         Abstract consumer that provides a method that handles running a command and getting a response on a
         device.
         """
-
-        groups = ['test_group']
+        channel_layer_alias = 'testlayer'
 
         async def handle(self, body):
-            print("Latest Channel ID: ")
+            # Add consumer to a known test group that we will use to send events to.
+            await self.channel_layer.group_add('test_group', self.channel_name)
             await self.send_headers(
                 status=200,
                 headers=[
@@ -61,13 +60,14 @@ async def test_async_http_consumer_with_channel_layer():
             )
 
         async def send_to_long_poll(self, event):
-            print("RunCommandConsumer: Event received on send to long poll.")
-            command_output = str(event['data']).encode('utf8')
-            await self.send_body(command_output, more_body=False)
+            received_data = str(event['data']).encode('utf8')
+            # We just echo what we receive, and close the response.
+            await self.send_body(received_data, more_body=False)
 
     channel_layers_setting = {
-        "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}
+        'testlayer': {"BACKEND": "channels.layers.InMemoryChannelLayer"}
     }
+
     with override_settings(CHANNEL_LAYERS=channel_layers_setting):
         # Open a connection
         communicator = HttpCommunicator(
@@ -77,14 +77,20 @@ async def test_async_http_consumer_with_channel_layer():
             body=json.dumps({"value": 42, "anything": False}).encode("utf-8"),
         )
 
-        def send_to_channel_layer():
-            print("send to channel layer called")
-            channel_layer = get_channel_layer()
-            # Test that the websocket channel was added to the group on connect
-            message = {"type": "send.to.long.poll", "data": "hello"}
-            asyncio.ensure_future(channel_layer.group_send("chat", message))
+        # We issue the HTTP request
+        await communicator.send_request()
 
-        asyncio.get_event_loop().call_later(3, send_to_channel_layer)
-        print("Making http requests.")
-        response = await communicator.get_response(timeout=10)
-        assert True
+        # Gets the response start (status and headers)
+        response_start = await communicator.get_response_start(timeout=1)
+
+        # Make sure that the start of the response looks good so far.
+        assert response_start['status'] == 200
+        assert response_start['headers'] == [(b'Content-Type', b'application/json')]
+
+        # Send now a message to the consumer through the channel layer. Using the known test_group.
+        channel_layer = get_channel_layer('testlayer')
+        await channel_layer.group_send('test_group', {"type": "send.to.long.poll", "data": "hello from channel layer"})
+
+        # Now we should be able to get the message back on the remaining chunk of body.
+        body = await communicator.get_body_chunk(timeout=1)
+        assert body == b"hello from channel layer"
