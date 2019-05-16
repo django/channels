@@ -1,7 +1,7 @@
 import time
 from datetime import datetime, timedelta
 from importlib import import_module
-from typing import Union, Dict, Any
+from typing import Union, Dict, Any, Optional, Callable, Awaitable
 
 from django.conf import settings
 from django.contrib.sessions.backends.base import UpdateError
@@ -53,10 +53,10 @@ class CookieMiddleware:
             message: Dict[str, Any],
             key: str,
             value: str = "",
-            max_age: int = None,
+            max_age: Optional[int] = None,
             expires: Union[datetime, str] = None,
             path: str = "/",
-            domain: str = None,
+            domain: Optional[str] = None,
             secure: bool = False,
             httponly: bool = False,
     ) -> None:
@@ -108,7 +108,7 @@ class CookieMiddleware:
             )
 
     @classmethod
-    def delete_cookie(cls, message: dict, key: str, path: str = "/", domain: str = None):
+    def delete_cookie(cls, message: dict, key: str, path: str = "/", domain: Optional[str] = None):
         """
         Deletes a cookie in a response.
         """
@@ -145,7 +145,7 @@ class SessionMiddlewareInstance:
         # Instantiate our inner application
         self.inner = self.middleware.inner(self.scope)
 
-    async def __call__(self, receive, send):
+    async def __call__(self, receive: Callable, send: Callable):
         """
         We intercept the send() callable so we can do session saves and
         add session cookie overrides to send back.
@@ -159,7 +159,7 @@ class SessionMiddlewareInstance:
         self.real_send = send
         return await self.inner(receive, self.send)
 
-    async def send(self, message: Dict[str, Any]):
+    async def send(self, message: Dict[str, Any]) -> Awaitable[None]:
         """
         Overridden send that also does session saves/cookies.
         """

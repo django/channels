@@ -107,7 +107,7 @@ class SyncConsumer(AsyncConsumer):
         else:
             raise ValueError("No handler for message type %s" % message["type"])
 
-    def send(self, message: Dict[str, Any]):
+    def send(self, message: Dict[str, Any])-> None:
         """
         Overrideable/callable-by-subclasses send method.
         """

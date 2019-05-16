@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import importlib
+from typing import Any, Dict, Optional, Tuple
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
@@ -13,7 +14,6 @@ try:
 except ImportError:  # Django 1.11
     from django.urls import RegexURLResolver as URLResolver
 
-
 """
 All Routing instances inside this file are also valid ASGI applications - with
 new Channels routing, whatever you end up with as the top level object is just
@@ -21,6 +21,28 @@ served up as the "ASGI application".
 """
 
 
+class ProtocolTypeRouter:
+    """
+    Takes a mapping of protocol type names to other Application instances,
+    and dispatches to the right one based on protocol name (or raises an error)
+    """
+
+    def __init__(self, application_mapping):
+        self.application_mapping = application_mapping
+        if "http" not in self.application_mapping:
+            self.application_mapping["http"] = AsgiHandler
+
+    # TODO don't know what this returns yet
+    def __call__(self, scope: Dict[str, Any]):
+        if scope["type"] in self.application_mapping:
+            return self.application_mapping[scope["type"]](scope)
+        else:
+            raise ValueError(
+                "No application configured for scope type %r" % scope["type"]
+            )
+
+
+# TODO does this return always a ProtocolTypeRouter
 def get_default_application():
     """
     Gets the default application, set in the ASGI_APPLICATION setting.
@@ -42,27 +64,7 @@ def get_default_application():
     return value
 
 
-class ProtocolTypeRouter:
-    """
-    Takes a mapping of protocol type names to other Application instances,
-    and dispatches to the right one based on protocol name (or raises an error)
-    """
-
-    def __init__(self, application_mapping):
-        self.application_mapping = application_mapping
-        if "http" not in self.application_mapping:
-            self.application_mapping["http"] = AsgiHandler
-
-    def __call__(self, scope):
-        if scope["type"] in self.application_mapping:
-            return self.application_mapping[scope["type"]](scope)
-        else:
-            raise ValueError(
-                "No application configured for scope type %r" % scope["type"]
-            )
-
-
-def route_pattern_match(route, path):
+def route_pattern_match(route, path: str) -> Optional[Tuple[str, Tuple[str, Any], Dict[str, Any]]]:
     """
     Backport of RegexPattern.match for Django versions before 2.0. Returns
     the remaining path and positional and keyword arguments matched.
@@ -73,7 +75,7 @@ def route_pattern_match(route, path):
             path, args, kwargs = match
             kwargs.update(route.default_args)
             return path, args, kwargs
-        return match
+        return None
 
     # Django<2.0. No converters... :-(
     match = route.regex.search(path)
@@ -85,7 +87,7 @@ def route_pattern_match(route, path):
         args = () if kwargs else match.groups()
         if kwargs is not None:
             kwargs.update(route.default_args)
-        return path[match.end() :], args, kwargs
+        return path[match.end():], args, kwargs
     return None
 
 
@@ -120,7 +122,7 @@ class URLRouter:
                     " URLRouter instances instead." % (route,)
                 )
 
-    def __call__(self, scope):
+    def __call__(self, scope: Dict[str, Any]) -> None:
         # Get the path
         path = scope.get("path_remaining", scope.get("path", None))
         if path is None:

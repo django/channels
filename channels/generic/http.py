@@ -65,7 +65,7 @@ class AsyncHttpConsumer(AsyncConsumer):
             "Subclasses of AsyncHttpConsumer must provide a handle() method."
         )
 
-    async def disconnect(self):
+    async def disconnect(self) -> None:
         """
         Overrideable place to run disconnect handling. Do not send anything
         from here.

@@ -7,16 +7,17 @@ import re
 import string
 import time
 from copy import deepcopy
+from typing import Dict, Any, Optional
 
 from django.conf import settings
 from django.core.signals import setting_changed
 from django.utils.module_loading import import_string
 
 from channels import DEFAULT_CHANNEL_LAYER
-
 from .exceptions import ChannelFull, InvalidChannelLayerError
 
 
+# TODO find out what backend type is
 class ChannelLayerManager:
     """
     Takes a settings dictionary of backends and initialises them on request.
@@ -26,7 +27,7 @@ class ChannelLayerManager:
         self.backends = {}
         setting_changed.connect(self._reset_backends)
 
-    def _reset_backends(self, setting, **kwargs):
+    def _reset_backends(self, setting, **kwargs) -> None:
         """
         Removes cached channel layers when the CHANNEL_LAYERS setting changes.
         """
@@ -34,18 +35,18 @@ class ChannelLayerManager:
             self.backends = {}
 
     @property
-    def configs(self):
+    def configs(self) -> Dict[str, Any]:
         # Lazy load settings so we can be imported
         return getattr(settings, "CHANNEL_LAYERS", {})
 
-    def make_backend(self, name):
+    def make_backend(self, name: str):
         """
         Instantiate channel layer.
         """
         config = self.configs[name].get("CONFIG", {})
         return self._make_backend(name, config)
 
-    def make_test_backend(self, name):
+    def make_test_backend(self, name: str):
         """
         Instantiate channel layer using its test config.
         """
@@ -55,7 +56,7 @@ class ChannelLayerManager:
             raise InvalidChannelLayerError("No TEST_CONFIG specified for %s" % name)
         return self._make_backend(name, config)
 
-    def _make_backend(self, name, config):
+    def _make_backend(self, name: str, config):
         # Check for old format config
         if "ROUTING" in self.configs[name]:
             raise InvalidChannelLayerError(
@@ -75,15 +76,15 @@ class ChannelLayerManager:
         # Initialise and pass config
         return backend_class(**config)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str):
         if key not in self.backends:
             self.backends[key] = self.make_backend(key)
         return self.backends[key]
 
-    def __contains__(self, key):
+    def __contains__(self, key: str) -> bool:
         return key in self.configs
 
-    def set(self, key, layer):
+    def set(self, key: str, layer):
         """
         Sets an alias to point to a new ChannelLayerWrapper instance, and
         returns the old one that it replaced. Useful for swapping out the
@@ -100,12 +101,13 @@ class BaseChannelLayer:
     common functionality.
     """
 
-    def __init__(self, expiry=60, capacity=100, channel_capacity=None):
+    def __init__(self, expiry: int = 60, capacity: int = 100, channel_capacity: Optional[dict] = None):
         self.expiry = expiry
         self.capacity = capacity
         self.channel_capacity = channel_capacity or {}
 
-    def compile_capacities(self, channel_capacity):
+    # TODO find out what channel capacity dictionary may cointain
+    def compile_capacities(self, channel_capacity: dict):
         """
         Takes an input channel_capacity dict and returns the compiled list
         of regexes that get_capacity will look for as self.channel_capacity
@@ -120,7 +122,7 @@ class BaseChannelLayer:
                 result.append((re.compile(fnmatch.translate(pattern)), value))
         return result
 
-    def get_capacity(self, channel):
+    def get_capacity(self, channel: str) -> int:
         """
         Gets the correct capacity for the given channel; either the default,
         or a matching result from channel_capacity. Returns the first matching
@@ -132,7 +134,7 @@ class BaseChannelLayer:
                 return capacity
         return self.capacity
 
-    def match_type_and_length(self, name):
+    def match_type_and_length(self, name: str) -> bool:
         if isinstance(name, str) and (len(name) < 100):
             return True
         return False
@@ -142,11 +144,11 @@ class BaseChannelLayer:
     channel_name_regex = re.compile(r"^[a-zA-Z\d\-_.]+(\![\d\w\-_.]*)?$")
     group_name_regex = re.compile(r"^[a-zA-Z\d\-_.]+$")
     invalid_name_error = (
-        "{} name must be a valid unicode string containing only ASCII "
-        + "alphanumerics, hyphens, underscores, or periods."
+            "{} name must be a valid unicode string containing only ASCII "
+            + "alphanumerics, hyphens, underscores, or periods."
     )
 
-    def valid_channel_name(self, name, receive=False):
+    def valid_channel_name(self, name: str, receive: bool = False) -> bool:
         if self.match_type_and_length(name):
             if bool(self.channel_name_regex.match(name)):
                 # Check cases for special channels
@@ -160,7 +162,7 @@ class BaseChannelLayer:
             + "alphanumerics, hyphens, or periods, not '{}'.".format(name)
         )
 
-    def valid_group_name(self, name):
+    def valid_group_name(self, name: str) -> bool:
         if self.match_type_and_length(name):
             if bool(self.group_name_regex.match(name)):
                 return True
@@ -169,7 +171,7 @@ class BaseChannelLayer:
             + "alphanumerics, hyphens, or periods."
         )
 
-    def valid_channel_names(self, names, receive=False):
+    def valid_channel_names(self, names: str, receive: bool = False) -> bool:
         _non_empty_list = True if names else False
         _names_type = isinstance(names, list)
         assert _non_empty_list and _names_type, "names must be a non-empty list"
@@ -179,7 +181,7 @@ class BaseChannelLayer:
         )
         return True
 
-    def non_local_name(self, name):
+    def non_local_name(self, name: str) -> str:
         """
         Given a channel name, returns the "non-local" part. If the channel name
         is a process-specific channel (contains !) this means the part up to
@@ -197,18 +199,16 @@ class InMemoryChannelLayer(BaseChannelLayer):
     """
 
     def __init__(
-        self,
-        expiry=60,
-        group_expiry=86400,
-        capacity=100,
-        channel_capacity=None,
-        **kwargs
+            self,
+            expiry: int = 60,
+            group_expiry: int = 86400,
+            capacity: int = 100,
+            channel_capacity: dict = None
     ):
         super().__init__(
             expiry=expiry,
             capacity=capacity,
-            channel_capacity=channel_capacity,
-            **kwargs
+            channel_capacity=channel_capacity
         )
         self.channels = {}
         self.groups = {}
@@ -218,7 +218,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
 
     extensions = ["groups", "flush"]
 
-    async def send(self, channel, message):
+    async def send(self, channel: str, message: Dict[str, Any]):
         """
         Send a message onto a (general or specific) channel.
         """
@@ -236,7 +236,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
         # Add message
         await queue.put((time.time() + self.expiry, deepcopy(message)))
 
-    async def receive(self, channel):
+    async def receive(self, channel: str) -> Dict[str, Any]:
         """
         Receive the first message that arrives on the channel.
         If more than one coroutine waits on the same channel, a random one
@@ -256,7 +256,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
 
         return message
 
-    async def new_channel(self, prefix="specific."):
+    async def new_channel(self, prefix: str = "specific.") -> str:
         """
         Returns a new channel name that can be used by something in our
         process as a specific channel.
@@ -268,7 +268,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
 
     ### Expire cleanup ###
 
-    def _clean_expired(self):
+    def _clean_expired(self) -> None:
         """
         Goes through all messages and groups and removes those that are expired.
         Any channel with an expired message is removed from all groups.
@@ -293,8 +293,8 @@ class InMemoryChannelLayer(BaseChannelLayer):
             for channel in list(self.groups.get(group, set())):
                 # If join time is older than group_expiry end the group membership
                 if (
-                    self.groups[group][channel]
-                    and int(self.groups[group][channel]) < timeout
+                        self.groups[group][channel]
+                        and int(self.groups[group][channel]) < timeout
                 ):
                     # Delete from group
                     del self.groups[group][channel]
@@ -305,11 +305,11 @@ class InMemoryChannelLayer(BaseChannelLayer):
         self.channels = {}
         self.groups = {}
 
-    async def close(self):
+    async def close(self) -> None:
         # Nothing to go
         pass
 
-    def _remove_from_groups(self, channel):
+    def _remove_from_groups(self, channel: str) -> None:
         """
         Removes a channel from all groups. Used when a message on it expires.
         """
@@ -317,9 +317,9 @@ class InMemoryChannelLayer(BaseChannelLayer):
             if channel in channels:
                 del channels[channel]
 
-    ### Groups extension ###
+    # Groups extension
 
-    async def group_add(self, group, channel):
+    async def group_add(self, group: str, channel: str) -> None:
         """
         Adds the channel name to a group.
         """
@@ -341,7 +341,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
             if not self.groups[group]:
                 del self.groups[group]
 
-    async def group_send(self, group, message):
+    async def group_send(self, group: str, message: Dict[str, Any]) -> None:
         # Check types
         assert isinstance(message, dict), "Message is not a dict"
         assert self.valid_group_name(group), "Invalid group name"
@@ -355,7 +355,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
                 pass
 
 
-def get_channel_layer(alias=DEFAULT_CHANNEL_LAYER):
+def get_channel_layer(alias: str = DEFAULT_CHANNEL_LAYER) -> Optional[BaseChannelLayer]:
     """
     Returns a channel layer by alias, or None if it is not configured.
     """

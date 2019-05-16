@@ -1,17 +1,17 @@
 import datetime
 import logging
 import sys
+from typing import Dict, Any, Union
 
+from daphne.endpoints import build_endpoint_description_strings
+from daphne.server import Server
 from django.apps import apps
 from django.conf import settings
 from django.core.management import CommandError
 from django.core.management.commands.runserver import Command as RunserverCommand
 
 from channels import __version__
-from channels.routing import get_default_application
-from daphne.endpoints import build_endpoint_description_strings
-from daphne.server import Server
-
+from channels.routing import get_default_application, ProtocolTypeRouter
 from ...staticfiles import StaticFilesWrapper
 
 logger = logging.getLogger("django.channels.server")
@@ -47,7 +47,7 @@ class Command(RunserverCommand):
             help="Specify the daphne websocket_handshake_timeout interval in seconds (default: 5)",
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         self.http_timeout = options.get("http_timeout", None)
         self.websocket_handshake_timeout = options.get("websocket_handshake_timeout", 5)
         # Check Channels is installed right
@@ -58,11 +58,12 @@ class Command(RunserverCommand):
         # Dispatch upward
         super().handle(*args, **options)
 
-    def inner_run(self, *args, **options):
+    def inner_run(self, *args, **options) -> None:
         # Maybe they want the wsgi one?
         if not options.get("use_asgi", True):
             if hasattr(RunserverCommand, "server_cls"):
                 self.server_cls = RunserverCommand.server_cls
+            # TODO this does not return anything maybe is better to return after calling runserver inner run
             return RunserverCommand.inner_run(self, *args, **options)
         # Run checks
         self.stdout.write("Performing system checks...\n\n")
@@ -113,7 +114,8 @@ class Command(RunserverCommand):
                 self.stdout.write(shutdown_message)
             return
 
-    def get_application(self, options):
+    # TODO is this Union[StaticFilesWrapper, ProtocolTypeRouter]
+    def get_application(self, options: Dict[str, Any]):
         """
         Returns the static files serving application wrapping the default application,
         if static files should be served. Otherwise just returns the default
@@ -127,7 +129,7 @@ class Command(RunserverCommand):
         else:
             return get_default_application()
 
-    def log_action(self, protocol, action, details):
+    def log_action(self, protocol: str, action: str, details: Dict[str, Any]) -> None:
         """
         Logs various different kinds of requests to the console.
         """

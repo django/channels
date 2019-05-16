@@ -13,7 +13,7 @@ class WebsocketCommunicator(ApplicationCommunicator):
     (uninstantiated) along with the initial connection parameters.
     """
 
-    def __init__(self, application, path:str, headers:List[Any]=None, subprotocols:List[str]=None):
+    def __init__(self, application, path: str, headers: List[Any] = None, subprotocols: List[str] = None):
         if not isinstance(path, str):
             raise TypeError("Expected str, got {}".format(type(path)))
         parsed = urlparse(path)
@@ -40,7 +40,7 @@ class WebsocketCommunicator(ApplicationCommunicator):
         else:
             return True, response.get("subprotocol", None)
 
-    async def send_to(self, text_data=None, bytes_data=None) -> None:
+    async def send_to(self, text_data: Optional[str] = None, bytes_data: Optional[bytes] = None) -> None:
         """
         Sends a WebSocket frame to the application.
         """
@@ -58,7 +58,7 @@ class WebsocketCommunicator(ApplicationCommunicator):
             ), "The bytes_data argument must be bytes"
             await self.send_input({"type": "websocket.receive", "bytes": bytes_data})
 
-    async def send_json_to(self, data: Dict[str, Any]):
+    async def send_json_to(self, data: Dict[str, Any]) -> None:
         """
         Sends JSON data as a text frame
         """

@@ -1,4 +1,4 @@
-def monkeypatch_django():
+def monkeypatch_django()-> None:
     """
     Monkeypatches support for us into parts of Django.
     """

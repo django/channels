@@ -4,7 +4,9 @@ import logging
 import sys
 import traceback
 from io import BytesIO
+from typing import Any, Dict, Callable
 
+from asgiref.sync import async_to_sync, sync_to_async
 from django import http
 from django.conf import settings
 from django.core import signals
@@ -14,7 +16,6 @@ from django.http import FileResponse, HttpResponse, HttpResponseServerError
 from django.urls import set_script_prefix
 from django.utils.functional import cached_property
 
-from asgiref.sync import async_to_sync, sync_to_async
 from channels.exceptions import RequestAborted, RequestTimeout
 
 logger = logging.getLogger("django.request")
@@ -39,7 +40,7 @@ class AsgiRequest(http.HttpRequest):
         self.script_name = self.scope.get("root_path", "")
         if self.script_name and scope["path"].startswith(self.script_name):
             # TODO: Better is-prefix checking, slash handling?
-            self.path_info = scope["path"][len(self.script_name) :]
+            self.path_info = scope["path"][len(self.script_name):]
         else:
             self.path_info = scope["path"]
 
@@ -121,8 +122,8 @@ class AsgiRequest(http.HttpRequest):
 
         # Limit the maximum request data size that will be handled in-memory.
         if (
-            settings.DATA_UPLOAD_MAX_MEMORY_SIZE is not None
-            and self._content_length > settings.DATA_UPLOAD_MAX_MEMORY_SIZE
+                settings.DATA_UPLOAD_MAX_MEMORY_SIZE is not None
+                and self._content_length > settings.DATA_UPLOAD_MAX_MEMORY_SIZE
         ):
             raise RequestDataTooBig(
                 "Request body exceeded settings.DATA_UPLOAD_MAX_MEMORY_SIZE."
@@ -139,7 +140,7 @@ class AsgiRequest(http.HttpRequest):
     def GET(self):
         return http.QueryDict(self.scope.get("query_string", ""))
 
-    def _get_scheme(self):
+    def _get_scheme(self) -> str:
         return self.scope.get("scheme", "http")
 
     def _get_post(self):
@@ -148,7 +149,7 @@ class AsgiRequest(http.HttpRequest):
             self._load_post_and_files()
         return self._post
 
-    def _set_post(self, post):
+    def _set_post(self, post) -> None:
         self._post = post
 
     def _get_files(self):
@@ -161,7 +162,7 @@ class AsgiRequest(http.HttpRequest):
     FILES = property(_get_files)
 
     @cached_property
-    def COOKIES(self):
+    def COOKIES(self) -> Dict[str, Any]:
         return http.parse_cookie(self.META.get("HTTP_COOKIE", ""))
 
 
@@ -192,7 +193,7 @@ class AsgiHandler(base.BaseHandler):
         self.scope = scope
         self.load_middleware()
 
-    async def __call__(self, receive, send):
+    async def __call__(self, receive: Callable, send: Callable) -> None:
         """
         Async entrypoint - uses the sync_to_async wrapper to run things in a
         threadpool.
@@ -214,7 +215,7 @@ class AsgiHandler(base.BaseHandler):
                     return
 
     @sync_to_async
-    def handle(self, body):
+    def handle(self, body: bytes) -> None:
         """
         Synchronous message processing.
         """
@@ -276,8 +277,8 @@ class AsgiHandler(base.BaseHandler):
         # Because we create an AsgiHandler on every HTTP request
         # we need to preserve the Django middleware chain once we load it.
         if (
-            hasattr(self.__class__, "_middleware_chain")
-            and self.__class__._middleware_chain
+                hasattr(self.__class__, "_middleware_chain")
+                and self.__class__._middleware_chain
         ):
             self._middleware_chain = self.__class__._middleware_chain
             self._view_middleware = self.__class__._view_middleware
@@ -367,7 +368,7 @@ class AsgiHandler(base.BaseHandler):
             return
         while position < len(data):
             yield (
-                data[position : position + cls.chunk_size],
+                data[position: position + cls.chunk_size],
                 (position + cls.chunk_size) >= len(data),
             )
             position += cls.chunk_size
