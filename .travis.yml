@@ -1,4 +1,4 @@
-sudo: false
+dist: xenial
 
 language: python
 
@@ -7,9 +7,9 @@ python:
   - "3.5"
 
 env:
-  - DJANGO="Django>=1.11,<2.0"
-  - DJANGO="Django>=2.0,<2.1"
-  - DJANGO="Django>=2.1,<2.2"
+  - DJANGO="Django==1.11.*"
+  - DJANGO="Django==2.1.*"
+  - DJANGO="Django==2.2.*"
 
 install:
   - pip install -U pip wheel setuptools
@@ -20,27 +20,23 @@ script:
   - pytest
 
 stages:
-  - lint
   - test
+  - lint
   - name: release
     if: tag IS present
 
 jobs:
   include:
     - python: "3.7"
-      env: DJANGO="Django>=2.0,<2.1"
-      dist: xenial
-      sudo: required
+      env: DJANGO="Django==2.1.*"
     - python: "3.7"
-      env: DJANGO="Django>=2.1,<2.2"
-      dist: xenial
-      sudo: required
+      env: DJANGO="Django==2.2.*"
 
     - stage: lint
       install: pip install -U -e .[tests] black pyflakes isort
       script:
         - pyflakes channels tests
-        - black --check channels tests
+        - black --check --diff channels tests
         - isort --check-only --diff --recursive channels tests
 
     - stage: release
