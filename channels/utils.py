@@ -1,7 +1,7 @@
 import asyncio
 import types
 from concurrent.futures import CancelledError
-from typing import Callable, Any, NoReturn
+from typing import Callable, Any, NoReturn, List
 
 
 def name_that_thing(thing: Any) -> str:
@@ -31,7 +31,7 @@ def name_that_thing(thing: Any) -> str:
     return repr(thing)
 
 
-async def await_many_dispatch(consumer_callables, dispatch: Callable) -> NoReturn:
+async def await_many_dispatch(consumer_callables: List[Callable], dispatch: Callable) -> NoReturn:
     """
     Given a set of consumer callables, awaits on them all and passes results
     from them to the dispatch awaitable as they come in.

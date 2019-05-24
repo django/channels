@@ -4,15 +4,15 @@ import logging
 import sys
 import traceback
 from io import BytesIO
-from typing import Any, Dict, Callable, NoReturn
+from typing import Any, Dict, Callable, NoReturn, Generator
 
 from asgiref.sync import async_to_sync, sync_to_async
-from django import http
 from django.conf import settings
 from django.core import signals
 from django.core.exceptions import RequestDataTooBig
 from django.core.handlers import base
-from django.http import FileResponse, HttpResponse, HttpResponseServerError
+from django.http import FileResponse, HttpResponse, HttpResponseServerError, QueryDict, HttpRequest, parse_cookie, \
+    HttpResponseBadRequest
 from django.urls import set_script_prefix
 from django.utils.functional import cached_property
 
@@ -21,7 +21,7 @@ from channels.exceptions import RequestAborted, RequestTimeout
 logger = logging.getLogger("django.request")
 
 
-class AsgiRequest(http.HttpRequest):
+class AsgiRequest(HttpRequest):
     """
     Custom request subclass that decodes from an ASGI-standard request
     dict, and wraps request body handling.
@@ -137,8 +137,8 @@ class AsgiRequest(http.HttpRequest):
         self.resolver_match = None
 
     @cached_property
-    def GET(self):
-        return http.QueryDict(self.scope.get("query_string", ""))
+    def GET(self) -> QueryDict:
+        return QueryDict(self.scope.get("query_string", ""))
 
     def _get_scheme(self) -> str:
         return self.scope.get("scheme", "http")
@@ -163,7 +163,7 @@ class AsgiRequest(http.HttpRequest):
 
     @cached_property
     def COOKIES(self) -> Dict[str, Any]:
-        return http.parse_cookie(self.META.get("HTTP_COOKIE", ""))
+        return parse_cookie(self.META.get("HTTP_COOKIE", ""))
 
 
 class AsgiHandler(base.BaseHandler):
@@ -234,7 +234,7 @@ class AsgiHandler(base.BaseHandler):
                 exc_info=sys.exc_info(),
                 extra={"status_code": 400},
             )
-            response = http.HttpResponseBadRequest()
+            response = HttpResponseBadRequest()
         except RequestTimeout:
             # Parsing the rquest failed, so the response is a Request Timeout error
             response = HttpResponse("408 Request Timeout (upload too slow)", status=408)
@@ -261,6 +261,7 @@ class AsgiHandler(base.BaseHandler):
         # There's no WSGI server to catch the exception further up if this fails,
         # so translate it into a plain text response.
         try:
+            # TODO why this is here? There's no such method in BaseHandler class
             return super(AsgiHandler, self).handle_uncaught_exception(
                 request, resolver, exc_info
             )
@@ -270,7 +271,7 @@ class AsgiHandler(base.BaseHandler):
                 content_type="text/plain",
             )
 
-    def load_middleware(self):
+    def load_middleware(self) -> NoReturn:
         """
         Loads the Django middleware chain and caches it on the class.
         """
@@ -307,7 +308,7 @@ class AsgiHandler(base.BaseHandler):
                 self.__class__._response_middleware = self._response_middleware
 
     @classmethod
-    def encode_response(cls, response):
+    def encode_response(cls, response) -> Generator[Dict[str, Any]]:
         """
         Encodes a Django HTTP response into ASGI http.response message(s).
         """
@@ -357,7 +358,7 @@ class AsgiHandler(base.BaseHandler):
                 }
 
     @classmethod
-    def chunk_bytes(cls, data):
+    def chunk_bytes(cls, data: bytes) -> NoReturn:
         """
         Chunks some data up so it can be sent in reasonable size messages.
         Yields (chunk, last_chunk) tuples.

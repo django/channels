@@ -218,7 +218,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
 
     extensions = ["groups", "flush"]
 
-    async def send(self, channel: str, message: Dict[str, Any]):
+    async def send(self, channel: str, message: Dict[str, Any]) -> NoReturn:
         """
         Send a message onto a (general or specific) channel.
         """
@@ -301,7 +301,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
 
     ### Flush extension ###
 
-    async def flush(self):
+    async def flush(self) -> NoReturn:
         self.channels = {}
         self.groups = {}
 
@@ -330,7 +330,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
         self.groups.setdefault(group, {})
         self.groups[group][channel] = time.time()
 
-    async def group_discard(self, group, channel):
+    async def group_discard(self, group: str, channel: str) -> NoReturn:
         # Both should be text and valid
         assert self.valid_channel_name(channel), "Invalid channel name"
         assert self.valid_group_name(group), "Invalid group name"

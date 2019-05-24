@@ -29,7 +29,7 @@ class CookieMiddleware:
     def __init__(self, inner):
         self.inner = inner
 
-    def __call__(self, scope):
+    def __call__(self, scope: Dict[str, Any]):
         # Check this actually has headers. They're a required scope key for HTTP and WS.
         if "headers" not in scope:
             raise ValueError(
@@ -54,7 +54,7 @@ class CookieMiddleware:
             key: str,
             value: str = "",
             max_age: Optional[int] = None,
-            expires: Union[datetime, str] = None,
+            expires: Optional[Union[datetime, str]] = None,
             path: str = "/",
             domain: Optional[str] = None,
             secure: bool = False,
@@ -108,11 +108,11 @@ class CookieMiddleware:
             )
 
     @classmethod
-    def delete_cookie(cls, message: dict, key: str, path: str = "/", domain: Optional[str] = None):
+    def delete_cookie(cls, message: dict, key: str, path: str = "/", domain: Optional[str] = None) -> NoReturn:
         """
         Deletes a cookie in a response.
         """
-        return cls.set_cookie(
+        cls.set_cookie(
             message,
             key,
             max_age=0,
@@ -127,7 +127,7 @@ class SessionMiddlewareInstance:
     Inner class that is instantiated once per scope.
     """
 
-    def __init__(self, scope, middleware):
+    def __init__(self, scope: Dict[str, Any], middleware):
         self.middleware = middleware
         self.scope = dict(scope)
         if "session" in self.scope:
@@ -159,7 +159,7 @@ class SessionMiddlewareInstance:
         self.real_send = send
         return await self.inner(receive, self.send)
 
-    async def send(self, message: Dict[str, Any]) -> Awaitable[None]:
+    async def send(self, message: Dict[str, Any]) -> Awaitable[Any]:
         """
         Overridden send that also does session saves/cookies.
         """
@@ -246,7 +246,7 @@ class SessionMiddleware:
         self.cookie_name = settings.SESSION_COOKIE_NAME
         self.session_store = import_module(settings.SESSION_ENGINE).SessionStore
 
-    def __call__(self, scope) -> SessionMiddlewareInstance:
+    def __call__(self, scope: Dict[str, Any]) -> SessionMiddlewareInstance:
         return SessionMiddlewareInstance(scope, self)
 
 

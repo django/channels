@@ -35,7 +35,8 @@ class BaseMiddleware:
         # Partially bind it to our coroutine entrypoint along with the scope
         return partial(self.coroutine_call, inner_instance, scope)
 
-    async def coroutine_call(self, inner_instance, scope: Dict[str, Any], receive: Callable, send: Callable) -> NoReturn:
+    async def coroutine_call(self, inner_instance, scope: Dict[str, Any], receive: Callable,
+                             send: Callable) -> NoReturn:
         """
         ASGI coroutine; where we can resolve items in the scope
         (but you can't modify it at the top level here!)

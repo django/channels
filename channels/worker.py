@@ -30,7 +30,7 @@ class Worker(StatelessServer):
         # See if any of the listeners had an error (e.g. channel layer error)
         [listener.result() for listener in listeners]
 
-    async def listener(self, channel) -> NoReturn:
+    async def listener(self, channel: str) -> NoReturn:
         """
         Single-channel listener
         """
