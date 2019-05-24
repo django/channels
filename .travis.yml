@@ -4,7 +4,6 @@ language: python
 
 python:
   - "3.6"
-  - "3.5"
 
 env:
   - DJANGO="Django==1.11.*"
