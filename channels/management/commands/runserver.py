@@ -1,7 +1,7 @@
 import datetime
 import logging
 import sys
-from typing import Dict, Any, Union, NoReturn
+from typing import Dict, Any, NoReturn
 
 from daphne.endpoints import build_endpoint_description_strings
 from daphne.server import Server
@@ -11,8 +11,8 @@ from django.core.management import CommandError
 from django.core.management.commands.runserver import Command as RunserverCommand
 
 from channels import __version__
-from channels.routing import get_default_application, ProtocolTypeRouter
-from ...staticfiles import StaticFilesWrapper
+from channels.routing import get_default_application
+from channels.staticfiles import StaticFilesWrapper
 
 logger = logging.getLogger("django.channels.server")
 
