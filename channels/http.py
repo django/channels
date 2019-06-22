@@ -308,7 +308,7 @@ class AsgiHandler(base.BaseHandler):
                 self.__class__._response_middleware = self._response_middleware
 
     @classmethod
-    def encode_response(cls, response) -> Generator[Dict[str, Any]]:
+    def encode_response(cls, response) -> Generator[Dict[str, Any], None, None]:
         """
         Encodes a Django HTTP response into ASGI http.response message(s).
         """
