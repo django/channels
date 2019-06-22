@@ -18,7 +18,7 @@ class WebsocketConsumer(SyncConsumer):
     WebSocket handling model that other applications can build on.
     """
 
-    groups: List[str] = None
+    groups = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
