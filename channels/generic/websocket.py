@@ -201,9 +201,7 @@ class AsyncWebsocketConsumer(AsyncConsumer):
         else:
             await self.receive(bytes_data=message["bytes"])
 
-    async def receive(
-        self, text_data: str = None, bytes_data: bytes = None
-    ) -> None:
+    async def receive(self, text_data: str = None, bytes_data: bytes = None) -> None:
         """
         Called with a decoded WebSocket frame.
         """

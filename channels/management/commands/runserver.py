@@ -129,9 +129,7 @@ class Command(RunserverCommand):
         else:
             return get_default_application()
 
-    def log_action(
-        self, protocol: str, action: str, details: Dict[str, Any]
-    ) -> None:
+    def log_action(self, protocol: str, action: str, details: Dict[str, Any]) -> None:
         """
         Logs various different kinds of requests to the console.
         """
