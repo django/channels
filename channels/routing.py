@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
 import importlib
-from typing import Any, Dict, Optional, Tuple, NoReturn
+from typing import Any, Dict, NoReturn, Optional, Tuple
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured

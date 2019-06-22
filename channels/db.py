@@ -1,6 +1,5 @@
-from django.db import close_old_connections
-
 from asgiref.sync import SyncToAsync
+from django.db import close_old_connections
 
 
 class DatabaseSyncToAsync(SyncToAsync):

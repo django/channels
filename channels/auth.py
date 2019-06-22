@@ -1,4 +1,4 @@
-from typing import Dict, Any, Union, Awaitable, Optional, NoReturn
+from typing import Any, Awaitable, Dict, NoReturn, Optional, Union
 
 from django.conf import settings
 from django.contrib.auth import (

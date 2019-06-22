@@ -3,11 +3,11 @@ from typing import Any, Dict, NoReturn
 
 from asgiref.sync import async_to_sync
 
-from . import DEFAULT_CHANNEL_LAYER
-from .db import database_sync_to_async
-from .exceptions import StopConsumer
-from .layers import get_channel_layer
-from .utils import await_many_dispatch
+from channels import DEFAULT_CHANNEL_LAYER
+from channels.db import database_sync_to_async
+from channels.exceptions import StopConsumer
+from channels.layers import get_channel_layer
+from channels.utils import await_many_dispatch
 
 
 def get_handler_name(message: Dict[str, Any]) -> str:
@@ -107,7 +107,7 @@ class SyncConsumer(AsyncConsumer):
         else:
             raise ValueError("No handler for message type %s" % message["type"])
 
-    def send(self, message: Dict[str, Any])-> NoReturn:
+    def send(self, message: Dict[str, Any]) -> NoReturn:
         """
         Overrideable/callable-by-subclasses send method.
         """

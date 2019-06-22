@@ -1,10 +1,10 @@
 import json
-from typing import List, Dict, Any, NoReturn
+from typing import Any, Dict, List, NoReturn
 
 from asgiref.sync import async_to_sync
 
-from ..consumer import AsyncConsumer, SyncConsumer
-from ..exceptions import (
+from channels.consumer import AsyncConsumer, SyncConsumer
+from channels.exceptions import (
     AcceptConnection,
     DenyConnection,
     InvalidChannelLayerError,

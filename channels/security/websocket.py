@@ -1,10 +1,10 @@
-from typing import Optional, Dict, Any, NoReturn
+from typing import Any, Dict, NoReturn, Optional
 from urllib.parse import urlparse
 
 from django.conf import settings
 from django.http.request import is_same_domain
 
-from ..generic.websocket import AsyncWebsocketConsumer
+from channels.generic.websocket import AsyncWebsocketConsumer
 
 
 class OriginValidator:

@@ -1,8 +1,8 @@
-from typing import Any, Optional, List, Union, NoReturn
+from typing import Any, List, NoReturn, Optional, Union
 from typing import Dict
 
 from channels.consumer import AsyncConsumer
-from ..exceptions import StopConsumer
+from channels.exceptions import StopConsumer
 
 
 class AsyncHttpConsumer(AsyncConsumer):

@@ -1,7 +1,7 @@
 import datetime
 import logging
 import sys
-from typing import Dict, Any, NoReturn
+from typing import Any, Dict, NoReturn
 
 from daphne.endpoints import build_endpoint_description_strings
 from daphne.server import Server

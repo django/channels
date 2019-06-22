@@ -7,7 +7,7 @@ import re
 import string
 import time
 from copy import deepcopy
-from typing import Dict, Any, Optional, NoReturn
+from typing import Any, Dict, NoReturn, Optional
 
 from django.conf import settings
 from django.core.signals import setting_changed

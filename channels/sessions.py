@@ -1,7 +1,7 @@
 import time
 from datetime import datetime, timedelta
 from importlib import import_module
-from typing import Union, Dict, Any, Optional, Callable, Awaitable, NoReturn
+from typing import Any, Awaitable, Callable, Dict, NoReturn, Optional, Union
 
 from django.conf import settings
 from django.contrib.sessions.backends.base import UpdateError

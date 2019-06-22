@@ -1,7 +1,7 @@
 import asyncio
 import types
 from concurrent.futures import CancelledError
-from typing import Callable, Any, NoReturn, List
+from typing import Any, Callable, List, NoReturn
 
 
 def name_that_thing(thing: Any) -> str:

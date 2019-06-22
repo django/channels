@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Any, Dict, Callable, NoReturn
+from typing import Any, Callable, Dict, NoReturn
 
 
 class BaseMiddleware:
