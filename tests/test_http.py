@@ -3,11 +3,11 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 import pytest
-from asgiref.testing import ApplicationCommunicator
 from django.core.exceptions import RequestDataTooBig
 from django.http import HttpResponse
 from django.test import override_settings
 
+from asgiref.testing import ApplicationCommunicator
 from channels.consumer import AsyncConsumer
 from channels.http import AsgiHandler, AsgiRequest
 from channels.sessions import SessionMiddlewareStack

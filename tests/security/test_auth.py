@@ -2,7 +2,6 @@ from importlib import import_module
 from unittest import mock
 
 import pytest
-from asgiref.sync import sync_to_async
 from django.conf import settings
 from django.contrib.auth import (
     BACKEND_SESSION_KEY,
@@ -14,6 +13,7 @@ from django.contrib.auth import (
 )
 from django.contrib.auth.models import AnonymousUser
 
+from asgiref.sync import sync_to_async
 from channels.auth import AuthMiddleware, get_user, login, logout
 from channels.db import database_sync_to_async
 from channels.generic.websocket import WebsocketConsumer
@@ -102,8 +102,8 @@ async def test_login_no_session_in_scope():
     """
 
     with pytest.raises(
-            ValueError,
-            match="Cannot find session in scope. You should wrap your consumer in SessionMiddleware.",
+        ValueError,
+        match="Cannot find session in scope. You should wrap your consumer in SessionMiddleware.",
     ):
         await login(scope={}, user=None)
 
@@ -117,8 +117,8 @@ async def test_login_no_user_in_scope(session):
     scope = {"session": session}
 
     with pytest.raises(
-            ValueError,
-            match="User must be passed as an argument or must be present in the scope.",
+        ValueError,
+        match="User must be passed as an argument or must be present in the scope.",
     ):
         await login(scope, user=None)
 

@@ -1,10 +1,8 @@
 import datetime
 import logging
 import sys
-from typing import Any, Dict, NoReturn
+from typing import Any, Dict
 
-from daphne.endpoints import build_endpoint_description_strings
-from daphne.server import Server
 from django.apps import apps
 from django.conf import settings
 from django.core.management import CommandError
@@ -13,6 +11,8 @@ from django.core.management.commands.runserver import Command as RunserverComman
 from channels import __version__
 from channels.routing import get_default_application
 from channels.staticfiles import StaticFilesWrapper
+from daphne.endpoints import build_endpoint_description_strings
+from daphne.server import Server
 
 logger = logging.getLogger("django.channels.server")
 
@@ -47,7 +47,7 @@ class Command(RunserverCommand):
             help="Specify the daphne websocket_handshake_timeout interval in seconds (default: 5)",
         )
 
-    def handle(self, *args, **options) -> NoReturn:
+    def handle(self, *args, **options) -> None:
         self.http_timeout = options.get("http_timeout", None)
         self.websocket_handshake_timeout = options.get("websocket_handshake_timeout", 5)
         # Check Channels is installed right
@@ -58,7 +58,7 @@ class Command(RunserverCommand):
         # Dispatch upward
         super().handle(*args, **options)
 
-    def inner_run(self, *args, **options) -> NoReturn:
+    def inner_run(self, *args, **options) -> None:
         # Maybe they want the wsgi one?
         if not options.get("use_asgi", True):
             if hasattr(RunserverCommand, "server_cls"):
@@ -129,7 +129,9 @@ class Command(RunserverCommand):
         else:
             return get_default_application()
 
-    def log_action(self, protocol: str, action: str, details: Dict[str, Any]) -> NoReturn:
+    def log_action(
+        self, protocol: str, action: str, details: Dict[str, Any]
+    ) -> None:
         """
         Logs various different kinds of requests to the console.
         """

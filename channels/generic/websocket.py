@@ -1,8 +1,7 @@
 import json
-from typing import Any, Dict, List, NoReturn
+from typing import Any, Dict, List
 
 from asgiref.sync import async_to_sync
-
 from channels.consumer import AsyncConsumer, SyncConsumer
 from channels.exceptions import (
     AcceptConnection,
@@ -25,7 +24,7 @@ class WebsocketConsumer(SyncConsumer):
         if self.groups is None:
             self.groups = []
 
-    def websocket_connect(self, message: Dict[str, Any]) -> NoReturn:
+    def websocket_connect(self, message: Dict[str, Any]) -> None:
         """
         Called when a WebSocket connection is opened.
         """
@@ -43,16 +42,16 @@ class WebsocketConsumer(SyncConsumer):
         except DenyConnection:
             self.close()
 
-    def connect(self) -> NoReturn:
+    def connect(self) -> None:
         self.accept()
 
-    def accept(self, subprotocol: List[str] = None) -> NoReturn:
+    def accept(self, subprotocol: List[str] = None) -> None:
         """
         Accepts an incoming socket
         """
         super().send({"type": "websocket.accept", "subprotocol": subprotocol})
 
-    def websocket_receive(self, message: Dict[str, Any]) -> NoReturn:
+    def websocket_receive(self, message: Dict[str, Any]) -> None:
         """
         Called when a WebSocket frame is received. Decodes it and passes it
         to receive().
@@ -68,7 +67,9 @@ class WebsocketConsumer(SyncConsumer):
         """
         pass
 
-    def send(self, text_data: str = None, bytes_data: bytes = None, close: bool = False):
+    def send(
+        self, text_data: str = None, bytes_data: bytes = None, close: bool = False
+    ):
         """
         Sends a reply back down the WebSocket
         """
@@ -121,19 +122,21 @@ class JsonWebsocketConsumer(WebsocketConsumer):
     error on binary data.
     """
 
-    def receive(self, text_data: str = None, bytes_data: bytes = None, **kwargs) -> NoReturn:
+    def receive(
+        self, text_data: str = None, bytes_data: bytes = None, **kwargs
+    ) -> None:
         if text_data:
             self.receive_json(self.decode_json(text_data), **kwargs)
         else:
             raise ValueError("No text section for incoming WebSocket frame!")
 
-    def receive_json(self, content: Dict[str, Any], **kwargs) -> NoReturn:
+    def receive_json(self, content: Dict[str, Any], **kwargs) -> None:
         """
         Called with decoded JSON content.
         """
         pass
 
-    def send_json(self, content: Dict[str, Any], close=False) -> NoReturn:
+    def send_json(self, content: Dict[str, Any], close=False) -> None:
         """
         Encode the given content as JSON and send it to the client.
         """
@@ -161,7 +164,7 @@ class AsyncWebsocketConsumer(AsyncConsumer):
         if self.groups is None:
             self.groups = []
 
-    async def websocket_connect(self, message: Dict[str, Any]) -> NoReturn:
+    async def websocket_connect(self, message: Dict[str, Any]) -> None:
         """
         Called when a WebSocket connection is opened.
         """
@@ -179,16 +182,16 @@ class AsyncWebsocketConsumer(AsyncConsumer):
         except DenyConnection:
             await self.close()
 
-    async def connect(self) -> NoReturn:
+    async def connect(self) -> None:
         await self.accept()
 
-    async def accept(self, subprotocol: List[str] = None) -> NoReturn:
+    async def accept(self, subprotocol: List[str] = None) -> None:
         """
         Accepts an incoming socket
         """
         await super().send({"type": "websocket.accept", "subprotocol": subprotocol})
 
-    async def websocket_receive(self, message: Dict[str, Any]) -> NoReturn:
+    async def websocket_receive(self, message: Dict[str, Any]) -> None:
         """
         Called when a WebSocket frame is received. Decodes it and passes it
         to receive().
@@ -198,13 +201,17 @@ class AsyncWebsocketConsumer(AsyncConsumer):
         else:
             await self.receive(bytes_data=message["bytes"])
 
-    async def receive(self, text_data: str = None, bytes_data: bytes = None) -> NoReturn:
+    async def receive(
+        self, text_data: str = None, bytes_data: bytes = None
+    ) -> None:
         """
         Called with a decoded WebSocket frame.
         """
         pass
 
-    async def send(self, text_data: str = None, bytes_data: bytes = None, close=False) -> NoReturn:
+    async def send(
+        self, text_data: str = None, bytes_data: bytes = None, close=False
+    ) -> None:
         """
         Sends a reply back down the WebSocket
         """
@@ -226,7 +233,7 @@ class AsyncWebsocketConsumer(AsyncConsumer):
         else:
             await super().send({"type": "websocket.close"})
 
-    async def websocket_disconnect(self, message: Dict[str, Any]) -> NoReturn:
+    async def websocket_disconnect(self, message: Dict[str, Any]) -> None:
         """
         Called when a WebSocket connection is closed. Base level so you don't
         need to call super() all the time.
@@ -241,7 +248,7 @@ class AsyncWebsocketConsumer(AsyncConsumer):
         await self.disconnect(message["code"])
         raise StopConsumer()
 
-    async def disconnect(self, code) -> NoReturn:
+    async def disconnect(self, code) -> None:
         """
         Called when a WebSocket connection is closed.
         """
@@ -255,19 +262,21 @@ class AsyncJsonWebsocketConsumer(AsyncWebsocketConsumer):
     error on binary data.
     """
 
-    async def receive(self, text_data: str = None, bytes_data: bytes = None, **kwargs) -> NoReturn:
+    async def receive(
+        self, text_data: str = None, bytes_data: bytes = None, **kwargs
+    ) -> None:
         if text_data:
             await self.receive_json(await self.decode_json(text_data), **kwargs)
         else:
             raise ValueError("No text section for incoming WebSocket frame!")
 
-    async def receive_json(self, content: Dict[str, Any], **kwargs) -> NoReturn:
+    async def receive_json(self, content: Dict[str, Any], **kwargs) -> None:
         """
         Called with decoded JSON content.
         """
         pass
 
-    async def send_json(self, content: Dict[str, Any], close=False) -> NoReturn:
+    async def send_json(self, content: Dict[str, Any], close=False) -> None:
         """
         Encode the given content as JSON and send it to the client.
         """

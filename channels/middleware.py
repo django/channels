@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Any, Callable, Dict, NoReturn
+from typing import Any, Callable, Dict
 
 
 class BaseMiddleware:
@@ -35,8 +35,9 @@ class BaseMiddleware:
         # Partially bind it to our coroutine entrypoint along with the scope
         return partial(self.coroutine_call, inner_instance, scope)
 
-    async def coroutine_call(self, inner_instance, scope: Dict[str, Any], receive: Callable,
-                             send: Callable) -> NoReturn:
+    async def coroutine_call(
+        self, inner_instance, scope: Dict[str, Any], receive: Callable, send: Callable
+    ) -> None:
         """
         ASGI coroutine; where we can resolve items in the scope
         (but you can't modify it at the top level here!)
@@ -44,10 +45,16 @@ class BaseMiddleware:
         await self.resolve_scope(scope)
         await inner_instance(receive, send)
 
-    def populate_scope(self, scope: Dict[str, Any]) -> NoReturn:
+    def populate_scope(self, scope: Dict[str, Any]) -> None:
         raise NotImplementedError(
-            '{} is missing the implementation of the method `populate_scope()`'.format(self.__class__.__name__))
+            "{} is missing the implementation of the method `populate_scope()`".format(
+                self.__class__.__name__
+            )
+        )
 
-    def resolve_scope(self, scope: Dict[str, Any]) -> NoReturn:
+    def resolve_scope(self, scope: Dict[str, Any]) -> None:
         raise NotImplementedError(
-            '{} is missing the implementation of the method `resolve_scope()`'.format(self.__class__.__name__))
+            "{} is missing the implementation of the method `resolve_scope()`".format(
+                self.__class__.__name__
+            )
+        )

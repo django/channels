@@ -7,14 +7,14 @@ import re
 import string
 import time
 from copy import deepcopy
-from typing import Any, Dict, NoReturn, Optional
+from typing import Any, Dict, Optional
 
 from django.conf import settings
 from django.core.signals import setting_changed
 from django.utils.module_loading import import_string
 
 from channels import DEFAULT_CHANNEL_LAYER
-from .exceptions import ChannelFull, InvalidChannelLayerError
+from channels.exceptions import ChannelFull, InvalidChannelLayerError
 
 
 # TODO find out what backend type is
@@ -27,7 +27,7 @@ class ChannelLayerManager:
         self.backends = {}
         setting_changed.connect(self._reset_backends)
 
-    def _reset_backends(self, setting, **kwargs) -> NoReturn:
+    def _reset_backends(self, setting, **kwargs) -> None:
         """
         Removes cached channel layers when the CHANNEL_LAYERS setting changes.
         """
@@ -101,7 +101,12 @@ class BaseChannelLayer:
     common functionality.
     """
 
-    def __init__(self, expiry: int = 60, capacity: int = 100, channel_capacity: Optional[dict] = None):
+    def __init__(
+        self,
+        expiry: int = 60,
+        capacity: int = 100,
+        channel_capacity: Optional[dict] = None,
+    ):
         self.expiry = expiry
         self.capacity = capacity
         self.channel_capacity = channel_capacity or {}
@@ -144,8 +149,8 @@ class BaseChannelLayer:
     channel_name_regex = re.compile(r"^[a-zA-Z\d\-_.]+(\![\d\w\-_.]*)?$")
     group_name_regex = re.compile(r"^[a-zA-Z\d\-_.]+$")
     invalid_name_error = (
-            "{} name must be a valid unicode string containing only ASCII "
-            + "alphanumerics, hyphens, underscores, or periods."
+        "{} name must be a valid unicode string containing only ASCII "
+        + "alphanumerics, hyphens, underscores, or periods."
     )
 
     def valid_channel_name(self, name: str, receive: bool = False) -> bool:
@@ -199,16 +204,14 @@ class InMemoryChannelLayer(BaseChannelLayer):
     """
 
     def __init__(
-            self,
-            expiry: int = 60,
-            group_expiry: int = 86400,
-            capacity: int = 100,
-            channel_capacity: dict = None
+        self,
+        expiry: int = 60,
+        group_expiry: int = 86400,
+        capacity: int = 100,
+        channel_capacity: dict = None,
     ):
         super().__init__(
-            expiry=expiry,
-            capacity=capacity,
-            channel_capacity=channel_capacity
+            expiry=expiry, capacity=capacity, channel_capacity=channel_capacity
         )
         self.channels = {}
         self.groups = {}
@@ -218,7 +221,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
 
     extensions = ["groups", "flush"]
 
-    async def send(self, channel: str, message: Dict[str, Any]) -> NoReturn:
+    async def send(self, channel: str, message: Dict[str, Any]) -> None:
         """
         Send a message onto a (general or specific) channel.
         """
@@ -268,7 +271,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
 
     ### Expire cleanup ###
 
-    def _clean_expired(self) -> NoReturn:
+    def _clean_expired(self) -> None:
         """
         Goes through all messages and groups and removes those that are expired.
         Any channel with an expired message is removed from all groups.
@@ -293,23 +296,23 @@ class InMemoryChannelLayer(BaseChannelLayer):
             for channel in list(self.groups.get(group, set())):
                 # If join time is older than group_expiry end the group membership
                 if (
-                        self.groups[group][channel]
-                        and int(self.groups[group][channel]) < timeout
+                    self.groups[group][channel]
+                    and int(self.groups[group][channel]) < timeout
                 ):
                     # Delete from group
                     del self.groups[group][channel]
 
     ### Flush extension ###
 
-    async def flush(self) -> NoReturn:
+    async def flush(self) -> None:
         self.channels = {}
         self.groups = {}
 
-    async def close(self) -> NoReturn:
+    async def close(self) -> None:
         # Nothing to go
         pass
 
-    def _remove_from_groups(self, channel: str) -> NoReturn:
+    def _remove_from_groups(self, channel: str) -> None:
         """
         Removes a channel from all groups. Used when a message on it expires.
         """
@@ -319,7 +322,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
 
     # Groups extension
 
-    async def group_add(self, group: str, channel: str) -> NoReturn:
+    async def group_add(self, group: str, channel: str) -> None:
         """
         Adds the channel name to a group.
         """
@@ -330,7 +333,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
         self.groups.setdefault(group, {})
         self.groups[group][channel] = time.time()
 
-    async def group_discard(self, group: str, channel: str) -> NoReturn:
+    async def group_discard(self, group: str, channel: str) -> None:
         # Both should be text and valid
         assert self.valid_channel_name(channel), "Invalid channel name"
         assert self.valid_group_name(group), "Invalid group name"
@@ -341,7 +344,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
             if not self.groups[group]:
                 del self.groups[group]
 
-    async def group_send(self, group: str, message: Dict[str, Any]) -> NoReturn:
+    async def group_send(self, group: str, message: Dict[str, Any]) -> None:
         # Check types
         assert isinstance(message, dict), "Message is not a dict"
         assert self.valid_group_name(group), "Invalid group name"

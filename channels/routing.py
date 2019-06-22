@@ -64,7 +64,9 @@ def get_default_application():
     return value
 
 
-def route_pattern_match(route, path: str) -> Optional[Tuple[str, Tuple[str, Any], Dict[str, Any]]]:
+def route_pattern_match(
+    route, path: str
+) -> Optional[Tuple[str, Tuple[str, Any], Dict[str, Any]]]:
     """
     Backport of RegexPattern.match for Django versions before 2.0. Returns
     the remaining path and positional and keyword arguments matched.
@@ -87,7 +89,7 @@ def route_pattern_match(route, path: str) -> Optional[Tuple[str, Tuple[str, Any]
         args = () if kwargs else match.groups()
         if kwargs is not None:
             kwargs.update(route.default_args)
-        return path[match.end():], args, kwargs
+        return path[match.end() :], args, kwargs
     return None
 
 

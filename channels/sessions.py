@@ -49,16 +49,16 @@ class CookieMiddleware:
 
     @classmethod
     def set_cookie(
-            cls,
-            message: Dict[str, Any],
-            key: str,
-            value: str = "",
-            max_age: Optional[int] = None,
-            expires: Optional[Union[datetime, str]] = None,
-            path: str = "/",
-            domain: Optional[str] = None,
-            secure: bool = False,
-            httponly: bool = False,
+        cls,
+        message: Dict[str, Any],
+        key: str,
+        value: str = "",
+        max_age: Optional[int] = None,
+        expires: Optional[Union[datetime, str]] = None,
+        path: str = "/",
+        domain: Optional[str] = None,
+        secure: bool = False,
+        httponly: bool = False,
     ) -> NoReturn:
         """
         Sets a cookie in the passed HTTP response message.
@@ -108,7 +108,9 @@ class CookieMiddleware:
             )
 
     @classmethod
-    def delete_cookie(cls, message: dict, key: str, path: str = "/", domain: Optional[str] = None) -> NoReturn:
+    def delete_cookie(
+        cls, message: dict, key: str, path: str = "/", domain: Optional[str] = None
+    ) -> NoReturn:
         """
         Deletes a cookie in a response.
         """
@@ -171,9 +173,9 @@ class SessionMiddlewareInstance:
             # changed data, save it. We also save if it's empty as we might
             # not be able to send a cookie-delete along with this message.
             if (
-                    message["type"] in self.middleware.save_message_types
-                    and message.get("status", 200) != 500
-                    and (modified or settings.SESSION_SAVE_EVERY_REQUEST)
+                message["type"] in self.middleware.save_message_types
+                and message.get("status", 200) != 500
+                and (modified or settings.SESSION_SAVE_EVERY_REQUEST)
             ):
                 self.save_session()
                 # If this is a message type that can transport cookies back to the

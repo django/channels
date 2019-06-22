@@ -6,7 +6,7 @@ from django.contrib.staticfiles import utils
 from django.contrib.staticfiles.views import serve
 from django.http import Http404
 
-from .http import AsgiHandler
+from channels.http import AsgiHandler
 
 
 class StaticFilesWrapper:
@@ -50,7 +50,7 @@ class StaticFilesHandler(AsgiHandler):
         """
         Returns the relative path to the media file on disk for the given URL.
         """
-        relative_url = url[len(self.scope["static_base_url"][2]):]
+        relative_url = url[len(self.scope["static_base_url"][2]) :]
         return url2pathname(relative_url)
 
     def serve(self, request):

@@ -44,9 +44,9 @@ class TestChannelLayerManager(unittest.TestCase):
         changes.
         """
         with override_settings(
-                CHANNEL_LAYERS={
-                    "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}
-                }
+            CHANNEL_LAYERS={
+                "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}
+            }
         ):
             self.assertEqual(channel_layers.backends, {})
             get_channel_layer()

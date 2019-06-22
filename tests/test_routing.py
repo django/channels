@@ -119,13 +119,13 @@ def test_url_router_nesting():
         ]
     )
     assert (
-            outer_router(
-                {
-                    "type": "http",
-                    "path": "/universe/42/author/andrewgodwin/book/channels-guide/page/10/",
-                }
-            )
-            == 1
+        outer_router(
+            {
+                "type": "http",
+                "path": "/universe/42/author/andrewgodwin/book/channels-guide/page/10/",
+            }
+        )
+        == 1
     )
     assert test_app.call_args[0][0]["url_route"] == {
         "args": (),

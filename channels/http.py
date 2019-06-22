@@ -4,18 +4,25 @@ import logging
 import sys
 import traceback
 from io import BytesIO
-from typing import Any, Callable, Dict, Generator, NoReturn
+from typing import Any, Callable, Dict, Generator, Tuple
 
-from asgiref.sync import async_to_sync, sync_to_async
 from django.conf import settings
 from django.core import signals
 from django.core.exceptions import RequestDataTooBig
 from django.core.handlers import base
-from django.http import FileResponse, HttpRequest, HttpResponse, HttpResponseBadRequest, HttpResponseServerError, \
-    QueryDict, parse_cookie
+from django.http import (
+    FileResponse,
+    HttpRequest,
+    HttpResponse,
+    HttpResponseBadRequest,
+    HttpResponseServerError,
+    QueryDict,
+    parse_cookie,
+)
 from django.urls import set_script_prefix
 from django.utils.functional import cached_property
 
+from asgiref.sync import async_to_sync, sync_to_async
 from channels.exceptions import RequestAborted, RequestTimeout
 
 logger = logging.getLogger("django.request")
@@ -40,7 +47,7 @@ class AsgiRequest(HttpRequest):
         self.script_name = self.scope.get("root_path", "")
         if self.script_name and scope["path"].startswith(self.script_name):
             # TODO: Better is-prefix checking, slash handling?
-            self.path_info = scope["path"][len(self.script_name):]
+            self.path_info = scope["path"][len(self.script_name) :]
         else:
             self.path_info = scope["path"]
 
@@ -122,8 +129,8 @@ class AsgiRequest(HttpRequest):
 
         # Limit the maximum request data size that will be handled in-memory.
         if (
-                settings.DATA_UPLOAD_MAX_MEMORY_SIZE is not None
-                and self._content_length > settings.DATA_UPLOAD_MAX_MEMORY_SIZE
+            settings.DATA_UPLOAD_MAX_MEMORY_SIZE is not None
+            and self._content_length > settings.DATA_UPLOAD_MAX_MEMORY_SIZE
         ):
             raise RequestDataTooBig(
                 "Request body exceeded settings.DATA_UPLOAD_MAX_MEMORY_SIZE."
@@ -149,7 +156,7 @@ class AsgiRequest(HttpRequest):
             self._load_post_and_files()
         return self._post
 
-    def _set_post(self, post) -> NoReturn:
+    def _set_post(self, post) -> None:
         self._post = post
 
     def _get_files(self):
@@ -193,7 +200,7 @@ class AsgiHandler(base.BaseHandler):
         self.scope = scope
         self.load_middleware()
 
-    async def __call__(self, receive: Callable, send: Callable) -> NoReturn:
+    async def __call__(self, receive: Callable, send: Callable) -> None:
         """
         Async entrypoint - uses the sync_to_async wrapper to run things in a
         threadpool.
@@ -215,7 +222,7 @@ class AsgiHandler(base.BaseHandler):
                     return
 
     @sync_to_async
-    def handle(self, body: bytes) -> NoReturn:
+    def handle(self, body: bytes) -> None:
         """
         Synchronous message processing.
         """
@@ -271,15 +278,15 @@ class AsgiHandler(base.BaseHandler):
                 content_type="text/plain",
             )
 
-    def load_middleware(self) -> NoReturn:
+    def load_middleware(self) -> None:
         """
         Loads the Django middleware chain and caches it on the class.
         """
         # Because we create an AsgiHandler on every HTTP request
         # we need to preserve the Django middleware chain once we load it.
         if (
-                hasattr(self.__class__, "_middleware_chain")
-                and self.__class__._middleware_chain
+            hasattr(self.__class__, "_middleware_chain")
+            and self.__class__._middleware_chain
         ):
             self._middleware_chain = self.__class__._middleware_chain
             self._view_middleware = self.__class__._view_middleware
@@ -358,7 +365,7 @@ class AsgiHandler(base.BaseHandler):
                 }
 
     @classmethod
-    def chunk_bytes(cls, data: bytes) -> NoReturn:
+    def chunk_bytes(cls, data: bytes) -> Generator[Tuple[bytes, bool], None, None]:
         """
         Chunks some data up so it can be sent in reasonable size messages.
         Yields (chunk, last_chunk) tuples.
@@ -369,7 +376,7 @@ class AsgiHandler(base.BaseHandler):
             return
         while position < len(data):
             yield (
-                data[position: position + cls.chunk_size],
+                data[position : position + cls.chunk_size],
                 (position + cls.chunk_size) >= len(data),
             )
             position += cls.chunk_size

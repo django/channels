@@ -1,7 +1,4 @@
-from typing import NoReturn
-
-
-def monkeypatch_django() -> NoReturn:
+def monkeypatch_django() -> None:
     """
     Monkeypatches support for us into parts of Django.
     """

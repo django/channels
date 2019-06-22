@@ -1,5 +1,5 @@
 import json
-from typing import Tuple, Any, Optional, Dict, List, NoReturn
+from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import unquote, urlparse
 
 from asgiref.testing import ApplicationCommunicator
@@ -13,7 +13,13 @@ class WebsocketCommunicator(ApplicationCommunicator):
     (uninstantiated) along with the initial connection parameters.
     """
 
-    def __init__(self, application, path: str, headers: List[Any] = None, subprotocols: List[str] = None):
+    def __init__(
+        self,
+        application,
+        path: str,
+        headers: List[Any] = None,
+        subprotocols: List[str] = None,
+    ):
         if not isinstance(path, str):
             raise TypeError("Expected str, got {}".format(type(path)))
         parsed = urlparse(path)
@@ -40,7 +46,9 @@ class WebsocketCommunicator(ApplicationCommunicator):
         else:
             return True, response.get("subprotocol", None)
 
-    async def send_to(self, text_data: Optional[str] = None, bytes_data: Optional[bytes] = None) -> NoReturn:
+    async def send_to(
+        self, text_data: Optional[str] = None, bytes_data: Optional[bytes] = None
+    ) -> None:
         """
         Sends a WebSocket frame to the application.
         """
@@ -58,13 +66,13 @@ class WebsocketCommunicator(ApplicationCommunicator):
             ), "The bytes_data argument must be bytes"
             await self.send_input({"type": "websocket.receive", "bytes": bytes_data})
 
-    async def send_json_to(self, data: Dict[str, Any]) -> NoReturn:
+    async def send_json_to(self, data: Dict[str, Any]) -> None:
         """
         Sends JSON data as a text frame
         """
         await self.send_to(text_data=json.dumps(data))
 
-    async def receive_from(self, timeout: int = 1) -> NoReturn:
+    async def receive_from(self, timeout: int = 1) -> None:
         """
         Receives a data frame from the view. Will fail if the connection
         closes instead. Returns either a bytestring or a unicode string
@@ -75,7 +83,7 @@ class WebsocketCommunicator(ApplicationCommunicator):
         assert response["type"] == "websocket.send"
         # Make sure there's exactly one key in the response
         assert ("text" in response) != (
-                "bytes" in response
+            "bytes" in response
         ), "The response needs exactly one of 'text' or 'bytes'"
         # Pull out the right key and typecheck it for our users
         if "text" in response:
@@ -87,7 +95,7 @@ class WebsocketCommunicator(ApplicationCommunicator):
             ), "Binary frame payload is not bytes"
             return response["bytes"]
 
-    async def receive_json_from(self, timeout: int = 1) -> NoReturn:
+    async def receive_json_from(self, timeout: int = 1) -> None:
         """
         Receives a JSON text frame payload and decodes it
         """
@@ -95,7 +103,7 @@ class WebsocketCommunicator(ApplicationCommunicator):
         assert isinstance(payload, str), "JSON data is not a text frame"
         return json.loads(payload)
 
-    async def disconnect(self, code: int = 1000, timeout: int = 1) -> NoReturn:
+    async def disconnect(self, code: int = 1000, timeout: int = 1) -> None:
         """
         Closes the socket
         """

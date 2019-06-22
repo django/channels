@@ -1,4 +1,4 @@
-from typing import Any, Dict, NoReturn, Optional
+from typing import Any, Dict, Optional
 from urllib.parse import urlparse
 
 from django.conf import settings
@@ -107,9 +107,9 @@ class OriginValidator:
         pattern_port = self.get_origin_port(parsed_pattern)
         # Compares hostname, scheme, ports of pattern and origin
         if (
-                parsed_pattern.scheme == parsed_origin.scheme
-                and origin_port == pattern_port
-                and is_same_domain(parsed_origin.hostname, parsed_pattern.hostname)
+            parsed_pattern.scheme == parsed_origin.scheme
+            and origin_port == pattern_port
+            and is_same_domain(parsed_origin.hostname, parsed_pattern.hostname)
         ):
             return True
         return False
@@ -149,5 +149,5 @@ class WebsocketDenier(AsyncWebsocketConsumer):
     Simple application which denies all requests to it.
     """
 
-    async def connect(self) -> NoReturn:
+    async def connect(self) -> None:
         await self.close()

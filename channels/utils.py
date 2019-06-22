@@ -1,7 +1,7 @@
 import asyncio
 import types
 from concurrent.futures import CancelledError
-from typing import Any, Callable, List, NoReturn
+from typing import Any, Callable, List
 
 
 def name_that_thing(thing: Any) -> str:
@@ -17,7 +17,7 @@ def name_that_thing(thing: Any) -> str:
     # Other named thing
     if hasattr(thing, "__name__"):
         if hasattr(thing, "__class__") and not isinstance(
-                thing, (types.FunctionType, types.MethodType)
+            thing, (types.FunctionType, types.MethodType)
         ):
             if thing.__class__ is not type and not issubclass(thing.__class__, type):
                 return name_that_thing(thing.__class__)
@@ -31,7 +31,9 @@ def name_that_thing(thing: Any) -> str:
     return repr(thing)
 
 
-async def await_many_dispatch(consumer_callables: List[Callable], dispatch: Callable) -> NoReturn:
+async def await_many_dispatch(
+    consumer_callables: List[Callable], dispatch: Callable
+) -> None:
     """
     Given a set of consumer callables, awaits on them all and passes results
     from them to the dispatch awaitable as they come in.

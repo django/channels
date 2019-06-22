@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, List, Optional
 from urllib.parse import unquote, urlparse
 
 from asgiref.testing import ApplicationCommunicator
@@ -15,7 +15,14 @@ class HttpCommunicator(ApplicationCommunicator):
     directly.
     """
 
-    def __init__(self, application, method: str, path: str, body: bytes = b"", headers: Optional[List[str]] = None):
+    def __init__(
+        self,
+        application,
+        method: str,
+        path: str,
+        body: bytes = b"",
+        headers: Optional[List[str]] = None,
+    ):
         parsed = urlparse(path)
         self.scope = {
             "type": "http",
