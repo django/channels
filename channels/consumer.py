@@ -80,6 +80,26 @@ class AsyncConsumer:
         """
         await self.base_send(message)
 
+class LifespanAsyncConsumer(AsyncConsumer):
+
+    def lifespan_startup(self):
+        pass
+
+    def lifespan_startup_complete(self):
+        pass
+
+    def lifespan_startup_failed(self):
+        pass
+
+    def lifespan_shutdown(self):
+        pass
+
+    def lifespan_shutdown_complete(self):
+        pass
+
+    def lifespan_shutdown_failed(self):
+        pass
+
 
 class SyncConsumer(AsyncConsumer):
     """
@@ -111,3 +131,29 @@ class SyncConsumer(AsyncConsumer):
         Overrideable/callable-by-subclasses send method.
         """
         self.base_send(message)
+
+class LifespanSyncConsumer(SyncConsumer):
+
+    @database_sync_to_async
+    def lifespan_startup(self):
+        pass
+
+    @database_sync_to_async
+    def lifespan_startup_complete(self):
+        pass
+
+    @database_sync_to_async
+    def lifespan_startup_failed(self, message=""):
+        pass
+
+    @database_sync_to_async
+    def lifespan_shutdown(self):
+        pass
+
+    @database_sync_to_async
+    def lifespan_shutdown_complete(self):
+        pass
+
+    @database_sync_to_async
+    def lifespan_shutdown_failed(self, message=""):
+        pass
