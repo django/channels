@@ -43,6 +43,9 @@ class AsyncHttpConsumer(AsyncConsumer):
         await self.send(
             {"type": "http.response.body", "body": body, "more_body": more_body}
         )
+        if not more_body:
+            await self.disconnect()
+            raise StopConsumer()
 
     async def send_response(self, status, body, **kwargs):
         """
@@ -78,11 +81,7 @@ class AsyncHttpConsumer(AsyncConsumer):
         if "body" in message:
             self.body.append(message["body"])
         if not message.get("more_body"):
-            try:
-                await self.handle(b"".join(self.body))
-            finally:
-                await self.disconnect()
-                raise StopConsumer()
+            await self.handle(b"".join(self.body))
 
     async def http_disconnect(self, message):
         """
