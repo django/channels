@@ -1,7 +1,9 @@
 import asyncio
 import types
 from concurrent.futures import CancelledError
-from typing import Any, Callable, List
+from typing import Any, Callable, Dict, List
+
+StrDict = Dict[str, Any]
 
 
 def name_that_thing(thing: Any) -> str:

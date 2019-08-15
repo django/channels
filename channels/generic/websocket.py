@@ -9,6 +9,7 @@ from channels.exceptions import (
     InvalidChannelLayerError,
     StopConsumer,
 )
+from channels.utils import StrDict
 
 
 class WebsocketConsumer(SyncConsumer):
@@ -24,7 +25,7 @@ class WebsocketConsumer(SyncConsumer):
         if self.groups is None:
             self.groups = []
 
-    def websocket_connect(self, message: Dict[str, Any]) -> None:
+    def websocket_connect(self, message: StrDict) -> None:
         """
         Called when a WebSocket connection is opened.
         """
@@ -51,7 +52,7 @@ class WebsocketConsumer(SyncConsumer):
         """
         super().send({"type": "websocket.accept", "subprotocol": subprotocol})
 
-    def websocket_receive(self, message: Dict[str, Any]) -> None:
+    def websocket_receive(self, message: StrDict) -> None:
         """
         Called when a WebSocket frame is received. Decodes it and passes it
         to receive().
@@ -91,7 +92,7 @@ class WebsocketConsumer(SyncConsumer):
         else:
             super().send({"type": "websocket.close"})
 
-    def websocket_disconnect(self, message: Dict[str, Any]):
+    def websocket_disconnect(self, message: StrDict):
         """
         Called when a WebSocket connection is closed. Base level so you don't
         need to call super() all the time.
@@ -130,24 +131,24 @@ class JsonWebsocketConsumer(WebsocketConsumer):
         else:
             raise ValueError("No text section for incoming WebSocket frame!")
 
-    def receive_json(self, content: Dict[str, Any], **kwargs) -> None:
+    def receive_json(self, content: StrDict, **kwargs) -> None:
         """
         Called with decoded JSON content.
         """
         pass
 
-    def send_json(self, content: Dict[str, Any], close=False) -> None:
+    def send_json(self, content: StrDict, close=False) -> None:
         """
         Encode the given content as JSON and send it to the client.
         """
         super().send(text_data=self.encode_json(content), close=close)
 
     @classmethod
-    def decode_json(cls, text_data: str) -> Dict[str, Any]:
+    def decode_json(cls, text_data: str) -> StrDict:
         return json.loads(text_data)
 
     @classmethod
-    def encode_json(cls, content: Dict[str, Any]) -> str:
+    def encode_json(cls, content: StrDict) -> str:
         return json.dumps(content)
 
 
@@ -164,7 +165,7 @@ class AsyncWebsocketConsumer(AsyncConsumer):
         if self.groups is None:
             self.groups = []
 
-    async def websocket_connect(self, message: Dict[str, Any]) -> None:
+    async def websocket_connect(self, message: StrDict) -> None:
         """
         Called when a WebSocket connection is opened.
         """
@@ -191,7 +192,7 @@ class AsyncWebsocketConsumer(AsyncConsumer):
         """
         await super().send({"type": "websocket.accept", "subprotocol": subprotocol})
 
-    async def websocket_receive(self, message: Dict[str, Any]) -> None:
+    async def websocket_receive(self, message: StrDict) -> None:
         """
         Called when a WebSocket frame is received. Decodes it and passes it
         to receive().
@@ -231,7 +232,7 @@ class AsyncWebsocketConsumer(AsyncConsumer):
         else:
             await super().send({"type": "websocket.close"})
 
-    async def websocket_disconnect(self, message: Dict[str, Any]) -> None:
+    async def websocket_disconnect(self, message: StrDict) -> None:
         """
         Called when a WebSocket connection is closed. Base level so you don't
         need to call super() all the time.
@@ -268,22 +269,22 @@ class AsyncJsonWebsocketConsumer(AsyncWebsocketConsumer):
         else:
             raise ValueError("No text section for incoming WebSocket frame!")
 
-    async def receive_json(self, content: Dict[str, Any], **kwargs) -> None:
+    async def receive_json(self, content: StrDict, **kwargs) -> None:
         """
         Called with decoded JSON content.
         """
         pass
 
-    async def send_json(self, content: Dict[str, Any], close=False) -> None:
+    async def send_json(self, content: StrDict, close=False) -> None:
         """
         Encode the given content as JSON and send it to the client.
         """
         await super().send(text_data=await self.encode_json(content), close=close)
 
     @classmethod
-    async def decode_json(cls, text_data: str) -> Dict[str, Any]:
+    async def decode_json(cls, text_data: str) -> StrDict:
         return json.loads(text_data)
 
     @classmethod
-    async def encode_json(cls, content: Dict[str, Any]) -> str:
+    async def encode_json(cls, content: StrDict) -> str:
         return json.dumps(content)

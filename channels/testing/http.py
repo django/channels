@@ -1,7 +1,8 @@
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 from urllib.parse import unquote, urlparse
 
 from asgiref.testing import ApplicationCommunicator
+from channels.utils import StrDict
 
 
 class HttpCommunicator(ApplicationCommunicator):
@@ -37,7 +38,7 @@ class HttpCommunicator(ApplicationCommunicator):
         self.sent_request = False
         super().__init__(application, self.scope)
 
-    async def get_response(self, timeout: int = 1) -> Dict[str, Any]:
+    async def get_response(self, timeout: int = 1) -> StrDict:
         """
         Get the application's response. Returns a dict with keys of
         "body", "headers" and "status".

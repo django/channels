@@ -1,8 +1,9 @@
 import json
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 from urllib.parse import unquote, urlparse
 
 from asgiref.testing import ApplicationCommunicator
+from channels.utils import StrDict
 
 
 class WebsocketCommunicator(ApplicationCommunicator):
@@ -66,7 +67,7 @@ class WebsocketCommunicator(ApplicationCommunicator):
             ), "The bytes_data argument must be bytes"
             await self.send_input({"type": "websocket.receive", "bytes": bytes_data})
 
-    async def send_json_to(self, data: Dict[str, Any]) -> None:
+    async def send_json_to(self, data: StrDict) -> None:
         """
         Sends JSON data as a text frame
         """

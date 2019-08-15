@@ -1,7 +1,8 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 from channels.consumer import AsyncConsumer
 from channels.exceptions import StopConsumer
+from channels.utils import StrDict
 
 
 class AsyncHttpConsumer(AsyncConsumer):
@@ -73,7 +74,7 @@ class AsyncHttpConsumer(AsyncConsumer):
         """
         pass
 
-    async def http_request(self, message: Dict[str, Any]) -> None:
+    async def http_request(self, message: StrDict) -> None:
         """
         Async entrypoint - concatenates body fragments and hands off control
         to ``self.handle`` when the body has been completely received.
@@ -87,7 +88,7 @@ class AsyncHttpConsumer(AsyncConsumer):
                 await self.disconnect()
                 raise StopConsumer()
 
-    async def http_disconnect(self, message: Dict[str, Any]) -> None:
+    async def http_disconnect(self, message: StrDict) -> None:
         """
         Let the user do their cleanup and close the consumer.
         """

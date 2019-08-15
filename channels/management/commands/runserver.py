@@ -11,6 +11,7 @@ from django.core.management.commands.runserver import Command as RunserverComman
 from channels import __version__
 from channels.routing import get_default_application
 from channels.staticfiles import StaticFilesWrapper
+from channels.utils import StrDict
 from daphne.endpoints import build_endpoint_description_strings
 from daphne.server import Server
 
@@ -115,7 +116,7 @@ class Command(RunserverCommand):
             return
 
     # TODO is this Union[StaticFilesWrapper, ProtocolTypeRouter]
-    def get_application(self, options: Dict[str, Any]):
+    def get_application(self, options: StrDict):
         """
         Returns the static files serving application wrapping the default application,
         if static files should be served. Otherwise just returns the default
@@ -129,7 +130,7 @@ class Command(RunserverCommand):
         else:
             return get_default_application()
 
-    def log_action(self, protocol: str, action: str, details: Dict[str, Any]) -> None:
+    def log_action(self, protocol: str, action: str, details: StrDict) -> None:
         """
         Logs various different kinds of requests to the console.
         """

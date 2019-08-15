@@ -1,7 +1,7 @@
 import time
 from datetime import datetime, timedelta
 from importlib import import_module
-from typing import Any, Awaitable, Callable, Dict, NoReturn, Optional, Union
+from typing import Any, Awaitable, Callable, NoReturn, Optional, Union
 
 from django.conf import settings
 from django.contrib.sessions.backends.base import UpdateError
@@ -13,6 +13,7 @@ from django.utils.encoding import force_str
 from django.utils.functional import LazyObject
 
 from channels.db import database_sync_to_async
+from channels.utils import StrDict
 
 try:
     from django.utils.http import http_date
@@ -29,7 +30,7 @@ class CookieMiddleware:
     def __init__(self, inner):
         self.inner = inner
 
-    def __call__(self, scope: Dict[str, Any]):
+    def __call__(self, scope: StrDict):
         # Check this actually has headers. They're a required scope key for HTTP and WS.
         if "headers" not in scope:
             raise ValueError(
@@ -50,7 +51,7 @@ class CookieMiddleware:
     @classmethod
     def set_cookie(
         cls,
-        message: Dict[str, Any],
+        message: StrDict,
         key: str,
         value: str = "",
         max_age: Optional[int] = None,
@@ -129,7 +130,7 @@ class SessionMiddlewareInstance:
     Inner class that is instantiated once per scope.
     """
 
-    def __init__(self, scope: Dict[str, Any], middleware):
+    def __init__(self, scope: StrDict, middleware):
         self.middleware = middleware
         self.scope = dict(scope)
         if "session" in self.scope:
@@ -161,7 +162,7 @@ class SessionMiddlewareInstance:
         self.real_send = send
         return await self.inner(receive, self.send)
 
-    async def send(self, message: Dict[str, Any]) -> Awaitable[Any]:
+    async def send(self, message: StrDict) -> Awaitable[Any]:
         """
         Overridden send that also does session saves/cookies.
         """
@@ -248,7 +249,7 @@ class SessionMiddleware:
         self.cookie_name = settings.SESSION_COOKIE_NAME
         self.session_store = import_module(settings.SESSION_ENGINE).SessionStore
 
-    def __call__(self, scope: Dict[str, Any]) -> SessionMiddlewareInstance:
+    def __call__(self, scope: StrDict) -> SessionMiddlewareInstance:
         return SessionMiddlewareInstance(scope, self)
 
 

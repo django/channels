@@ -1,10 +1,11 @@
-from typing import Any, Dict, Optional
+from typing import Optional
 from urllib.parse import urlparse
 
 from django.conf import settings
 from django.http.request import is_same_domain
 
 from channels.generic.websocket import AsyncWebsocketConsumer
+from channels.utils import StrDict
 
 
 class OriginValidator:
@@ -17,7 +18,7 @@ class OriginValidator:
         self.application = application
         self.allowed_origins = allowed_origins
 
-    def __call__(self, scope: Dict[str, Any]):
+    def __call__(self, scope: StrDict):
         # Make sure the scope is of type websocket
         if scope["type"] != "websocket":
             raise ValueError(
