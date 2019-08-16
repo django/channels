@@ -13,6 +13,9 @@ Django Channels
 .. image:: https://img.shields.io/pypi/l/channels.svg
     :target: https://pypi.python.org/pypi/channels
 
+.. image:: https://codecov.io/gh/WisdomPill/channels/branch/codecoverage/graph/badge.svg
+  :target: https://codecov.io/gh/WisdomPill/channels
+
 Channels augments Django to bring WebSocket, long-poll HTTP,
 task offloading and other async support to your code, using familiar Django
 design patterns and a flexible underlying framework that lets you not only

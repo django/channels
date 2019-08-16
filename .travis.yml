@@ -10,6 +10,7 @@ env:
   - DJANGO="Django==1.11.*"
   - DJANGO="Django==2.1.*"
   - DJANGO="Django==2.2.*"
+  - CODECOV_TOKEN="170db67a-58a0-437c-a1ba-4983d48ad382"
 
 install:
   - pip install -U pip wheel setuptools
@@ -18,6 +19,9 @@ install:
 
 script:
   - pytest
+
+after_success:
+  - codecov
 
 stages:
   - test
