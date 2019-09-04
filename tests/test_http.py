@@ -1,5 +1,6 @@
 import re
 import unittest
+from tempfile import SpooledTemporaryFile
 from unittest.mock import Mock, patch
 
 import pytest
@@ -9,18 +10,38 @@ from django.test import override_settings
 
 from asgiref.testing import ApplicationCommunicator
 from channels.consumer import AsyncConsumer
-from channels.http import AsgiHandler, AsgiRequest, AsgiRequestIO
+from channels.http import AsgiHandler, AsgiRequest, AsgiRequestIO, StreamedAsgiHandler
 from channels.sessions import SessionMiddlewareStack
 from channels.testing import HttpCommunicator
 
 
-class RequestTests(unittest.TestCase):
+class TestRequest:
     """
     Tests that ASGI request handling correctly decodes HTTP requests given scope
     and body.
     """
 
-    def test_basic(self):
+    @staticmethod
+    def body_stream(stream_class, receive):
+        """
+        Prepare custom SpooledTemporaryFile or AsgiRequestIO body stream
+        from 'receive' callable.
+        """
+
+        if stream_class is AsgiRequestIO:
+            return AsgiRequestIO(receive)
+
+        stream = stream_class()
+        while True:
+            message = receive()
+            if "body" in message:
+                stream.write(message["body"])
+            if not message.get("more_body", False):
+                stream.seek(0)
+                return stream
+
+    @pytest.mark.parametrize("stream_class", [SpooledTemporaryFile, AsgiRequestIO])
+    def test_basic(self, stream_class):
         """
         Tests that the handler can decode the most basic request message,
         with all optional fields omitted.
@@ -28,22 +49,23 @@ class RequestTests(unittest.TestCase):
 
         request = AsgiRequest(
             {"http_version": "1.1", "method": "GET", "path": "/test/"},
-            AsgiRequestIO(lambda: {}),
+            self.body_stream(stream_class, lambda: {}),
         )
-        self.assertEqual(request.path, "/test/")
-        self.assertEqual(request.method, "GET")
-        self.assertFalse(request.body)
-        self.assertNotIn("HTTP_HOST", request.META)
-        self.assertNotIn("REMOTE_ADDR", request.META)
-        self.assertNotIn("REMOTE_HOST", request.META)
-        self.assertNotIn("REMOTE_PORT", request.META)
-        self.assertIn("SERVER_NAME", request.META)
-        self.assertIn("SERVER_PORT", request.META)
-        self.assertFalse(request.GET)
-        self.assertFalse(request.POST)
-        self.assertFalse(request.COOKIES)
+        assert request.path == "/test/"
+        assert request.method == "GET"
+        assert not request.body
+        assert "HTTP_HOST" not in request.META
+        assert "REMOTE_ADDR" not in request.META
+        assert "REMOTE_HOST" not in request.META
+        assert "REMOTE_PORT" not in request.META
+        assert "SERVER_NAME" in request.META
+        assert "SERVER_PORT" in request.META
+        assert not request.GET
+        assert not request.POST
+        assert not request.COOKIES
 
-    def test_extended(self):
+    @pytest.mark.parametrize("stream_class", [SpooledTemporaryFile, AsgiRequestIO])
+    def test_extended(self, stream_class):
         """
         Tests a more fully-featured GET request
         """
@@ -61,24 +83,25 @@ class RequestTests(unittest.TestCase):
                 "client": ["10.0.0.1", 1234],
                 "server": ["10.0.0.2", 80],
             },
-            AsgiRequestIO(lambda: {}),
+            self.body_stream(stream_class, lambda: {}),
         )
-        self.assertEqual(request.path, "/test2/")
-        self.assertEqual(request.method, "GET")
-        self.assertFalse(request.body)
-        self.assertEqual(request.META["HTTP_HOST"], "example.com")
-        self.assertEqual(request.META["REMOTE_ADDR"], "10.0.0.1")
-        self.assertEqual(request.META["REMOTE_HOST"], "10.0.0.1")
-        self.assertEqual(request.META["REMOTE_PORT"], 1234)
-        self.assertEqual(request.META["SERVER_NAME"], "10.0.0.2")
-        self.assertEqual(request.META["SERVER_PORT"], "80")
-        self.assertEqual(request.GET["x"], "1")
-        self.assertEqual(request.GET["y"], "&foo bar+baz")
-        self.assertEqual(request.COOKIES["test-time"], "1448995585123")
-        self.assertEqual(request.COOKIES["test-value"], "yeah")
-        self.assertFalse(request.POST)
+        assert request.path == "/test2/"
+        assert request.method == "GET"
+        assert not request.body
+        assert request.META["HTTP_HOST"] == "example.com"
+        assert request.META["REMOTE_ADDR"] == "10.0.0.1"
+        assert request.META["REMOTE_HOST"] == "10.0.0.1"
+        assert request.META["REMOTE_PORT"] == 1234
+        assert request.META["SERVER_NAME"] == "10.0.0.2"
+        assert request.META["SERVER_PORT"] == "80"
+        assert request.GET["x"] == "1"
+        assert request.GET["y"] == "&foo bar+baz"
+        assert request.COOKIES["test-time"] == "1448995585123"
+        assert request.COOKIES["test-value"] == "yeah"
+        assert not request.POST
 
-    def test_post(self):
+    @pytest.mark.parametrize("stream_class", [SpooledTemporaryFile, AsgiRequestIO])
+    def test_post(self, stream_class):
         """
         Tests a POST body.
         """
@@ -98,23 +121,22 @@ class RequestTests(unittest.TestCase):
                     "content-length": b"18",
                 },
             },
-            AsgiRequestIO(receive),
+            self.body_stream(stream_class, receive),
         )
-        self.assertEqual(request.path, "/test2/")
-        self.assertEqual(request.method, "POST")
-        self.assertEqual(request.body, b"djangoponies=are+awesome")
-        self.assertEqual(request.META["HTTP_HOST"], "example.com")
-        self.assertEqual(
-            request.META["CONTENT_TYPE"], "application/x-www-form-urlencoded"
-        )
-        self.assertEqual(request.GET["django"], "great")
-        self.assertEqual(request.POST["djangoponies"], "are awesome")
-        with self.assertRaises(KeyError):
+        assert request.path == "/test2/"
+        assert request.method == "POST"
+        assert request.body == b"djangoponies=are+awesome"
+        assert request.META["HTTP_HOST"] == "example.com"
+        assert request.META["CONTENT_TYPE"] == "application/x-www-form-urlencoded"
+        assert request.GET["django"] == "great"
+        assert request.POST["djangoponies"] == "are awesome"
+        with pytest.raises(KeyError):
             request.POST["django"]
-        with self.assertRaises(KeyError):
+        with pytest.raises(KeyError):
             request.GET["djangoponies"]
 
-    def test_post_files(self):
+    @pytest.mark.parametrize("stream_class", [SpooledTemporaryFile, AsgiRequestIO])
+    def test_post_files(self, stream_class):
         """
         Tests POSTing files using multipart form data.
         """
@@ -141,17 +163,18 @@ class RequestTests(unittest.TestCase):
                     "content-length": str(len(body)).encode("ascii"),
                 },
             },
-            AsgiRequestIO(receive),
+            self.body_stream(stream_class, receive),
         )
-        self.assertEqual(request.method, "POST")
-        self.assertEqual(len(request.body), len(body))
-        self.assertTrue(request.META["CONTENT_TYPE"].startswith("multipart/form-data"))
-        self.assertTrue(request._read_started)
-        self.assertFalse(request._post_parse_error)
-        self.assertEqual(request.POST["title"], "My First Book")
-        self.assertEqual(request.FILES["pdf"].read(), b"FAKEPDFBYTESGOHERE")
+        assert request.method == "POST"
+        assert len(request.body) == len(body)
+        assert request.META["CONTENT_TYPE"].startswith("multipart/form-data")
+        assert request._read_started
+        assert not request._post_parse_error
+        assert request.POST["title"] == "My First Book"
+        assert request.FILES["pdf"].read() == b"FAKEPDFBYTESGOHERE"
 
-    def test_chunked_post_files(self):
+    @pytest.mark.parametrize("stream_class", [SpooledTemporaryFile, AsgiRequestIO])
+    def test_chunked_post_files(self, stream_class):
         """
         Tests POSTing chunked files using multipart form data.
         """
@@ -192,18 +215,19 @@ class RequestTests(unittest.TestCase):
                     "content-length": str(len(body)).encode("ascii"),
                 },
             },
-            AsgiRequestIO(receive),
+            self.body_stream(stream_class, receive),
         )
 
-        self.assertEqual(request.method, "POST")
-        self.assertTrue(request.META["CONTENT_TYPE"].startswith("multipart/form-data"))
-        self.assertEqual(request.FILES["pdf"].read(), b"FAKEPDFBYTESGOHERE")
-        self.assertTrue(request._read_started)
-        self.assertFalse(request._post_parse_error)
-        self.assertEqual(request.FILES["txt"].read(), b"FAKETEXT")
-        self.assertEqual(request.POST["title"], "My First Book")
+        assert request.method == "POST"
+        assert request.META["CONTENT_TYPE"].startswith("multipart/form-data")
+        assert request.FILES["pdf"].read() == b"FAKEPDFBYTESGOHERE"
+        assert request._read_started
+        assert not request._post_parse_error
+        assert request.FILES["txt"].read() == b"FAKETEXT"
+        assert request.POST["title"] == "My First Book"
 
-    def test_stream(self):
+    @pytest.mark.parametrize("stream_class", [SpooledTemporaryFile, AsgiRequestIO])
+    def test_stream(self, stream_class):
         """
         Tests the body stream is emulated correctly.
         """
@@ -218,11 +242,11 @@ class RequestTests(unittest.TestCase):
                 "path": "/",
                 "headers": {"host": b"example.com", "content-length": b"11"},
             },
-            AsgiRequestIO(receive),
+            self.body_stream(stream_class, receive),
         )
-        self.assertEqual(request.method, "PUT")
-        self.assertEqual(request.read(3), b"one")
-        self.assertEqual(request.read(), b"twothree")
+        assert request.method == "PUT"
+        assert request.read(3) == b"one"
+        assert request.read() == b"twothree"
 
     def test_script_name(self):
         request = AsgiRequest(
@@ -235,9 +259,10 @@ class RequestTests(unittest.TestCase):
             None,  # Dummy value.
         )
 
-        self.assertEqual(request.path, "/path/to/test/")
+        assert request.path == "/path/to/test/"
 
-    def test_max_memory_size_exceeded(self):
+    @pytest.mark.parametrize("stream_class", [SpooledTemporaryFile, AsgiRequestIO])
+    def test_max_memory_size_exceeded(self, stream_class):
         def receive():
             return {"type": "http.request", "body": b""}
 
@@ -250,10 +275,16 @@ class RequestTests(unittest.TestCase):
                         "path": "/",
                         "headers": {"host": b"example.com", "content-length": b"1000"},
                     },
-                    AsgiRequestIO(receive),
+                    self.body_stream(stream_class, receive),
                 ).body
 
-    def test_size_check_ignores_files(self):
+    @pytest.mark.parametrize("stream_class", [SpooledTemporaryFile, AsgiRequestIO])
+    def test_size_check_ignores_files(self, stream_class):
+        """
+        Make sure that AsgiRequest calculates the DATA_UPLOAD_MAX_MEMORY_SIZE
+        check against the total request size excluding any file upload data.
+        """
+
         name = b"Title"
         title = b"My first book"
         file_data = (
@@ -291,14 +322,15 @@ class RequestTests(unittest.TestCase):
         # should not lead to an exception.
         allowable_size = len(file_data) - 10
         with override_settings(DATA_UPLOAD_MAX_MEMORY_SIZE=allowable_size):
-            AsgiRequest(scope, AsgiRequestIO(receive)).POST
+            AsgiRequest(scope, self.body_stream(stream_class, receive)).POST
 
         exceptional_size = len(name + title) - 10
         with override_settings(DATA_UPLOAD_MAX_MEMORY_SIZE=exceptional_size):
             with pytest.raises(RequestDataTooBig):
-                AsgiRequest(scope, AsgiRequestIO(receive)).POST
+                AsgiRequest(scope, self.body_stream(stream_class, receive)).POST
 
-    def test_size_check_ignores_chunked_files(self):
+    @pytest.mark.parametrize("stream_class", [SpooledTemporaryFile, AsgiRequestIO])
+    def test_size_check_ignores_chunked_files(self, stream_class):
         name = b"Title"
         title = b"My first book"
         file_data = (
@@ -343,10 +375,21 @@ class RequestTests(unittest.TestCase):
         # should not lead to an exception.
         allowable_size = len(file_data) - 10
         with override_settings(DATA_UPLOAD_MAX_MEMORY_SIZE=allowable_size):
-            AsgiRequest(scope, AsgiRequestIO(receive)).POST
+            AsgiRequest(scope, self.body_stream(stream_class, receive)).POST
 
 
 # Handler tests
+
+
+def fake_get_response(request):
+    """
+    Mocked 'get_response' method for AsgiHandler-AsgiRequest tests
+    with GET requests.
+    """
+    assert request.method == "GET"
+    # Access request body to ensure it is read() in sync context.
+    _ = request.body
+    return HttpResponse("fake")
 
 
 class MockHandler(AsgiHandler):
@@ -355,61 +398,62 @@ class MockHandler(AsgiHandler):
     ripped out.
     """
 
-    @staticmethod
-    def fake_get_response(request):
-        """
-        Mocked 'get_response' method for AsgiHandler-AsgiRequest tests
-        with GET requests.
-        """
-        assert request.method == "GET"
-        # Access request body to ensure it is read() in sync context.
-        _ = request.body
-        return HttpResponse("fake")
-
-    get_response = Mock(side_effect=lambda r: MockHandler.fake_get_response(r))
+    get_response = Mock(side_effect=fake_get_response)
 
 
+class MockStreamedHandler(StreamedAsgiHandler):
+    """
+    Testing subclass of StreamedAsgiHandler that has the actual Django response
+    part ripped out.
+    """
+
+    get_response = Mock(side_effect=fake_get_response)
+
+
+@pytest.mark.parametrize("application", [MockHandler, MockStreamedHandler])
 @pytest.mark.asyncio
-async def test_handler_basic():
+async def test_handler_basic(application):
     """
     Tests very basic request handling, no body.
     """
     scope = {"type": "http", "http_version": "1.1", "method": "GET", "path": "/test/"}
-    handler = ApplicationCommunicator(MockHandler, scope)
+    handler = ApplicationCommunicator(application, scope)
     await handler.send_input({"type": "http.request"})
     await handler.receive_output(1)  # response start
     await handler.receive_output(1)  # response body
 
-    request, = MockHandler.get_response.call_args[0]
+    request, = application.get_response.call_args[0]
     assert request.scope == scope
     assert request.body == b""
 
 
+@pytest.mark.parametrize("application", [MockHandler, MockStreamedHandler])
 @pytest.mark.asyncio
-async def test_handler_body_single():
+async def test_handler_body_single(application):
     """
     Tests request handling with a single-part body
     """
     scope = {"type": "http", "http_version": "1.1", "method": "GET", "path": "/test/"}
-    handler = ApplicationCommunicator(MockHandler, scope)
+    handler = ApplicationCommunicator(application, scope)
     await handler.send_input(
         {"type": "http.request", "body": b"chunk one \x01 chunk two"}
     )
     await handler.receive_output(1)  # response start
     await handler.receive_output(1)  # response body
 
-    request, = MockHandler.get_response.call_args[0]
+    request, = application.get_response.call_args[0]
     assert request.scope == scope
     assert request.body == b"chunk one \x01 chunk two"
 
 
+@pytest.mark.parametrize("application", [MockHandler, MockStreamedHandler])
 @pytest.mark.asyncio
-async def test_handler_body_multiple():
+async def test_handler_body_multiple(application):
     """
     Tests request handling with a multi-part body
     """
     scope = {"type": "http", "http_version": "1.1", "method": "GET", "path": "/test/"}
-    handler = ApplicationCommunicator(MockHandler, scope)
+    handler = ApplicationCommunicator(application, scope)
     await handler.send_input(
         {"type": "http.request", "body": b"chunk one", "more_body": True}
     )
@@ -420,18 +464,19 @@ async def test_handler_body_multiple():
     await handler.receive_output(1)  # response start
     await handler.receive_output(1)  # response body
 
-    request, = MockHandler.get_response.call_args[0]
+    request, = application.get_response.call_args[0]
     assert request.scope == scope
     assert request.body == b"chunk one \x01 chunk two"
 
 
+@pytest.mark.parametrize("application", [MockHandler, MockStreamedHandler])
 @pytest.mark.asyncio
-async def test_handler_body_ignore_extra():
+async def test_handler_body_ignore_extra(application):
     """
     Tests request handling ignores anything after more_body: False
     """
     scope = {"type": "http", "http_version": "1.1", "method": "GET", "path": "/test/"}
-    handler = ApplicationCommunicator(MockHandler, scope)
+    handler = ApplicationCommunicator(application, scope)
     await handler.send_input(
         {"type": "http.request", "body": b"chunk one", "more_body": False}
     )
@@ -439,7 +484,7 @@ async def test_handler_body_ignore_extra():
     await handler.receive_output(1)  # response start
     await handler.receive_output(1)  # response body
 
-    request, = MockHandler.get_response.call_args[0]
+    request, = application.get_response.call_args[0]
     assert request.scope == scope
     assert request.body == b"chunk one"
 

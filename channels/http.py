@@ -3,6 +3,7 @@ import codecs
 import io
 import logging
 import sys
+import tempfile
 import traceback
 
 from django import http
@@ -34,6 +35,7 @@ class AsgiRequest(http.HttpRequest):
         self.scope = scope
         self._content_length = 0
         self._post_parse_error = False
+        self._read_started = False
         self.resolver_match = None
         self.script_name = self.scope.get("root_path", "")
         if self.script_name and scope["path"].startswith(self.script_name):
@@ -117,7 +119,6 @@ class AsgiRequest(http.HttpRequest):
                 pass
         # Body handling
         self._stream = stream
-        self._read_started = False
         # Other bits
         self.resolver_match = None
 
@@ -147,44 +148,6 @@ class AsgiRequest(http.HttpRequest):
     @cached_property
     def COOKIES(self):
         return http.parse_cookie(self.META.get("HTTP_COOKIE", ""))
-
-
-class AsgiRequestIO(io.RawIOBase):
-    """Raw I/O implementation for stream request bodies."""
-
-    def __init__(self, receive):
-        io.RawIOBase.__init__(self)
-        self.receive = receive
-        self._buffer = b""
-        self._more_body = True
-
-    def readable(self):
-        return True
-
-    def read(self, size=-1):
-        """
-        Read up to size bytes from the object and return them.
-        Fewer than size bytes may be returned.
-        """
-
-        self._checkClosed()
-
-        if size is None or size < 0:
-            # As a convenience, if size is unspecified or -1, readall() is called.
-            return io.RawIOBase.readall(self)
-
-        if size == 0:
-            return b""
-
-        while not self._buffer and self._more_body:
-            message = self.receive()
-            self._more_body = message.get("more_body", False)
-            if "body" in message:
-                self._buffer = message["body"]
-
-        data = self._buffer[:size]
-        self._buffer = self._buffer[size:]
-        return data
 
 
 class AsgiHandler(base.BaseHandler):
@@ -221,8 +184,37 @@ class AsgiHandler(base.BaseHandler):
         """
         self.send = async_to_sync(send)
 
-        stream = AsgiRequestIO(async_to_sync(receive))
-        await self.handle(stream)
+        # Receive the HTTP request body as a stream object.
+        try:
+            body_stream = await self.read_body(receive)
+        except RequestAborted:
+            return
+        # Launch into body handling (and a synchronous subthread).
+        await self.handle(body_stream)
+
+    async def read_body(self, receive):
+        """Reads a HTTP body from an ASGI connection."""
+        # Use the tempfile that auto rolls-over to a disk file as it fills up,
+        # if a maximum in-memory size is set. Otherwise use a BytesIO object.
+        if settings.FILE_UPLOAD_MAX_MEMORY_SIZE is None:
+            body_file = io.BytesIO()
+        else:
+            body_file = tempfile.SpooledTemporaryFile(
+                max_size=settings.FILE_UPLOAD_MAX_MEMORY_SIZE, mode="w+b"
+            )
+        while True:
+            message = await receive()
+            if message["type"] == "http.disconnect":
+                # Early client disconnect.
+                raise RequestAborted()
+            # Add a body chunk from the message, if provided.
+            if "body" in message:
+                body_file.write(message["body"])
+            # Quit out if that's the end.
+            if not message.get("more_body", False):
+                break
+        body_file.seek(0)
+        return body_file
 
     @sync_to_async
     def handle(self, body):
@@ -382,3 +374,64 @@ class AsgiHandler(base.BaseHandler):
                 (position + cls.chunk_size) >= len(data),
             )
             position += cls.chunk_size
+
+
+class AsgiRequestIO(io.RawIOBase):
+    """Raw I/O implementation for stream request bodies."""
+
+    def __init__(self, receive):
+        io.RawIOBase.__init__(self)
+        self.receive = receive
+        self._buffer = b""
+        self._more_body = True
+
+    def readable(self):
+        return True
+
+    def read(self, size=-1):
+        """
+        Read up to size bytes from the object and return them.
+        Fewer than size bytes may be returned.
+        """
+
+        self._checkClosed()
+
+        if size is None or size < 0:
+            # As a convenience, if size is unspecified or -1, readall() is called.
+            return io.RawIOBase.readall(self)
+
+        if size == 0:
+            return b""
+
+        while not self._buffer and self._more_body:
+            message = self.receive()
+            self._more_body = message.get("more_body", False)
+            if "body" in message:
+                self._buffer = message["body"]
+
+        data = self._buffer[:size]
+        self._buffer = self._buffer[size:]
+        return data
+
+
+class StreamedAsgiHandler(AsgiHandler):
+    """
+    Handler for ASGI requests for the view system only. The only
+    difference from the AsgiHandler is the special transmission of
+    the message body through the AsgiRequestIO stream.
+
+    EXPERIMENTAL.
+
+    This can be useful for transferring large amounts of data by chunks.
+    Unlike AsgiHandler, the message body will not be cached to a
+    temporary file.
+    """
+
+    async def read_body(self, receive):
+        """
+        Wrap the 'receive' awaitable in the special body stream.
+        Provide the ability to read chunks of body from simple synchronous
+        read-like methods of the stream.
+        """
+
+        return AsgiRequestIO(async_to_sync(receive))
