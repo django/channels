@@ -77,4 +77,7 @@ async def test_database_sync_to_async(db_engine, conn_max_age, use_fix, testdir)
         )
     )
     result = testdir.runpytest_subprocess(str(p1))
-    assert result.ret == 0
+    if use_fix:
+        assert result.ret == 0
+    else:
+        assert result.ret == 1
