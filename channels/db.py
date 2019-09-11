@@ -6,6 +6,17 @@ from asgiref.sync import SyncToAsync
 HAS_INC_THREAD_SHARING = django.VERSION >= (2, 2)
 
 
+def _close_old_connections():
+    """Like django.db.close_old_connections, but skipping in_atomic_block.
+
+    Ref: https://code.djangoproject.com/ticket/30448
+    Ref: https://github.com/django/django/pull/11769
+    """
+    for conn in connections.all():
+        if not conn.in_atomic_block:
+            conn.close_if_unusable_or_obsolete()
+
+
 class DatabaseSyncToAsync(SyncToAsync):
     """
     SyncToAsync version that cleans up old database connections.
@@ -34,22 +45,13 @@ class DatabaseSyncToAsync(SyncToAsync):
                         connections[name].allow_thread_sharing = True
         return restore_allow_thread_sharing
 
-    def _close_old_connections(self):
-        """Like django.db.close_old_connections, but skipping in_atomic_block.
-
-        Ref: https://github.com/django/django/pull/11769
-        """
-        for conn in connections.all():
-            if not conn.in_atomic_block:
-                conn.close_if_unusable_or_obsolete()
-
     def thread_handler(self, loop, *args, **kwargs):
         restore_allow_thread_sharing = self._inherit_main_thread_connections()
-        self._close_old_connections()
+        _close_old_connections()
         try:
             return super().thread_handler(loop, *args, **kwargs)
         finally:
-            self._close_old_connections()
+            _close_old_connections()
             for name, saved_sharing in restore_allow_thread_sharing.items():
                 connections[name].allow_thread_sharing = saved_sharing
 
