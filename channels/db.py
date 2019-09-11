@@ -19,16 +19,18 @@ class DatabaseSyncToAsync(SyncToAsync):
 
         This is required for tests using Django's TestCase.
         """
-        restore_allow_thread_sharing = []
+        restore_allow_thread_sharing = {}
 
         for name in self.main_thread_connections:
             if self.main_thread_connections[name].in_atomic_block:
                 connections[name] = self.main_thread_connections[name]
                 if HAS_INC_THREAD_SHARING:
                     connections[name].inc_thread_sharing()
-                elif not connections[name].allow_thread_sharing:
-                    restore_allow_thread_sharing.append(name)
-                    connections[name].allow_thread_sharing = True
+                else:
+                    saved_sharing = connections[name].allow_thread_sharing
+                    if not saved_sharing:
+                        restore_allow_thread_sharing[name] = saved_sharing
+                        connections[name].allow_thread_sharing = True
         return restore_allow_thread_sharing
 
     def _close_old_connections(self):
@@ -47,8 +49,8 @@ class DatabaseSyncToAsync(SyncToAsync):
             return super().thread_handler(loop, *args, **kwargs)
         finally:
             self._close_old_connections()
-            for name in restore_allow_thread_sharing:
-                connections[name].allow_thread_sharing = False
+            for name, saved_sharing in restore_allow_thread_sharing.items():
+                connections[name].allow_thread_sharing = saved_sharing
 
 
 # The class is TitleCased, but we want to encourage use as a callable/decorator
