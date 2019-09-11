@@ -5,10 +5,9 @@ pytest_plugins = ["pytester"]
 
 @pytest.mark.django_db
 @pytest.mark.asyncio
-@pytest.mark.parametrize("db_engine", (
-    "django.db.backends.sqlite3",
-    "django.db.backends.postgresql",
-))
+@pytest.mark.parametrize(
+    "db_engine", ("django.db.backends.sqlite3", "django.db.backends.postgresql")
+)
 @pytest.mark.parametrize("conn_max_age", (0, 600))
 async def test_database_sync_to_async(db_engine, conn_max_age, testdir):
     if db_engine == "django.db.backends.postgresql":
@@ -34,10 +33,8 @@ async def test_database_sync_to_async(db_engine, conn_max_age, testdir):
                 "channels",
             ],
         )
-        """ % (
-            db_engine,
-            conn_max_age,
-        )
+        """
+        % (db_engine, conn_max_age)
     )
     p1 = testdir.makepyfile(
         """

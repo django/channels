@@ -10,6 +10,7 @@ class DatabaseSyncToAsync(SyncToAsync):
     """
     SyncToAsync version that cleans up old database connections.
     """
+
     def __init__(self, *args, **kwargs):
         self.main_thread_connections = {name: connections[name] for name in connections}
         super().__init__(*args, **kwargs)
