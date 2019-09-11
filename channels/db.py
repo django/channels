@@ -7,16 +7,6 @@ class DatabaseSyncToAsync(SyncToAsync):
     """
     SyncToAsync version that cleans up old database connections.
     """
-
-    def thread_handler(self, loop, *args, **kwargs):
-        close_old_connections()
-        try:
-            return super().thread_handler(loop, *args, **kwargs)
-        finally:
-            close_old_connections()
-
-
-class DatabaseSyncToAsyncForTests(SyncToAsync):
     def __init__(self, *args, **kwargs):
         self.main_thread_connections = {name: connections[name] for name in connections}
         super().__init__(*args, **kwargs)
@@ -34,11 +24,13 @@ class DatabaseSyncToAsyncForTests(SyncToAsync):
                 connections[name].inc_thread_sharing()
 
     def _close_old_connections(self):
-        """Like django.db.close_old_connections, but skipping in_atomic_block."""
+        """Like django.db.close_old_connections, but skipping in_atomic_block.
+
+        Ref: https://github.com/django/django/pull/11769
+        """
         for conn in connections.all():
-            if conn.in_atomic_block:
-                continue
-            conn.close_if_unusable_or_obsolete()
+            if not conn.in_atomic_block:
+                conn.close_if_unusable_or_obsolete()
 
     def thread_handler(self, loop, *args, **kwargs):
         self._inherit_main_thread_connections()

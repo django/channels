@@ -10,8 +10,7 @@ pytest_plugins = ["pytester"]
     "django.db.backends.postgresql",
 ))
 @pytest.mark.parametrize("conn_max_age", (0, 600))
-@pytest.mark.parametrize("use_fix", (True, False))
-async def test_database_sync_to_async(db_engine, conn_max_age, use_fix, testdir):
+async def test_database_sync_to_async(db_engine, conn_max_age, testdir):
     if db_engine == "django.db.backends.postgresql":
         pytest.importorskip("psycopg2")
 
@@ -43,11 +42,7 @@ async def test_database_sync_to_async(db_engine, conn_max_age, use_fix, testdir)
     p1 = testdir.makepyfile(
         """
         import pytest
-        use_fix = %r
-        if use_fix:
-            from channels.db import DatabaseSyncToAsyncForTests as database_sync_to_async
-        else:
-            from channels.db import database_sync_to_async
+        from channels.db import database_sync_to_async
 
         @pytest.mark.asyncio
         @pytest.mark.django_db
@@ -72,12 +67,7 @@ async def test_database_sync_to_async(db_engine, conn_max_age, use_fix, testdir)
         def test_check_rolled_back():
             from django.contrib.auth.models import User
             assert User.objects.count() == 0
-        """ % (
-            int(use_fix),
-        )
+        """
     )
     result = testdir.runpytest_subprocess(str(p1))
-    if use_fix:
-        assert result.ret == 0
-    else:
-        assert result.ret == 1
+    assert result.ret == 0
