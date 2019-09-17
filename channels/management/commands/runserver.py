@@ -9,8 +9,6 @@ from django.core.management.commands.runserver import Command as RunserverComman
 
 from channels import __version__
 from channels.routing import get_default_application
-from daphne.endpoints import build_endpoint_description_strings
-from daphne.server import Server
 
 from ...staticfiles import StaticFilesWrapper
 
@@ -19,7 +17,6 @@ logger = logging.getLogger("django.channels.server")
 
 class Command(RunserverCommand):
     protocol = "http"
-    server_cls = Server
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
@@ -64,6 +61,13 @@ class Command(RunserverCommand):
             if hasattr(RunserverCommand, "server_cls"):
                 self.server_cls = RunserverCommand.server_cls
             return RunserverCommand.inner_run(self, *args, **options)
+
+        # The late import here is to avoid incurring the import overhead of
+        # all of twisted in for example unit tests where we don't need it
+        from daphne.server import Server
+        from daphne.endpoints import build_endpoint_description_strings
+        self.server_cls = Server
+
         # Run checks
         self.stdout.write("Performing system checks...\n\n")
         self.check(display_num_errors=True)
