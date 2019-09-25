@@ -4,7 +4,6 @@ import logging
 import sys
 import tempfile
 import traceback
-from io import BytesIO
 from typing import Callable, Generator, Tuple
 
 from django.conf import settings
