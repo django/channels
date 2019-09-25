@@ -5,7 +5,7 @@ from django.conf import settings
 from django.http.request import is_same_domain
 
 from channels.generic.websocket import AsyncWebsocketConsumer
-from channels.utils import StrDict
+from channels.typing import Scope
 
 
 class OriginValidator:
@@ -18,7 +18,7 @@ class OriginValidator:
         self.application = application
         self.allowed_origins = allowed_origins
 
-    def __call__(self, scope: StrDict):
+    def __call__(self, scope: Scope):
         # Make sure the scope is of type websocket
         if scope["type"] != "websocket":
             raise ValueError(

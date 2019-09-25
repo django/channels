@@ -13,7 +13,7 @@ from django.utils.encoding import force_str
 from django.utils.functional import LazyObject
 
 from channels.db import database_sync_to_async
-from channels.utils import StrDict
+from channels.typing import Scope
 
 try:
     from django.utils.http import http_date
@@ -30,7 +30,7 @@ class CookieMiddleware:
     def __init__(self, inner):
         self.inner = inner
 
-    def __call__(self, scope: StrDict):
+    def __call__(self, scope: Scope):
         # Check this actually has headers. They're a required scope key for HTTP and WS.
         if "headers" not in scope:
             raise ValueError(
@@ -51,7 +51,7 @@ class CookieMiddleware:
     @classmethod
     def set_cookie(
         cls,
-        message: StrDict,
+        message: Scope,
         key: str,
         value: str = "",
         max_age: Optional[int] = None,
@@ -130,7 +130,7 @@ class SessionMiddlewareInstance:
     Inner class that is instantiated once per scope.
     """
 
-    def __init__(self, scope: StrDict, middleware):
+    def __init__(self, scope: Scope, middleware):
         self.middleware = middleware
         self.scope = dict(scope)
         if "session" in self.scope:
@@ -162,7 +162,7 @@ class SessionMiddlewareInstance:
         self.real_send = send
         return await self.inner(receive, self.send)
 
-    async def send(self, message: StrDict) -> Awaitable[Any]:
+    async def send(self, message: Scope) -> Awaitable[Any]:
         """
         Overridden send that also does session saves/cookies.
         """
@@ -249,7 +249,7 @@ class SessionMiddleware:
         self.cookie_name = settings.SESSION_COOKIE_NAME
         self.session_store = import_module(settings.SESSION_ENGINE).SessionStore
 
-    def __call__(self, scope: StrDict) -> SessionMiddlewareInstance:
+    def __call__(self, scope: Scope) -> SessionMiddlewareInstance:
         return SessionMiddlewareInstance(scope, self)
 
 

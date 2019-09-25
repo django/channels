@@ -8,7 +8,7 @@ from django.core.exceptions import ImproperlyConfigured
 from django.urls.exceptions import Resolver404
 
 from channels.http import AsgiHandler
-from channels.utils import StrDict
+from channels.typing import Scope
 
 try:
     from django.urls.resolvers import URLResolver
@@ -34,7 +34,7 @@ class ProtocolTypeRouter:
             self.application_mapping["http"] = AsgiHandler
 
     # TODO don't know what this returns yet
-    def __call__(self, scope: StrDict):
+    def __call__(self, scope: Scope):
         if scope["type"] in self.application_mapping:
             return self.application_mapping[scope["type"]](scope)
         else:
@@ -67,7 +67,7 @@ def get_default_application():
 
 def route_pattern_match(
     route, path: str
-) -> Optional[Tuple[str, Tuple[str, Any], StrDict]]:
+) -> Optional[Tuple[str, Tuple[str, Any], Scope]]:
     """
     Backport of RegexPattern.match for Django versions before 2.0. Returns
     the remaining path and positional and keyword arguments matched.
@@ -125,7 +125,7 @@ class URLRouter:
                     " URLRouter instances instead." % (route,)
                 )
 
-    def __call__(self, scope: StrDict) -> NoReturn:
+    def __call__(self, scope: Scope) -> NoReturn:
         # Get the path
         path = scope.get("path_remaining", scope.get("path", None))
         if path is None:

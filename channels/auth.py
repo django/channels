@@ -1,4 +1,4 @@
-from typing import Awaitable, Optional, Union
+from typing import Optional, Union
 
 from django.conf import settings
 from django.contrib.auth import (
@@ -20,11 +20,11 @@ from django.utils.translation import LANGUAGE_SESSION_KEY
 from channels.db import database_sync_to_async
 from channels.middleware import BaseMiddleware
 from channels.sessions import CookieMiddleware, SessionMiddleware
-from channels.utils import StrDict
+from channels.typing import Scope
 
 
 @database_sync_to_async
-def get_user(scope: StrDict) -> Awaitable[Union[AbstractBaseUser, AnonymousUser]]:
+def get_user(scope: Scope) -> Union[AbstractBaseUser, AnonymousUser]:
     """
     Return the user model instance associated with the given scope.
     If no user is retrieved, return an instance of `AnonymousUser`.
@@ -58,7 +58,7 @@ def get_user(scope: StrDict) -> Awaitable[Union[AbstractBaseUser, AnonymousUser]
 
 @database_sync_to_async
 def login(
-    scope: StrDict, user: Optional[Union[AbstractBaseUser, AnonymousUser]], backend=None
+    scope: Scope, user: Optional[Union[AbstractBaseUser, AnonymousUser]], backend=None
 ) -> None:
     """
     Persist a user id and a backend in the request.
@@ -112,7 +112,7 @@ def login(
 
 
 @database_sync_to_async
-def logout(scope: StrDict) -> None:
+def logout(scope: Scope) -> None:
     """
     Remove the authenticated user's ID from the request and flush their session data.
     """
@@ -158,7 +158,7 @@ class AuthMiddleware(BaseMiddleware):
     Requires SessionMiddleware to function.
     """
 
-    def populate_scope(self, scope: StrDict) -> None:
+    def populate_scope(self, scope: Scope) -> None:
         # Make sure we have a session
         if "session" not in scope:
             raise ValueError(
@@ -168,7 +168,7 @@ class AuthMiddleware(BaseMiddleware):
         if "user" not in scope:
             scope["user"] = UserLazyObject()
 
-    async def resolve_scope(self, scope: StrDict) -> None:
+    async def resolve_scope(self, scope: Scope) -> None:
         scope["user"]._wrapped = await get_user(scope)
 
 

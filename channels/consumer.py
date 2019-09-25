@@ -5,10 +5,11 @@ from channels import DEFAULT_CHANNEL_LAYER
 from channels.db import database_sync_to_async
 from channels.exceptions import StopConsumer
 from channels.layers import get_channel_layer
-from channels.utils import StrDict, await_many_dispatch
+from channels.typing import Scope
+from channels.utils import await_many_dispatch
 
 
-def get_handler_name(message: StrDict) -> str:
+def get_handler_name(message: Scope) -> str:
     """
     Looks at a message, checks it has a sensible type, and returns the
     handler name for that type.
@@ -32,7 +33,7 @@ class AsyncConsumer:
     _sync = False
     channel_layer_alias = DEFAULT_CHANNEL_LAYER
 
-    def __init__(self, scope: StrDict):
+    def __init__(self, scope: Scope):
         self.scope = scope
 
     async def __call__(self, receive, send) -> None:
@@ -63,7 +64,7 @@ class AsyncConsumer:
             # Exit cleanly
             pass
 
-    async def dispatch(self, message: StrDict) -> None:
+    async def dispatch(self, message: Scope) -> None:
         """
         Works out what to do with a message.
         """
@@ -73,7 +74,7 @@ class AsyncConsumer:
         else:
             raise ValueError("No handler for message type %s" % message["type"])
 
-    async def send(self, message: StrDict) -> None:
+    async def send(self, message: Scope) -> None:
         """
         Overrideable/callable-by-subclasses send method.
         """
@@ -94,7 +95,7 @@ class SyncConsumer(AsyncConsumer):
     _sync = True
 
     @database_sync_to_async
-    def dispatch(self, message: StrDict) -> None:
+    def dispatch(self, message: Scope) -> None:
         """
         Dispatches incoming messages to type-based handlers asynchronously.
         """
@@ -105,7 +106,7 @@ class SyncConsumer(AsyncConsumer):
         else:
             raise ValueError("No handler for message type %s" % message["type"])
 
-    def send(self, message: StrDict) -> None:
+    def send(self, message: Scope) -> None:
         """
         Overrideable/callable-by-subclasses send method.
         """

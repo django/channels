@@ -1,7 +1,7 @@
 from functools import partial
 from typing import Callable
 
-from channels.utils import StrDict
+from channels.typing import Scope
 
 
 class BaseMiddleware:
@@ -23,7 +23,7 @@ class BaseMiddleware:
 
     # TODO what does partial return?
     # should not be supported for now https://github.com/python/mypy/issues/1484
-    def __call__(self, scope: StrDict):
+    def __call__(self, scope: Scope):
         """
         ASGI constructor; can insert things into the scope, but not
         run asynchronous code.
@@ -38,7 +38,7 @@ class BaseMiddleware:
         return partial(self.coroutine_call, inner_instance, scope)
 
     async def coroutine_call(
-        self, inner_instance, scope: StrDict, receive: Callable, send: Callable
+        self, inner_instance, scope: Scope, receive: Callable, send: Callable
     ) -> None:
         """
         ASGI coroutine; where we can resolve items in the scope
@@ -47,14 +47,14 @@ class BaseMiddleware:
         await self.resolve_scope(scope)
         await inner_instance(receive, send)
 
-    def populate_scope(self, scope: StrDict) -> None:
+    def populate_scope(self, scope: Scope) -> None:
         raise NotImplementedError(
             "{} is missing the implementation of the method `populate_scope()`".format(
                 self.__class__.__name__
             )
         )
 
-    def resolve_scope(self, scope: StrDict) -> None:
+    def resolve_scope(self, scope: Scope) -> None:
         raise NotImplementedError(
             "{} is missing the implementation of the method `resolve_scope()`".format(
                 self.__class__.__name__

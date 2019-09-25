@@ -15,9 +15,7 @@ from django.utils.module_loading import import_string
 
 from channels import DEFAULT_CHANNEL_LAYER
 from channels.exceptions import ChannelFull, InvalidChannelLayerError
-
-# TODO find out what backend type is
-from channels.utils import StrDict
+from channels.typing import Scope
 
 
 class ChannelLayerManager:
@@ -37,7 +35,7 @@ class ChannelLayerManager:
             self.backends = {}
 
     @property
-    def configs(self) -> StrDict:
+    def configs(self) -> Scope:
         # Lazy load settings so we can be imported
         return getattr(settings, "CHANNEL_LAYERS", {})
 
@@ -223,7 +221,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
 
     extensions = ["groups", "flush"]
 
-    async def send(self, channel: str, message: StrDict) -> None:
+    async def send(self, channel: str, message: Scope) -> None:
         """
         Send a message onto a (general or specific) channel.
         """
@@ -241,7 +239,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
         # Add message
         await queue.put((time.time() + self.expiry, deepcopy(message)))
 
-    async def receive(self, channel: str) -> StrDict:
+    async def receive(self, channel: str) -> Scope:
         """
         Receive the first message that arrives on the channel.
         If more than one coroutine waits on the same channel, a random one
@@ -346,7 +344,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
             if not self.groups[group]:
                 del self.groups[group]
 
-    async def group_send(self, group: str, message: StrDict) -> None:
+    async def group_send(self, group: str, message: Scope) -> None:
         # Check types
         assert isinstance(message, dict), "Message is not a dict"
         assert self.valid_group_name(group), "Invalid group name"

@@ -24,7 +24,7 @@ from django.utils.functional import cached_property
 
 from asgiref.sync import async_to_sync, sync_to_async
 from channels.exceptions import RequestAborted, RequestTimeout
-from channels.utils import StrDict
+from channels.typing import Scope
 
 logger = logging.getLogger("django.request")
 
@@ -170,7 +170,7 @@ class AsgiRequest(HttpRequest):
     FILES = property(_get_files)
 
     @cached_property
-    def COOKIES(self) -> StrDict:
+    def COOKIES(self) -> Scope:
         return parse_cookie(self.META.get("HTTP_COOKIE", ""))
 
 
@@ -316,7 +316,7 @@ class AsgiHandler(base.BaseHandler):
                 self.__class__._response_middleware = self._response_middleware
 
     @classmethod
-    def encode_response(cls, response) -> Generator[StrDict, None, None]:
+    def encode_response(cls, response) -> Generator[Scope, None, None]:
         """
         Encodes a Django HTTP response into ASGI http.response message(s).
         """
