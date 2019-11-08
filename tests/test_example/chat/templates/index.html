@@ -1,0 +1,53 @@
+
+{% extends "base.html" %}
+
+{% block title %}Test Example{% endblock %}
+{% block header_text %}Test Example{% endblock %}
+
+{% block content %}
+    <input type="text" id="txt_message">
+    <button id="btn_send">Send</button>
+    <button id="btn_get">Get Special Data</button>
+    <br>
+    <p>Output: <button id="btn_clear">Clear</button></p>
+    <textarea id="txt_output" cols="80" rows="10"></textarea>
+{% endblock %}
+
+{% block extra_body %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var txtMessage = document.getElementById('txt_message');
+            var txtOutput = document.getElementById('txt_output');
+
+            // Correctly decide between ws:// and wss://
+            var ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
+            var ws_path = ws_scheme + '://' + window.location.host + "/chat/";
+            console.log("Connecting to " + ws_path);
+            var socket = new WebSocket(ws_path);
+
+            socket.onmessage = function(e) {
+                var data = JSON.parse(e.data);
+                console.log(data);
+                txtOutput.value += e.data + "\n";
+            };
+
+            socket.onopen = function() {
+                console.log("Opened");
+            };
+
+            socket.onclose = function(e) {
+                console.log("Closed", e);
+            };
+
+            document.getElementById('btn_send').addEventListener('click', function(e) {
+                socket.send(JSON.stringify({'text': txtMessage.value}));
+            });
+            document.getElementById('btn_get').addEventListener('click', function(e) {
+                socket.send(JSON.stringify({'action': 'special'}));
+            });
+            document.getElementById('btn_clear').addEventListener('click', function(e) {
+                txtOutput.value = "";
+            });
+        });
+    </script>
+{% endblock %}
