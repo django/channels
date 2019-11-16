@@ -1,13 +1,13 @@
 Django Channels Load Testing Results Index
 ===============
 
-[2016-09-06 Results](2016-09-06/README.rst) 
+[2019-11-14 Results](2019-11-14/README.rst) 
 ---------------
 
 **Normal Django, WSGI**
-- Gunicorn (19.6.0)
+- Gunicorn (20.0.0)
 
 
 **Django Channels, ASGI**
-- Redis (0.14.0) and Daphne (0.14.3)
-- IPC (1.1.0) and Daphne (0.14.3)
+- Redis (5.0.6) and Daphne (2.3.1)
+- IPC (1.4.2) and Daphne (2.3.1)
