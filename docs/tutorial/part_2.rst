@@ -213,12 +213,13 @@ look like::
 Put the following code in ``chat/routing.py``::
 
     # chat/routing.py
-    from django.urls import re_path
 
+    from django.conf.urls import url
+    
     from . import consumers
 
     websocket_urlpatterns = [
-        re_path(r'ws/chat/(?P<room_name>\w+)/$', consumers.ChatConsumer),
+        url(r'ws/chat/(?P<room_name>\w+)/$', consumers.ChatConsumer),
     ]
 
 The next step is to point the root routing configuration at the **chat.routing**
