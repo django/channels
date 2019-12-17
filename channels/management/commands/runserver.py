@@ -1,6 +1,8 @@
+import asyncio
 import datetime
 import logging
 import sys
+import time
 
 from django.apps import apps
 from django.conf import settings
@@ -56,7 +58,21 @@ class Command(RunserverCommand):
                 "You have not set ASGI_APPLICATION, which is needed to run the server."
             )
         # Dispatch upward
-        super().handle(*args, **options)
+        try:
+            super().handle(*args, **options)
+        finally:
+            # Ensure that any running event loop is stopped (if an exception is
+            # raised, the event loop does not shut down cleanly).
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                loop.stop()
+                # The loop does not stop immediately - give it a second to do so.
+                for i in range(100):
+                    if not loop.is_running():
+                        break
+                    time.sleep(0.01)
+                else:
+                    raise RuntimeError("Event loop did not stop")
 
     def inner_run(self, *args, **options):
         # Maybe they want the wsgi one?
