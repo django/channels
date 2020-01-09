@@ -39,22 +39,23 @@ async def test_database_sync_to_async(db_engine, conn_max_age, testdir):
     p1 = testdir.makepyfile(
         """
         import pytest
+        from django.contrib.auth.models import User
+
         from channels.db import database_sync_to_async
+
+        @database_sync_to_async
+        def create_obj(**kwargs):
+            User.objects.create(**kwargs)
 
         @pytest.mark.asyncio
         @pytest.mark.django_db
         async def test_inner():
-            from django.contrib.auth.models import User
             from django.db import connections
 
             conn = connections["default"]
             assert conn.in_atomic_block
 
             assert User.objects.count() == 0
-
-            @database_sync_to_async
-            def create_obj(**kwargs):
-                User.objects.create(**kwargs)
 
             await create_obj(username="alice")
             await create_obj(username="bob")
