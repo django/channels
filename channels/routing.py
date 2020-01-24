@@ -6,14 +6,10 @@ from typing import Any, NoReturn, Optional, Tuple
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.urls.exceptions import Resolver404
+from django.urls.resolvers import URLResolver
 
 from channels.http import AsgiHandler
 from channels.typing import Scope
-
-try:
-    from django.urls.resolvers import URLResolver
-except ImportError:  # Django 1.11
-    from django.urls import RegexURLResolver as URLResolver
 
 """
 All Routing instances inside this file are also valid ASGI applications - with

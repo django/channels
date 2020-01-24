@@ -38,7 +38,7 @@ Create the view template for the room view in ``chat/templates/chat/room.html``:
         <input id="chat-message-submit" type="button" value="Send"/>
     </body>
     <script>
-        var roomName = {{ room_name_json }};
+        var roomName = "{{ room_name|escapejs }}";
 
         var chatSocket = new WebSocket(
             'ws://' + window.location.host +
@@ -73,20 +73,17 @@ Create the view template for the room view in ``chat/templates/chat/room.html``:
     </script>
     </html>
 
-Create the view function for the room view in ``chat/views.py``.
-Add the imports of ``mark_safe`` and ``json`` and add the ``room`` view function::
+Create the view function for the room view in ``chat/views.py``::
 
     # chat/views.py
     from django.shortcuts import render
-    from django.utils.safestring import mark_safe
-    import json
 
     def index(request):
         return render(request, 'chat/index.html', {})
 
     def room(request, room_name):
         return render(request, 'chat/room.html', {
-            'room_name_json': mark_safe(json.dumps(room_name))
+            'room_name': room_name
         })
 
 Create the route for the room view in ``chat/urls.py``::
@@ -149,7 +146,7 @@ echos it back to the same WebSocket.
     Note that for smaller sites you can use a simpler deployment strategy where
     Daphne serves all requests - HTTP and WebSocket - rather than having a
     separate WSGI server. In this deployment configuration no common path prefix
-    like is ``/ws/`` is necessary.
+    like ``/ws/`` is necessary.
 
 Create a new file ``chat/consumers.py``. Your app directory should now look like::
 

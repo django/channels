@@ -7,14 +7,14 @@ setup(
     url='http://github.com/django/channels',
     author='Django Software Foundation',
     author_email='foundation@djangoproject.com',
-    description="Brings async, event-driven capabilities to Django. Django 1.11 and up only.",
+    description="Brings async, event-driven capabilities to Django. Django 2.2 and up only.",
     license='BSD',
     packages=find_packages(exclude=['tests']),
     include_package_data=True,
     python_requires='>=3.5',
     install_requires=[
-        'Django>=1.11',
-        'asgiref~=3.0',
+        'Django>=2.2',
+        'asgiref~=3.2',
         'daphne~=2.3',
     ],
     extras_require={
@@ -39,6 +39,7 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Topic :: Internet :: WWW/HTTP',
     ],
 )
