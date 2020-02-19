@@ -14,6 +14,7 @@ from django.contrib.auth import (
 from django.contrib.auth.models import AnonymousUser
 
 from asgiref.sync import sync_to_async
+from asgiref.compatibility import guarantee_single_callable
 from channels.auth import AuthMiddleware, get_user, login, logout
 from channels.db import database_sync_to_async
 from channels.generic.websocket import WebsocketConsumer
@@ -264,5 +265,6 @@ async def test_scope_user_error_message(session):
 
     with pytest.raises(ValueError, match="Accessing scope user before it is ready."):
         scope = {"session": session}
-        auth = AuthMiddleware(TestConsumer)
-        auth(scope)
+        app = guarantee_single_callable(TestConsumer)
+        auth = AuthMiddleware(app)
+        await auth(scope, lambda e: None, lambda e: None)
