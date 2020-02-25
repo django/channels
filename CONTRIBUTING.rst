@@ -25,7 +25,7 @@ Make sure the tests pass:
 
 .. code-block:: sh
 
-    pip install -e .[tests]
+    python -m pip install -e .[tests]
     pytest
 
 Make your change. Add tests for your change. Make the tests pass:

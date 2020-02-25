@@ -22,7 +22,7 @@ presumably Django test support as well. You can do this by installing the
 
 .. code-block:: sh
 
-    pip install -U pytest-django pytest-asyncio
+    python -m pip install -U pytest-django pytest-asyncio
 
 Then, you need to decorate the tests you want to run async with
 ``pytest.mark.asyncio``. Note that you can't mix this with ``unittest.TestCase``

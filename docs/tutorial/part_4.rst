@@ -23,7 +23,7 @@ Install Selenium. Run the following command:
 
 .. code-block:: sh
 
-    $ pip3 install selenium
+    $ python3 -m pip install selenium
 
 .. _Install the Chrome web browser: https://www.google.com/chrome/
 .. _Install chromedriver: https://sites.google.com/a/chromium.org/chromedriver/getting-started

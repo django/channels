@@ -352,7 +352,7 @@ Redis. Run the following command:
 
 .. code-block:: sh
 
-    $ pip3 install channels_redis
+    $ python3 -m pip install channels_redis
 
 Before we can use a channel layer, we must configure it. Edit the
 ``mysite/settings.py`` file and add a ``CHANNEL_LAYERS`` setting to the bottom.

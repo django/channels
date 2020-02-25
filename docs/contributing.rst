@@ -75,7 +75,7 @@ your environment:
 .. code-block:: sh
 
     cd channels/
-    pip install -e .[tests]
+    python -m pip install -e .[tests]
 
 Note the ``[tests]`` section there; that tells ``pip`` that you want to install
 the ``tests`` extra, which will bring in testing dependencies like
