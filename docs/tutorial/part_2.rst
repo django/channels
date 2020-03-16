@@ -238,8 +238,10 @@ Put the following code in ``chat/routing.py``:
     from . import consumers
 
     websocket_urlpatterns = [
-        path('ws/chat/<str:room_name>/', consumers.ChatConsumer),
+        re_path(r'ws/chat/(?P<room_name>\w+)/$', consumers.ChatConsumer),
     ]
+
+(Note we use ``re_path()`` due to limitations in :ref:`URLRouter <urlrouter>`.)
 
 The next step is to point the root routing configuration at the **chat.routing**
 module. In ``mysite/routing.py``, import ``AuthMiddlewareStack``, ``URLRouter``,
