@@ -144,7 +144,7 @@ class JsonWebsocketConsumer(WebsocketConsumer):
 
     @classmethod
     def encode_json(cls, content):
-        return json.dumps(content)
+        return json.dumps(content).replace('\"', '')
 
 
 class AsyncWebsocketConsumer(AsyncConsumer):
