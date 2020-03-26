@@ -1,5 +1,8 @@
 dist: xenial
 
+services:
+  - postgresql
+
 language: python
 
 python:
@@ -12,7 +15,7 @@ env:
   - DJANGO="Django==3.0.*"
 
 install:
-  - pip install -U pip wheel setuptools
+  - pip install -U pip wheel setuptools psycopg2
   - pip install $DJANGO -e .[tests]
   - pip freeze
 
