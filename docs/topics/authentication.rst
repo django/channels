@@ -74,7 +74,14 @@ query string and uses that:
 
 .. code-block:: python
 
-    from django.db import close_old_connections
+    from channels.db import database_sync_to_async
+
+    @database_sync_to_async
+    def get_user(user_id):
+        try:
+            return User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return AnonymousUser()
 
     class QueryAuthMiddleware:
         """
@@ -86,17 +93,28 @@ query string and uses that:
             self.inner = inner
 
         def __call__(self, scope):
+            return QueryAuthMiddlewareInstance(scope, self)
 
-            # Close old database connections to prevent usage of timed out connections
-            close_old_connections()
+    class QueryAuthMiddlewareInstance:
+        """
+        Inner class that is instantiated once per scope.
+        """
 
+        def __init__(self, scope, middleware):
+            self.middleware = middleware
+            self.scope = dict(scope)
+            self.inner = self.middleware.inner
+
+        async def __call__(self, receive, send):
             # Look up user from query string (you should also do things like
             # checking if it is a valid user ID, or if scope["user"] is already
             # populated).
-            user = User.objects.get(id=int(scope["query_string"]))
+            self.scope['user'] = await get_user(int(self.scope["query_string"]))
 
-            # Return the inner application directly and let it run everything else
-            return self.inner(dict(scope, user=user))
+            # Instantiate our inner application
+            inner = self.inner(self.scope)
+
+            return await inner(receive, send)
 
 .. warning::
 
