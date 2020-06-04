@@ -241,7 +241,7 @@ Much like a standard WSGI server, your application code that is handling
 protocol events runs inside the server process itself - for example, WebSocket
 handling code runs inside your WebSocket server process.
 
-Each socket or connection to your overall application is handled by a
+Each socket or connection to your overall application is handled by an
 *application instance* inside one of these servers. They get called and can
 send data back to the client directly.
 
