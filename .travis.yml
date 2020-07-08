@@ -32,7 +32,7 @@ jobs:
       env: DJANGO="Django==2.2.*"
 
     - stage: lint
-      install: pip install -U -e .[tests] black pyflakes isort
+      install: pip install -U -e .[tests] black pyflakes isort<5
       script:
         - pyflakes channels tests
         - black --check --diff channels tests
