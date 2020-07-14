@@ -8,7 +8,8 @@ These projects from the community are developed on top of Channels:
 * DjangoChannelsRestFramework_, a framework that providers DRF like consumers for channels.
 * ChannelsMultiplexer_, a JsonConsumer Multiplexer for channels.
 * DjangoChannelsIRC_, an interface server and matching generic consumers for IRC.
-* Apollo_, a real-time polling application for corporate and academic environments
+* Apollo_, a real-time polling application for corporate and academic environments.
+* DjangoChannelsJsonRpc_, a wrapper for the JSON-RPC protocol.
 
 If you'd like to add your project, please submit a PR with a link and brief description.
 
@@ -18,3 +19,4 @@ If you'd like to add your project, please submit a PR with a link and brief desc
 .. _ChannelsMultiplexer: https://github.com/hishnash/channelsmultiplexer
 .. _DjangoChannelsIRC: https://github.com/AdvocatesInc/django-channels-irc
 .. _Apollo: https://github.com/maliesa96/apollo
+.. _DjangoChannelsJsonRpc: https://github.com/millerf/django-channels2-jsonrpc
