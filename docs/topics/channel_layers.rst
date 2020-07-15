@@ -38,7 +38,7 @@ You can get the default channel layer from a project with
 is automatically provided for you on the consumer as ``self.channel_layer``.
 
 Redis Channel Layer
-**********************
+*******************
 
 `channels_redis`_ is the only official Django-maintained channel layer
 supported for production use. The layer uses Redis as its backing store,
@@ -62,7 +62,7 @@ In this example, Redis is running on localhost (127.0.0.1) port 6379:
     }
 
 In-Memory Channel Layer
-**********************
+***********************
 
 .. warning::
 
