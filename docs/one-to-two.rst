@@ -162,10 +162,10 @@ storing it on ``self`` inside a consumer.
 HTTP sessions and Django auth
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-All :doc:`authentication </topics/authentication>` and
-:doc:`sessions </topics/session>` are now done with middleware. You can remove
-any decorators that handled them, like ``http_session``, ``channel_session_user``
-and so on (in fact, there are no decorators in Channels 2 - it's all middleware).
+All :doc:`authentication <topics/authentication>` and :doc:`sessions
+<topics/sessions>` are now done with middleware. You can remove any decorators
+that handled them, like ``http_session``, ``channel_session_user`` and so on
+(in fact, there are no decorators in Channels 2 - it's all middleware).
 
 To get auth now, wrap your URLRouter in an ``AuthMiddlewareStack``:
 
