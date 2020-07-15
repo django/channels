@@ -9,7 +9,6 @@ from django.urls.resolvers import URLResolver
 
 from channels.http import AsgiHandler
 
-
 """
 All Routing instances inside this file are also valid ASGI applications - with
 new Channels routing, whatever you end up with as the top level object is just
