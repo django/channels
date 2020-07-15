@@ -289,3 +289,69 @@ async def test_async_json_websocket_consumer():
     await communicator.send_to(bytes_data=b"w\0\0\0")
     with pytest.raises(ValueError):
         await communicator.wait()
+
+
+@pytest.mark.asyncio
+async def test_block_underscored_type_function_call():
+    """
+    Test that consumer prevent calling private functions as handler
+    """
+
+    class TestConsumer(AsyncWebsocketConsumer):
+        channel_layer_alias = "testlayer"
+
+        async def _my_private_handler(self, _):
+            await self.send(text_data="should never be called")
+
+    channel_layers_setting = {
+        "testlayer": {"BACKEND": "channels.layers.InMemoryChannelLayer"}
+    }
+    with override_settings(CHANNEL_LAYERS=channel_layers_setting):
+        communicator = WebsocketCommunicator(TestConsumer, "/testws/")
+        await communicator.connect()
+
+        channel_layer = get_channel_layer("testlayer")
+        # Test that the specific channel layer is retrieved
+        assert channel_layer != None
+
+        channel_name = list(channel_layer.channels.keys())[0]
+        # Should block call to private functions handler and raise ValueError
+        message = {"type": "_my_private_handler", "text": "hello"}
+        await channel_layer.send(channel_name, message)
+        with pytest.raises(
+            ValueError, match=r"Malformed type in message \(leading underscore\)"
+        ):
+            await communicator.receive_from()
+
+
+@pytest.mark.asyncio
+async def test_block_leading_dot_type_function_call():
+    """
+    Test that consumer prevent calling private functions as handler
+    """
+
+    class TestConsumer(AsyncWebsocketConsumer):
+        channel_layer_alias = "testlayer"
+
+        async def _my_private_handler(self, _):
+            await self.send(text_data="should never be called")
+
+    channel_layers_setting = {
+        "testlayer": {"BACKEND": "channels.layers.InMemoryChannelLayer"}
+    }
+    with override_settings(CHANNEL_LAYERS=channel_layers_setting):
+        communicator = WebsocketCommunicator(TestConsumer, "/testws/")
+        await communicator.connect()
+
+        channel_layer = get_channel_layer("testlayer")
+        # Test that the specific channel layer is retrieved
+        assert channel_layer != None
+
+        channel_name = list(channel_layer.channels.keys())[0]
+        # Should not replace dot by underscore and call private function (see issue: #1430)
+        message = {"type": ".my_private_handler", "text": "hello"}
+        await channel_layer.send(channel_name, message)
+        with pytest.raises(
+            ValueError, match=r"Malformed type in message \(leading underscore\)"
+        ):
+            await communicator.receive_from()
