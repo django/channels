@@ -7,6 +7,7 @@ def monkeypatch_django():
     from django.contrib.staticfiles.management.commands.runserver import (
         Command as StaticRunserverCommand,
     )
+
     from .management.commands.runserver import Command as RunserverCommand
 
     StaticRunserverCommand.__bases__ = (RunserverCommand,)
