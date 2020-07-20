@@ -284,3 +284,8 @@ Reload nginx to apply the changes:
 
     $ sudo service nginx reload
 
+
+Video tutorial
+--------------
+
+https://www.youtube.com/watch?v=TLGucyn9URA&t=3s
