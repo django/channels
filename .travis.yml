@@ -10,6 +10,7 @@ python:
 env:
   - DJANGO="Django~=2.2.8"
   - DJANGO="Django==3.0.*"
+  - DJANGO="Django>=3.1rc1,<3.2"
 
 install:
   - pip install -U attrs pytest  # Travis comes with an old version pre-installed.
