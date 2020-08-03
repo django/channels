@@ -247,24 +247,3 @@ async def test_logout_not_logged_in(session):
 
     assert "user" not in scope
     assert isinstance(await get_user(scope), AnonymousUser)
-
-
-@pytest.mark.django_db(transaction=True)
-@pytest.mark.asyncio
-async def test_scope_user_error_message(session):
-    """
-    Tests that the correct error message is thrown when scope user is accessed before it's ready
-    """
-
-    class TestConsumer(WebsocketConsumer):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-            if "user" in self.scope:
-                # access scope user before it's ready
-                getattr(self.scope["user"], "test")
-
-    with pytest.raises(ValueError, match="Accessing scope user before it is ready."):
-        scope = {"session": session}
-        app = guarantee_single_callable(TestConsumer)
-        auth = AuthMiddleware(app)
-        await auth(scope, lambda e: None, lambda e: None)
