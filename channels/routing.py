@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import importlib
 
+from asgiref.compatibility import guarantee_single_callable
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.urls.exceptions import Resolver404
@@ -48,9 +49,12 @@ class ProtocolTypeRouter:
         if "http" not in self.application_mapping:
             self.application_mapping["http"] = AsgiHandler
 
-    def __call__(self, scope):
+    async def __call__(self, scope, receive, send):
         if scope["type"] in self.application_mapping:
-            return self.application_mapping[scope["type"]](scope)
+            application = guarantee_single_callable(
+                self.application_mapping[scope["type"]]
+            )
+            return await application(scope, receive, send)
         else:
             raise ValueError(
                 "No application configured for scope type %r" % scope["type"]
@@ -113,7 +117,7 @@ class URLRouter:
                     " URLRouter instances instead." % (route,)
                 )
 
-    def __call__(self, scope):
+    async def __call__(self, scope, receive, send):
         # Get the path
         path = scope.get("path_remaining", scope.get("path", None))
         if path is None:
@@ -128,7 +132,8 @@ class URLRouter:
                     new_path, args, kwargs = match
                     # Add args or kwargs into the scope
                     outer = scope.get("url_route", {})
-                    return route.callback(
+                    application = guarantee_single_callable(route.callback)
+                    return await application(
                         dict(
                             scope,
                             path_remaining=new_path,
@@ -136,7 +141,9 @@ class URLRouter:
                                 "args": outer.get("args", ()) + args,
                                 "kwargs": {**outer.get("kwargs", {}), **kwargs},
                             },
-                        )
+                        ),
+                        receive,
+                        send,
                     )
             except Resolver404:
                 pass
@@ -156,14 +163,17 @@ class ChannelNameRouter:
     def __init__(self, application_mapping):
         self.application_mapping = application_mapping
 
-    def __call__(self, scope):
+    async def __call__(self, scope, receive, send):
         if "channel" not in scope:
             raise ValueError(
                 "ChannelNameRouter got a scope without a 'channel' key. "
                 + "Did you make sure it's only being used for 'channel' type messages?"
             )
         if scope["channel"] in self.application_mapping:
-            return self.application_mapping[scope["channel"]](scope)
+            application = guarantee_single_callable(
+                self.application_mapping[scope["channel"]]
+            )
+            return await application(scope, receive, send)
         else:
             raise ValueError(
                 "No application configured for channel name %r" % scope["channel"]
