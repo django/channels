@@ -1,0 +1,24 @@
+3.0.0 Release Notes
+===================
+
+Channels 3.0 brings compatibility against ASGI 3, per Django 3.1's dependency.
+(Specifically we ensure session save calls are made inside an asgiref
+``database_sync_to_async()``.)
+
+
+Backwards Incompatible Changes
+------------------------------
+
+We have changed the internals per ASGI 3's requirement for a single callable application.
+
+This is per asgiref ``guarantee_single_callable``, and as such you will need to change how you
+call your application via the (conventional) ``routing.py`` in your code.
+
+As a downstream effect we also changed the middleware's ``__call__`` method to be asynchronous;
+if you have overridden or extended the middleware's ``__call__``, you must adopt an asychronous
+implementation. Additionally, we simplified the internals of ``BaseMiddleware`` so that ``__call__``
+ no longer offers automatic ``populate_scope`` and ``resolve_scope`` methods. If you were relying
+on those to be called for you (you made those functions in your subclassed middleware), you must
+implement ``__call__`` to call into those functions, and
+likely call ``return await super().__call__(scope, receive, send)`` at the bottom of the method.
+
