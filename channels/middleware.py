@@ -1,6 +1,3 @@
-from functools import partial
-
-
 class BaseMiddleware:
     """
     Base class for implementing ASGI middleware. Inherit from this and

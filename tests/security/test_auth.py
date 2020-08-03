@@ -14,10 +14,8 @@ from django.contrib.auth import (
 from django.contrib.auth.models import AnonymousUser
 
 from asgiref.sync import sync_to_async
-from asgiref.compatibility import guarantee_single_callable
-from channels.auth import AuthMiddleware, get_user, login, logout
+from channels.auth import get_user, login, logout
 from channels.db import database_sync_to_async
-from channels.generic.websocket import WebsocketConsumer
 
 
 class CatchSignal:

@@ -8,8 +8,8 @@ from django.core.exceptions import RequestDataTooBig
 from django.http import HttpResponse, RawPostDataException
 from django.test import override_settings
 
-from asgiref.testing import ApplicationCommunicator
 from asgiref.compatibility import guarantee_single_callable
+from asgiref.testing import ApplicationCommunicator
 from channels.consumer import AsyncConsumer
 from channels.db import database_sync_to_async
 from channels.http import AsgiHandler, AsgiRequest
@@ -347,9 +347,7 @@ async def test_sessions():
 
     app = guarantee_single_callable(SimpleHttpApp)
 
-    communicator = HttpCommunicator(
-        SessionMiddlewareStack(app), "GET", "/test/"
-    )
+    communicator = HttpCommunicator(SessionMiddlewareStack(app), "GET", "/test/")
     response = await communicator.get_response()
     headers = response.get("headers", [])
 
