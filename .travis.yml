@@ -37,7 +37,7 @@ jobs:
       script:
         - pyflakes channels tests
         - black --check --diff channels tests
-        - isort --check-only --diff --recursive channels tests
+        - isort --check-only --diff channels tests
 
     - stage: release
       script: skip
