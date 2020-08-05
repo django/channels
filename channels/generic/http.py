@@ -10,7 +10,6 @@ class AsyncHttpConsumer(AsyncConsumer):
     """
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
         self.body = []
 
     async def send_headers(self, *, status=200, headers=None):

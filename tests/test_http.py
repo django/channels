@@ -345,7 +345,7 @@ async def test_sessions():
             )
             await self.send({"type": "http.response.body", "body": b"test response"})
 
-    app = guarantee_single_callable(SimpleHttpApp)
+    app = SimpleHttpApp()
 
     communicator = HttpCommunicator(SessionMiddlewareStack(app), "GET", "/test/")
     response = await communicator.get_response()

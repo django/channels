@@ -30,8 +30,10 @@ async def test_websocket_consumer():
         def disconnect(self, code):
             results["disconnected"] = code
 
+    app = TestConsumer()
+
     # Test a normal connection
-    communicator = WebsocketCommunicator(TestConsumer, "/testws/")
+    communicator = WebsocketCommunicator(app, "/testws/")
     connected, _ = await communicator.connect()
     assert connected
     assert "connected" in results
@@ -61,9 +63,11 @@ async def test_websocket_consumer_subprotocol():
             assert self.scope["subprotocols"] == ["subprotocol1", "subprotocol2"]
             self.accept("subprotocol2")
 
+    app = TestConsumer()
+
     # Test a normal connection with subprotocols
     communicator = WebsocketCommunicator(
-        TestConsumer, "/testws/", subprotocols=["subprotocol1", "subprotocol2"]
+        app, "/testws/", subprotocols=["subprotocol1", "subprotocol2"]
     )
     connected, subprotocol = await communicator.connect()
     assert connected
@@ -84,11 +88,13 @@ async def test_websocket_consumer_groups():
             results["received"] = (text_data, bytes_data)
             self.send(text_data=text_data, bytes_data=bytes_data)
 
+    app = TestConsumer()
+
     channel_layers_setting = {
         "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}
     }
     with override_settings(CHANNEL_LAYERS=channel_layers_setting):
-        communicator = WebsocketCommunicator(TestConsumer, "/testws/")
+        communicator = WebsocketCommunicator(app, "/testws/")
         await communicator.connect()
 
         channel_layer = get_channel_layer()
@@ -122,8 +128,10 @@ async def test_async_websocket_consumer():
         async def disconnect(self, code):
             results["disconnected"] = code
 
+    app = TestConsumer()
+
     # Test a normal connection
-    communicator = WebsocketCommunicator(TestConsumer, "/testws/")
+    communicator = WebsocketCommunicator(app, "/testws/")
     connected, _ = await communicator.connect()
     assert connected
     assert "connected" in results
@@ -153,9 +161,11 @@ async def test_async_websocket_consumer_subprotocol():
             assert self.scope["subprotocols"] == ["subprotocol1", "subprotocol2"]
             await self.accept("subprotocol2")
 
+    app = TestConsumer()
+
     # Test a normal connection with subprotocols
     communicator = WebsocketCommunicator(
-        TestConsumer, "/testws/", subprotocols=["subprotocol1", "subprotocol2"]
+        app, "/testws/", subprotocols=["subprotocol1", "subprotocol2"]
     )
     connected, subprotocol = await communicator.connect()
     assert connected
