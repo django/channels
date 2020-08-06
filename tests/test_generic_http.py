@@ -21,9 +21,11 @@ async def test_async_http_consumer():
                 headers={b"Content-Type": b"application/json"},
             )
 
+    app = TestConsumer()
+
     # Open a connection
     communicator = HttpCommunicator(
-        TestConsumer,
+        app,
         method="POST",
         path="/test/",
         body=json.dumps({"value": 42, "anything": False}).encode("utf-8"),
