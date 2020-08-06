@@ -20,6 +20,7 @@ async def test_async_http_consumer():
                 json.dumps({"value": data["value"]}).encode("utf-8"),
                 headers={b"Content-Type": b"application/json"},
             )
+
     app = TestConsumer()
 
     # Open a connection

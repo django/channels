@@ -233,7 +233,7 @@ async def test_async_websocket_consumer_specific_channel_layer():
 
         channel_layer = get_channel_layer("testlayer")
         # Test that the specific channel layer is retrieved
-        assert channel_layer != None
+        assert channel_layer is not None
 
         channel_name = list(channel_layer.channels.keys())[0]
         message = {"type": "websocket.receive", "text": "hello"}
@@ -332,7 +332,7 @@ async def test_block_underscored_type_function_call():
 
         channel_layer = get_channel_layer("testlayer")
         # Test that the specific channel layer is retrieved
-        assert channel_layer != None
+        assert channel_layer is not None
 
         channel_name = list(channel_layer.channels.keys())[0]
         # Should block call to private functions handler and raise ValueError
@@ -367,7 +367,7 @@ async def test_block_leading_dot_type_function_call():
 
         channel_layer = get_channel_layer("testlayer")
         # Test that the specific channel layer is retrieved
-        assert channel_layer != None
+        assert channel_layer is not None
 
         channel_name = list(channel_layer.channels.keys())[0]
         # Should not replace dot by underscore and call private function (see issue: #1430)

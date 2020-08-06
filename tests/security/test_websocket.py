@@ -45,7 +45,9 @@ async def test_origin_validator():
     assert connected
     await communicator.disconnect()
     # Make our test application, with scheme://domain[:port] for http
-    application = OriginValidator(AsyncWebsocketConsumer(), ["http://allowed-domain.com"])
+    application = OriginValidator(
+        AsyncWebsocketConsumer(), ["http://allowed-domain.com"]
+    )
     # Test a normal connection
     communicator = WebsocketCommunicator(
         application, "/", headers=[(b"origin", b"http://allowed-domain.com")]

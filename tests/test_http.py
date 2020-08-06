@@ -8,7 +8,6 @@ from django.core.exceptions import RequestDataTooBig
 from django.http import HttpResponse, RawPostDataException
 from django.test import override_settings
 
-from asgiref.compatibility import guarantee_single_callable
 from asgiref.testing import ApplicationCommunicator
 from channels.consumer import AsyncConsumer
 from channels.db import database_sync_to_async
