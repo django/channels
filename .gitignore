@@ -20,6 +20,7 @@ Pipfile.lock
 # IDE and Tooling files
 .idea/*
 *~
+.vscode
 
 # macOS
 .DS_Store
