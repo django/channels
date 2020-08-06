@@ -34,13 +34,12 @@ class AsyncConsumer:
     _sync = False
     channel_layer_alias = DEFAULT_CHANNEL_LAYER
 
-    def __init__(self, scope):
-        self.scope = scope
-
-    async def __call__(self, receive, send):
+    async def __call__(self, scope, receive, send):
         """
         Dispatches incoming messages to type-based handlers asynchronously.
         """
+        self.scope = scope
+
         # Initialize channel layer
         self.channel_layer = get_channel_layer(self.channel_layer_alias)
         if self.channel_layer is not None:
