@@ -28,7 +28,7 @@ async def test_http_communicator():
     """
     Tests that the HTTP communicator class works at a basic level.
     """
-    communicator = HttpCommunicator(SimpleHttpApp, "GET", "/test/?foo=bar")
+    communicator = HttpCommunicator(SimpleHttpApp(), "GET", "/test/?foo=bar")
     response = await communicator.get_response()
     assert response["body"] == b"test response"
     assert response["status"] == 200
@@ -71,7 +71,7 @@ async def test_websocket_communicator():
     """
     Tests that the WebSocket communicator class works at a basic level.
     """
-    communicator = WebsocketCommunicator(SimpleWebsocketApp, "/testws/")
+    communicator = WebsocketCommunicator(SimpleWebsocketApp(), "/testws/")
     # Test connection
     connected, subprotocol = await communicator.connect()
     assert connected
@@ -98,7 +98,7 @@ async def test_websocket_application():
     Tests that the WebSocket communicator class works with the
     URLRoute application.
     """
-    application = URLRouter([url(r"^testws/(?P<message>\w+)/$", KwargsWebSocketApp)])
+    application = URLRouter([url(r"^testws/(?P<message>\w+)/$", KwargsWebSocketApp())])
     communicator = WebsocketCommunicator(application, "/testws/test/")
     connected, subprotocol = await communicator.connect()
     # Test connection
@@ -114,7 +114,7 @@ async def test_timeout_disconnect():
     """
     Tests that disconnect() still works after a timeout.
     """
-    communicator = WebsocketCommunicator(ErrorWebsocketApp, "/testws/")
+    communicator = WebsocketCommunicator(ErrorWebsocketApp(), "/testws/")
     # Test connection
     connected, subprotocol = await communicator.connect()
     assert connected
@@ -156,7 +156,7 @@ async def test_connection_scope(path):
     """
     Tests ASGI specification for the the connection scope.
     """
-    communicator = WebsocketCommunicator(ConnectionScopeValidator, path)
+    communicator = WebsocketCommunicator(ConnectionScopeValidator(), path)
     connected, _ = await communicator.connect()
     assert connected
     await communicator.disconnect()
