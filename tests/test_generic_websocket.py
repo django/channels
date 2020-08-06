@@ -186,11 +186,13 @@ async def test_async_websocket_consumer_groups():
             results["received"] = (text_data, bytes_data)
             await self.send(text_data=text_data, bytes_data=bytes_data)
 
+    app = TestConsumer()
+
     channel_layers_setting = {
         "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}
     }
     with override_settings(CHANNEL_LAYERS=channel_layers_setting):
-        communicator = WebsocketCommunicator(TestConsumer, "/testws/")
+        communicator = WebsocketCommunicator(app, "/testws/")
         await communicator.connect()
 
         channel_layer = get_channel_layer()
