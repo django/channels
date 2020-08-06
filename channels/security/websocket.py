@@ -16,7 +16,7 @@ class OriginValidator:
         self.application = application
         self.allowed_origins = allowed_origins
 
-    def __call__(self, scope):
+    async def __call__(self, scope, send, receive):
         # Make sure the scope is of type websocket
         if scope["type"] != "websocket":
             raise ValueError(
@@ -34,10 +34,11 @@ class OriginValidator:
         # Check to see if the origin header is valid
         if self.valid_origin(parsed_origin):
             # Pass control to the application
-            return self.application(scope)
+            return await self.application(scope, send, receive)
         else:
             # Deny the connection
-            return WebsocketDenier(scope)
+            denier = WebsocketDenier()
+            return await denier(scope, send, receive)
 
     def valid_origin(self, parsed_origin):
         """
