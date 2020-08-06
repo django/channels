@@ -222,11 +222,13 @@ async def test_async_websocket_consumer_specific_channel_layer():
             results["received"] = (text_data, bytes_data)
             await self.send(text_data=text_data, bytes_data=bytes_data)
 
+    app = TestConsumer()
+
     channel_layers_setting = {
         "testlayer": {"BACKEND": "channels.layers.InMemoryChannelLayer"}
     }
     with override_settings(CHANNEL_LAYERS=channel_layers_setting):
-        communicator = WebsocketCommunicator(TestConsumer, "/testws/")
+        communicator = WebsocketCommunicator(app, "/testws/")
         await communicator.connect()
 
         channel_layer = get_channel_layer("testlayer")
@@ -258,8 +260,10 @@ async def test_json_websocket_consumer():
             results["received"] = data
             self.send_json(data)
 
+    app = TestConsumer()
+
     # Open a connection
-    communicator = WebsocketCommunicator(TestConsumer, "/testws/")
+    communicator = WebsocketCommunicator(app, "/testws/")
     connected, _ = await communicator.connect()
     assert connected
     # Test sending
@@ -288,8 +292,10 @@ async def test_async_json_websocket_consumer():
             results["received"] = data
             await self.send_json(data)
 
+    app = TestConsumer()
+
     # Open a connection
-    communicator = WebsocketCommunicator(TestConsumer, "/testws/")
+    communicator = WebsocketCommunicator(app, "/testws/")
     connected, _ = await communicator.connect()
     assert connected
     # Test sending
@@ -315,11 +321,13 @@ async def test_block_underscored_type_function_call():
         async def _my_private_handler(self, _):
             await self.send(text_data="should never be called")
 
+    app = TestConsumer()
+
     channel_layers_setting = {
         "testlayer": {"BACKEND": "channels.layers.InMemoryChannelLayer"}
     }
     with override_settings(CHANNEL_LAYERS=channel_layers_setting):
-        communicator = WebsocketCommunicator(TestConsumer, "/testws/")
+        communicator = WebsocketCommunicator(app, "/testws/")
         await communicator.connect()
 
         channel_layer = get_channel_layer("testlayer")
@@ -348,11 +356,13 @@ async def test_block_leading_dot_type_function_call():
         async def _my_private_handler(self, _):
             await self.send(text_data="should never be called")
 
+    app = TestConsumer()
+
     channel_layers_setting = {
         "testlayer": {"BACKEND": "channels.layers.InMemoryChannelLayer"}
     }
     with override_settings(CHANNEL_LAYERS=channel_layers_setting):
-        communicator = WebsocketCommunicator(TestConsumer, "/testws/")
+        communicator = WebsocketCommunicator(app, "/testws/")
         await communicator.connect()
 
         channel_layer = get_channel_layer("testlayer")
