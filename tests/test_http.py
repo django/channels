@@ -262,7 +262,7 @@ async def test_handler_basic():
     Tests very basic request handling, no body.
     """
     scope = {"type": "http", "http_version": "1.1", "method": "GET", "path": "/test/"}
-    handler = ApplicationCommunicator(MockHandler, scope)
+    handler = ApplicationCommunicator(MockHandler(), scope)
     await handler.send_input({"type": "http.request"})
     await handler.receive_output(1)  # response start
     await handler.receive_output(1)  # response body
@@ -277,7 +277,7 @@ async def test_handler_body_single():
     Tests request handling with a single-part body
     """
     scope = {"type": "http", "http_version": "1.1", "method": "GET", "path": "/test/"}
-    handler = ApplicationCommunicator(MockHandler, scope)
+    handler = ApplicationCommunicator(MockHandler(), scope)
     await handler.send_input(
         {"type": "http.request", "body": b"chunk one \x01 chunk two"}
     )
@@ -294,7 +294,7 @@ async def test_handler_body_multiple():
     Tests request handling with a multi-part body
     """
     scope = {"type": "http", "http_version": "1.1", "method": "GET", "path": "/test/"}
-    handler = ApplicationCommunicator(MockHandler, scope)
+    handler = ApplicationCommunicator(MockHandler(), scope)
     await handler.send_input(
         {"type": "http.request", "body": b"chunk one", "more_body": True}
     )
@@ -315,7 +315,7 @@ async def test_handler_body_ignore_extra():
     Tests request handling ignores anything after more_body: False
     """
     scope = {"type": "http", "http_version": "1.1", "method": "GET", "path": "/test/"}
-    handler = ApplicationCommunicator(MockHandler, scope)
+    handler = ApplicationCommunicator(MockHandler(), scope)
     await handler.send_input(
         {"type": "http.request", "body": b"chunk one", "more_body": False}
     )
@@ -373,20 +373,12 @@ class MiddlewareTests(unittest.TestCase):
         Tests that middleware is only loaded once
         and is successfully cached on the AsgiHandler class.
         """
-
-        scope = {
-            "type": "http",
-            "http_version": "1.1",
-            "method": "GET",
-            "path": "/test/",
-        }
-
-        AsgiHandler(scope)  # First Handler
+        AsgiHandler()  # First Handler
 
         self.assertTrue(AsgiHandler._middleware_chain is not None)
 
         with patch(
             "django.core.handlers.base.BaseHandler.load_middleware"
         ) as super_function:
-            AsgiHandler(scope)  # Second Handler
+            AsgiHandler()  # Second Handler
             self.assertFalse(super_function.called)
