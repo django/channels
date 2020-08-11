@@ -168,21 +168,21 @@ class AsgiHandler(base.BaseHandler):
     # Size to chunk response bodies into for multiple response messages
     chunk_size = 512 * 1024
 
-    def __init__(self, scope):
+    def __init__(self):
+        super(AsgiHandler, self).__init__()
+        self.load_middleware()
+
+    async def __call__(self, scope, receive, send):
+        """
+        Async entrypoint - uses the sync_to_async wrapper to run things in a
+        threadpool.
+        """
         if scope["type"] != "http":
             raise ValueError(
                 "The AsgiHandler can only handle HTTP connections, not %s"
                 % scope["type"]
             )
-        super(AsgiHandler, self).__init__()
         self.scope = scope
-        self.load_middleware()
-
-    async def __call__(self, receive, send):
-        """
-        Async entrypoint - uses the sync_to_async wrapper to run things in a
-        threadpool.
-        """
         self.send = async_to_sync(send)
 
         # Receive the HTTP request body as a stream object.
