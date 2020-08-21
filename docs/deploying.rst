@@ -231,7 +231,8 @@ When running the supervisor fcgi-program under a different user, change the owne
 
 .. code-block:: sh
 
-    $ sudo chown <user>.<user> /run/daphne/
+    $ sudo chmod 775 /run
+    $ sudo chmod 775 /run/*
 
 Have supervisor reread and update its jobs:
 
