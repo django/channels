@@ -11,5 +11,5 @@ def pytest_configure():
             "django.contrib.admin",
             "channels",
         ],
-        SECRET_KEY="Not_a_secret_key"
+        SECRET_KEY="Not_a_secret_key",
     )
