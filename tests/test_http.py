@@ -159,15 +159,14 @@ class RequestTests(unittest.TestCase):
                 "headers": {
                     "sec-websocket-protocol": b"350",
                 },
-            }, BytesIO(b"")
+            },
+            BytesIO(b""),
         )
         self.assertEqual(request.path, "/test/")
         self.assertEqual(request.method, "GET")
         self.assertEqual(request.META["REQUEST_METHOD"], "GET")
         self.assertEqual(request.GET["django"], "great")
-        self.assertEqual(
-            request.META["HTTP_SEC_WEBSOCKET_PROTOCOL"], "350"
-        )
+        self.assertEqual(request.META["HTTP_SEC_WEBSOCKET_PROTOCOL"], "350")
 
     def test_stream(self):
         """
