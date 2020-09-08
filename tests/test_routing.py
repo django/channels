@@ -1,8 +1,8 @@
 from unittest.mock import MagicMock
 
 import pytest
-from django.conf.urls import url
 from django.core.exceptions import ImproperlyConfigured
+from django.urls import path, re_path
 
 from channels.http import AsgiHandler
 from channels.routing import ChannelNameRouter, ProtocolTypeRouter, URLRouter
@@ -59,12 +59,12 @@ def test_url_router():
     defaultkwarg_app = MagicMock(return_value=6)
     router = URLRouter(
         [
-            url(r"^$", MagicMock(return_value=1)),
-            url(r"^foo/$", MagicMock(return_value=2)),
-            url(r"^bar", MagicMock(return_value=3)),
-            url(r"^posarg/(\d+)/$", posarg_app),
-            url(r"^kwarg/(?P<name>\w+)/$", kwarg_app),
-            url(r"^defaultkwargs/$", defaultkwarg_app, kwargs={"default": 42}),
+            path("", MagicMock(return_value=1)),
+            path("foo/", MagicMock(return_value=2)),
+            re_path(r"bar", MagicMock(return_value=3)),
+            re_path(r"^posarg/(\d+)/$", posarg_app),
+            path("kwarg/<str:name>/", kwarg_app),
+            path("defaultkwargs/", defaultkwarg_app, kwargs={"default": 42}),
         ]
     )
     # Valid basic matches
@@ -107,14 +107,16 @@ def test_url_router_nesting():
     test_app = MagicMock(return_value=1)
     inner_router = URLRouter(
         [
-            url(r"^book/(?P<book>[\w\-]+)/page/(?P<page>\d+)/$", test_app),
-            url(r"^test/(\d+)/$", test_app),
+            re_path(r"^book/(?P<book>[\w\-]+)/page/(?P<page>\d+)/$", test_app),
+            re_path(r"^test/(\d+)/$", test_app),
         ]
     )
     outer_router = URLRouter(
         [
-            url(r"^universe/(?P<universe>\d+)/author/(?P<author>\w+)/", inner_router),
-            url(r"^positional/(\w+)/", inner_router),
+            re_path(
+                r"^universe/(?P<universe>\d+)/author/(?P<author>\w+)/", inner_router
+            ),
+            re_path(r"^positional/(\w+)/", inner_router),
         ]
     )
     assert (
@@ -215,12 +217,12 @@ def test_path_remaining():
     Resolving continues in outer router if an inner router has no matching
     routes
     """
-    inner_router = URLRouter([url(r"^no-match/$", MagicMock(return_value=1))])
+    inner_router = URLRouter([path("no-match/", MagicMock(return_value=1))])
     test_app = MagicMock(return_value=2)
     outer_router = URLRouter(
-        [url(r"^prefix/", inner_router), url(r"^prefix/stuff/$", test_app)]
+        [path("prefix/", inner_router), path("prefix/stuff/", test_app)]
     )
-    outermost_router = URLRouter([url(r"", outer_router)])
+    outermost_router = URLRouter([path("", outer_router)])
 
     assert outermost_router({"type": "http", "path": "/prefix/stuff/"}) == 2
 
@@ -232,6 +234,6 @@ def test_invalid_routes():
     from django.urls import include
 
     with pytest.raises(ImproperlyConfigured) as exc:
-        URLRouter([url(r"^$", include([]))])
+        URLRouter([path("", include([]))])
 
     assert "include() is not supported in URLRouter." in str(exc)
