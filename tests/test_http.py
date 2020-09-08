@@ -141,6 +141,34 @@ class RequestTests(unittest.TestCase):
         self.assertEqual(request.POST["title"], "My First Book")
         self.assertEqual(request.FILES["pdf"].read(), b"FAKEPDFBYTESGOHERE")
 
+    def test_websocket_handshake(self):
+        """
+        Tests handler can decode Websocket connection scope HTTP handshake.
+
+        As per the ASGI specs, a request method is not supplied in the
+        websocket connection scope (although the request method must have been
+        GET as of RFC6455).
+        """
+
+        request = AsgiRequest(
+            {
+                "type": "websocket",
+                "http_version": "1.1",
+                "query_string": "django=great",
+                "path": "/test/",
+                "headers": {
+                    "sec-websocket-protocol": b"350",
+                },
+            }, BytesIO(b"")
+        )
+        self.assertEqual(request.path, "/test/")
+        self.assertEqual(request.method, "GET")
+        self.assertEqual(request.META["REQUEST_METHOD"], "GET")
+        self.assertEqual(request.GET["django"], "great")
+        self.assertEqual(
+            request.META["HTTP_SEC_WEBSOCKET_PROTOCOL"], "350"
+        )
+
     def test_stream(self):
         """
         Tests the body stream is emulated correctly.

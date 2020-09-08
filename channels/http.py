@@ -53,7 +53,11 @@ class AsgiRequest(http.HttpRequest):
             self.path = scope["path"]
 
         # HTTP basics
-        self.method = self.scope["method"].upper()
+        if self.scope.get("type") == "websocket":
+            self.method = "GET"
+        else:
+            self.method = self.scope["method"].upper()
+
         # fix https://github.com/django/channels/issues/622
         query_string = self.scope.get("query_string", "")
         if isinstance(query_string, bytes):
