@@ -38,7 +38,7 @@ class CookieMiddleware:
         # Go through headers to find the cookie one
         for name, value in scope.get("headers", []):
             if name == b"cookie":
-                cookies = parse_cookie(value.decode("ascii"))
+                cookies = parse_cookie(value.decode("latin1"))
                 break
         else:
             # No cookie header found - add an empty default.
