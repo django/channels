@@ -231,7 +231,13 @@ When running the supervisor fcgi-program under a different user, change the owne
 
 .. code-block:: sh
 
-    $ sudo chown <user>.<user> /run/daphne/
+    $ sudo chown <user>.<group> /run/daphne/
+
+The /run/ folder is cleared on a server reboot. To make the /run/daphne folder persistant create a file ``/usr/lib/tmpfiles.d/daphne.conf`` with the contents below.
+
+.. code-block:: text
+
+    $ d /run/daphne 0755 <user> <group>
 
 Have supervisor reread and update its jobs:
 
