@@ -116,13 +116,6 @@ query string and uses that:
 
             return await inner(receive, send)
 
-.. warning::
-
-    Right now you will need to call ``close_old_connections()`` before any
-    database code you call inside a middleware's scope-setup method to ensure
-    you don't leak idle database connections. We hope to call this automatically
-    in future versions of Channels.
-
 The same principles can be applied to authenticate over non-HTTP protocols;
 for example, you might want to use someone's chat username from a chat protocol
 to turn it into a user.
