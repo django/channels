@@ -396,3 +396,9 @@ Of course you can also use those primitives to implement a HTTP endpoint for
                 payload = "data: %s\n\n" % datetime.now().isoformat()
                 await self.send_body(payload.encode("utf-8"), more_body=True)
                 await asyncio.sleep(1)
+
+
+WebsocketDemultiplexer
+~~~~~~~~~~~~~~~~~~~~~~
+
+Channels does not provide a standard way to multiplex different data streams over a single Websocket. However, there is a third-party package available that provides a (de)multiplexer for ``AsyncJsonWebsocketConsumer`` consumers: ``channels-demultiplexer`` (https://github.com/csdenboer/channels-demultiplexer).
