@@ -205,7 +205,7 @@ share the same bound port:
 
     # Each process needs to have a separate socket file, so we use process_num
     # Make sure to update "mysite.asgi" to match your project name
-    command=daphne -u /run/daphne/daphne%(process_num)d.sock --fd 0 --access-log - --proxy-headers mysite.asgi:application
+    command=/my/app/path/venv/bin/daphne -u /my/app/path/run/daphne/daphne%(process_num)d.sock --fd 0 --access-log - --proxy-headers mysite.asgi:application
 
     # Number of processes to startup, roughly the number of CPUs you have
     numprocs=4
@@ -225,7 +225,7 @@ Create the run directory for the sockets referenced in the supervisor configurat
 
 .. code-block:: sh
 
-    $ sudo mkdir /run/daphne/
+    $ sudo mkdir -p /my/app/path/run/daphne/
 
 When running the supervisor fcgi-program under a different user, change the owner settings of the run directory.
 
