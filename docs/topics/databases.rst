@@ -19,7 +19,10 @@ Database Connections
 
 Channels can potentially open a lot more database connections than you may be used to if you are using threaded consumers (synchronous ones) - it can open up to one connection per thread.
 
-By default, the number of threads is set to "the number of CPUs * 5", so you may see up to this number of threads. If you want to change it, set the ``ASGI_THREADS`` environment variable to the maximum number you wish to allow.
+If you wish to control the maximum number of threads used, set the
+``ASGI_THREADS`` environment variable to the maximum number you wish to allow.
+By default, the number of threads is set to "the number of CPUs * 5" for 
+Python 3.7 and below, and `min(32, os.cpu_count() + 4)` for Python 3.8+. 
 
 To avoid having too many threads idling in connections, you can instead rewrite your code to use async consumers and only dip into threads when you need to use Django's ORM (using ``database_sync_to_async``).
 
