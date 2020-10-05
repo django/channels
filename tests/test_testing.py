@@ -2,7 +2,7 @@ import asyncio
 from urllib.parse import unquote
 
 import pytest
-from django.conf.urls import url
+from django.urls import path
 
 from channels.consumer import AsyncConsumer
 from channels.generic.websocket import WebsocketConsumer
@@ -98,7 +98,7 @@ async def test_websocket_application():
     Tests that the WebSocket communicator class works with the
     URLRoute application.
     """
-    application = URLRouter([url(r"^testws/(?P<message>\w+)/$", KwargsWebSocketApp)])
+    application = URLRouter([path("testws/<str:message>/", KwargsWebSocketApp)])
     communicator = WebsocketCommunicator(application, "/testws/test/")
     connected, subprotocol = await communicator.connect()
     # Test connection
