@@ -256,7 +256,10 @@ class AsyncJsonWebsocketConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data=None, bytes_data=None, **kwargs):
         if text_data:
-            await self.receive_json(await self.decode_json(text_data), **kwargs)
+            try:
+                await self.receive_json(await self.decode_json(text_data), **kwargs)
+            except ValueError as e:
+                await self.json_parse_exception_handler(e)
         else:
             raise ValueError("No text section for incoming WebSocket frame!")
 
@@ -271,6 +274,16 @@ class AsyncJsonWebsocketConsumer(AsyncWebsocketConsumer):
         Encode the given content as JSON and send it to the client.
         """
         await super().send(text_data=await self.encode_json(content), close=close)
+
+    async def json_parse_exception_handler(self, e: ValueError):
+        """
+        Handles exception happening during json PARSE example: JSON Parse Error
+        Has to be overriden to handle JSON parse errors coming from socket,
+        either way exception is hard to trace
+
+        In case it's not overloaded - raising exception again to catch it on server level
+        """
+        raise e
 
     @classmethod
     async def decode_json(cls, text_data):
