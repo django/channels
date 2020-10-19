@@ -1,6 +1,10 @@
----
 name: Tests
-on: [push, pull_request]
+
+on:
+  push:
+    branches:
+    - master
+  pull_request:
 
 jobs:
   tests:
@@ -8,8 +12,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9]
-        django: [2.2.*, 3.0.*, 3.1.*]
+        python-version:
+        - 3.6
+        - 3.7
+        - 3.8
+        - 3.9
 
     steps:
       - uses: actions/checkout@v2
@@ -19,12 +26,11 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip wheel setuptools
-          pip install django==${{ matrix.django }} -e .[tests]
-          pip freeze
-      - name: Run tests
+          python -m pip install --upgrade pip wheel setuptools tox
+      - name: Run tox targets for ${{ matrix.python-version }}
         run: |
-          pytest
+          ENV_PREFIX=$(tr -C -d "0-9" <<< "${{ matrix.python-version }}")
+          TOXENV=$(tox --listenvs | grep "^py$ENV_PREFIX" | tr '\n' ',') python -m tox
 
   lint:
     runs-on: ubuntu-latest
@@ -33,7 +39,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.8
+          python-version: 3.9
       - name: Install dependencies
         run: |
           pip install -U -e .[tests] black pyflakes isort
