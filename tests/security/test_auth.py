@@ -77,7 +77,8 @@ def session():
 
 async def assert_is_logged_in(scope, user):
     """
-    Assert that the provided user is logged in to the session contained within the scope.
+    Assert that the provided user is logged in to the session contained within
+    the scope.
     """
     assert "user" in scope
     assert scope["user"] == user
@@ -98,13 +99,15 @@ async def assert_is_logged_in(scope, user):
 @pytest.mark.asyncio
 async def test_login_no_session_in_scope():
     """
-    Test to ensure that a `ValueError` is raised if when tying to login a user to a scope that has no session.
+    Test to ensure that a `ValueError` is raised if when tying to login a user
+    to a scope that has no session.
     """
 
-    with pytest.raises(
-        ValueError,
-        match="Cannot find session in scope. You should wrap your consumer in SessionMiddleware.",
-    ):
+    msg = (
+        "Cannot find session in scope. You should wrap your consumer in "
+        "SessionMiddleware."
+    )
+    with pytest.raises(ValueError, match=msg):
         await login(scope={}, user=None)
 
 
@@ -112,7 +115,8 @@ async def test_login_no_session_in_scope():
 @pytest.mark.asyncio
 async def test_login_no_user_in_scope(session):
     """
-    Test the login method to ensure it raises a `ValueError` if no user is passed and is no user in the scope.
+    Test the login method to ensure it raises a `ValueError` if no user is
+    passed and is no user in the scope.
     """
     scope = {"session": session}
 
@@ -127,8 +131,8 @@ async def test_login_no_user_in_scope(session):
 @pytest.mark.asyncio
 async def test_login_user_as_argument(session, user_bob):
     """
-    Test that one can login to a scope that has a session by passing the scope and user as arguments to the login
-     function.
+    Test that one can login to a scope that has a session by passing the scope
+    and user as arguments to the login function.
     """
     scope = {"session": session}
 
@@ -148,8 +152,8 @@ async def test_login_user_as_argument(session, user_bob):
 @pytest.mark.asyncio
 async def test_login_user_on_scope(session, user_bob):
     """
-    Test that in the absence of a user being passed to the `login` function the function will use the user set on the
-     scope.
+    Test that in the absence of a user being passed to the `login` function the
+    function will use the user set on the scope.
     """
     scope = {"session": session, "user": user_bob}
 
@@ -232,7 +236,8 @@ async def test_logout(session, user_bob):
 @pytest.mark.asyncio
 async def test_logout_not_logged_in(session):
     """
-    Test that the `logout` function does nothing in the case were there is no user logged in.
+    Test that the `logout` function does nothing in the case were there is no
+    user logged in.
     """
     scope = {"session": session}
 
@@ -252,7 +257,8 @@ async def test_logout_not_logged_in(session):
 @pytest.mark.asyncio
 async def test_scope_user_error_message(session):
     """
-    Tests that the correct error message is thrown when scope user is accessed before it's ready
+    Tests that the correct error message is thrown when scope user is accessed
+    before it's ready
     """
 
     class TestConsumer(WebsocketConsumer):

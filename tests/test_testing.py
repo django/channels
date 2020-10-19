@@ -149,7 +149,10 @@ class ConnectionScopeValidator(WebsocketConsumer):
 paths = [
     "user:pass@example.com:8080/p/a/t/h?query=string#hash",
     "wss://user:pass@example.com:8080/p/a/t/h?query=string#hash",
-    "ws://www.example.com/%E9%A6%96%E9%A1%B5/index.php?foo=%E9%A6%96%E9%A1%B5&spam=eggs",
+    (
+        "ws://www.example.com/%E9%A6%96%E9%A1%B5/index.php?"
+        "foo=%E9%A6%96%E9%A1%B5&spam=eggs"
+    ),
 ]
 
 
