@@ -1,3 +1,4 @@
+from daphne.testing import DaphneProcess
 from django.core.exceptions import ImproperlyConfigured
 from django.db import connections
 from django.test.testcases import TransactionTestCase
@@ -5,7 +6,6 @@ from django.test.utils import modify_settings
 
 from channels.routing import get_default_application
 from channels.staticfiles import StaticFilesWrapper
-from daphne.testing import DaphneProcess
 
 
 class ChannelsLiveServerTestCase(TransactionTestCase):

@@ -2,6 +2,7 @@ from importlib import import_module
 from unittest import mock
 
 import pytest
+from asgiref.sync import sync_to_async
 from django.conf import settings
 from django.contrib.auth import (
     BACKEND_SESSION_KEY,
@@ -13,7 +14,6 @@ from django.contrib.auth import (
 )
 from django.contrib.auth.models import AnonymousUser
 
-from asgiref.sync import sync_to_async
 from channels.auth import AuthMiddleware, get_user, login, logout
 from channels.db import database_sync_to_async
 from channels.generic.websocket import WebsocketConsumer
