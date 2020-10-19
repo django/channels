@@ -174,6 +174,4 @@ class AuthMiddleware(BaseMiddleware):
 
 # Handy shortcut for applying all three layers at once
 def AuthMiddlewareStack(inner):
-    return CookieMiddleware(
-        SessionMiddleware(AuthMiddleware(inner))
-    )
+    return CookieMiddleware(SessionMiddleware(AuthMiddleware(inner)))

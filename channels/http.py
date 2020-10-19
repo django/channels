@@ -39,7 +39,7 @@ class AsgiRequest(http.HttpRequest):
         self.script_name = self.scope.get("root_path", "")
         if self.script_name and scope["path"].startswith(self.script_name):
             # TODO: Better is-prefix checking, slash handling?
-            self.path_info = scope["path"][len(self.script_name):]
+            self.path_info = scope["path"][len(self.script_name) :]
         else:
             self.path_info = scope["path"]
 
