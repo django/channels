@@ -36,7 +36,10 @@ class Command(RunserverCommand):
             dest="http_timeout",
             type=int,
             default=None,
-            help="Specify the daphne http_timeout interval in seconds (default: no timeout)",
+            help=(
+                "Specify the daphne http_timeout interval in seconds "
+                "(default: no timeout)"
+            ),
         )
         parser.add_argument(
             "--websocket_handshake_timeout",
@@ -44,7 +47,10 @@ class Command(RunserverCommand):
             dest="websocket_handshake_timeout",
             type=int,
             default=5,
-            help="Specify the daphne websocket_handshake_timeout interval in seconds (default: 5)",
+            help=(
+                "Specify the daphne websocket_handshake_timeout interval in "
+                "seconds (default: 5)"
+            ),
         )
 
     def handle(self, *args, **options):

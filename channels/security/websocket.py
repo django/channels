@@ -58,14 +58,14 @@ class OriginValidator:
 
         Check than the origin looks valid and matches the origin pattern in
         specified list ``allowed_origins``. Any pattern begins with a scheme.
-        After the scheme there must be a domain. Any domain beginning with a period
-        corresponds to the domain and all its subdomains (for example, ``http://.example.com``
-        ``http://example.com`` and any subdomain). After the domain there must be a port,
+        After the scheme there must be a domain. Any domain beginning with a
+        period corresponds to the domain and all its subdomains (for example,
+        ``http://.example.com``). After the domain there must be a port,
         but it can be omitted. ``*`` matches anything and anything
         else must match exactly.
 
-        Note. This function assumes that the given origin has a schema, domain and port,
-        but port is optional.
+        Note. This function assumes that the given origin has a schema, domain
+        and port, but port is optional.
 
         Returns ``True`` for a valid host, ``False`` otherwise.
         """

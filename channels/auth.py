@@ -27,7 +27,8 @@ def get_user(scope):
     """
     if "session" not in scope:
         raise ValueError(
-            "Cannot find session in scope. You should wrap your consumer in SessionMiddleware."
+            "Cannot find session in scope. You should wrap your consumer in "
+            "SessionMiddleware."
         )
     session = scope["session"]
     user = None
@@ -61,7 +62,8 @@ def login(scope, user, backend=None):
     """
     if "session" not in scope:
         raise ValueError(
-            "Cannot find session in scope. You should wrap your consumer in SessionMiddleware."
+            "Cannot find session in scope. You should wrap your consumer in "
+            "SessionMiddleware."
         )
     session = scope["session"]
     session_auth_hash = ""
@@ -94,7 +96,8 @@ def login(scope, user, backend=None):
             _, backend = backends[0]
         else:
             raise ValueError(
-                "You have multiple authentication backends configured and therefore must provide the `backend` "
+                "You have multiple authentication backends configured and "
+                "therefore must provide the `backend` "
                 "argument or set the `backend` attribute on the user."
             )
     session[SESSION_KEY] = user._meta.pk.value_to_string(user)
@@ -112,7 +115,8 @@ def logout(scope):
     """
     if "session" not in scope:
         raise ValueError(
-            "Login cannot find session in scope. You should wrap your consumer in SessionMiddleware."
+            "Login cannot find session in scope. You should wrap your "
+            "consumer in SessionMiddleware."
         )
     session = scope["session"]
     # Dispatch the signal before the user is logged out so the receivers have a
@@ -139,7 +143,8 @@ def _get_user_session_key(session):
 
 class UserLazyObject(LazyObject):
     """
-    Throw a more useful error message when scope['user'] is accessed before it's resolved
+    Throw a more useful error message when scope['user'] is accessed before
+    it's resolved
     """
 
     def _setup(self):
@@ -156,7 +161,8 @@ class AuthMiddleware(BaseMiddleware):
         # Make sure we have a session
         if "session" not in scope:
             raise ValueError(
-                "AuthMiddleware cannot find session in scope. SessionMiddleware must be above it."
+                "AuthMiddleware cannot find session in scope. "
+                "SessionMiddleware must be above it."
             )
         # Add it to the scope if it's not there already
         if "user" not in scope:
@@ -167,6 +173,5 @@ class AuthMiddleware(BaseMiddleware):
 
 
 # Handy shortcut for applying all three layers at once
-AuthMiddlewareStack = lambda inner: CookieMiddleware(
-    SessionMiddleware(AuthMiddleware(inner))
-)
+def AuthMiddlewareStack(inner):
+    return CookieMiddleware(SessionMiddleware(AuthMiddleware(inner)))

@@ -241,7 +241,7 @@ class RequestTests(unittest.TestCase):
             AsgiRequest(scope, BytesIO(body)).POST
 
 
-### Handler tests
+# Handler tests
 
 
 class MockHandler(AsgiHandler):

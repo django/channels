@@ -137,7 +137,7 @@ class BaseChannelLayer:
             return True
         return False
 
-    ### Name validation functions
+    # Name validation functions
 
     channel_name_regex = re.compile(r"^[a-zA-Z\d\-_.]+(\![\d\w\-_.]*)?$")
     group_name_regex = re.compile(r"^[a-zA-Z\d\-_.]+$")
@@ -214,7 +214,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
         self.groups = {}
         self.group_expiry = group_expiry
 
-    ### Channel layer API ###
+    # Channel layer API
 
     extensions = ["groups", "flush"]
 
@@ -225,7 +225,8 @@ class InMemoryChannelLayer(BaseChannelLayer):
         # Typecheck
         assert isinstance(message, dict), "message is not a dict"
         assert self.valid_channel_name(channel), "Channel name not valid"
-        # If it's a process-local channel, strip off local part and stick full name in message
+        # If it's a process-local channel, strip off local part and stick full
+        # name in message
         assert "__asgi_channel__" not in message
 
         queue = self.channels.setdefault(channel, asyncio.Queue())
@@ -266,7 +267,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
             "".join(random.choice(string.ascii_letters) for i in range(12)),
         )
 
-    ### Expire cleanup ###
+    # Expire cleanup
 
     def _clean_expired(self):
         """
@@ -299,7 +300,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
                     # Delete from group
                     del self.groups[group][channel]
 
-    ### Flush extension ###
+    # Flush extension
 
     async def flush(self):
         self.channels = {}
@@ -317,7 +318,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
             if channel in channels:
                 del channels[channel]
 
-    ### Groups extension ###
+    # Groups extension
 
     async def group_add(self, group, channel):
         """

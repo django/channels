@@ -154,13 +154,15 @@ class SessionMiddlewareInstance:
         self.middleware = middleware
         self.scope = dict(scope)
         if "session" in self.scope:
-            # There's already session middleware of some kind above us, pass that through
+            # There's already session middleware of some kind above us, pass
+            # that through
             self.activated = False
         else:
             # Make sure there are cookies in the scope
             if "cookies" not in self.scope:
                 raise ValueError(
-                    "No cookies in scope - SessionMiddleware needs to run inside of CookieMiddleware."
+                    "No cookies in scope - SessionMiddleware needs to run "
+                    "inside of CookieMiddleware."
                 )
             # Parse the headers in the scope into cookies
             self.scope["session"] = LazyObject()
@@ -250,4 +252,5 @@ class SessionMiddlewareInstance:
 
 
 # Shortcut to include cookie middleware
-SessionMiddlewareStack = lambda inner: CookieMiddleware(SessionMiddleware(inner))
+def SessionMiddlewareStack(inner):
+    return CookieMiddleware(SessionMiddleware(inner))

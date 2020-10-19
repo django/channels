@@ -43,7 +43,8 @@ class AsgiRequest(http.HttpRequest):
         else:
             self.path_info = scope["path"]
 
-        # django path is different from asgi scope path args, it should combine with script name
+        # django path is different from asgi scope path args, it should combine
+        # with script name
         if self.script_name:
             self.path = "%s/%s" % (
                 self.script_name.rstrip("/"),
@@ -91,7 +92,8 @@ class AsgiRequest(http.HttpRequest):
                 corrected_name = "CONTENT_TYPE"
             else:
                 corrected_name = "HTTP_%s" % name.upper().replace("-", "_")
-            # HTTPbis say only ASCII chars are allowed in headers, but we latin1 just in case
+            # HTTPbis say only ASCII chars are allowed in headers, but we
+            # use latin1 just in case
             value = value.decode("latin1")
             if corrected_name in self.META:
                 value = self.META[corrected_name] + "," + value

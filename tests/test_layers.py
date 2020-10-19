@@ -54,7 +54,7 @@ class TestChannelLayerManager(unittest.TestCase):
         self.assertEqual(channel_layers.backends, {})
 
 
-### In-memory layer tests
+# In-memory layer tests
 
 
 @pytest.mark.asyncio

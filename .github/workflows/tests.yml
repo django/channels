@@ -42,9 +42,6 @@ jobs:
           python-version: 3.9
       - name: Install dependencies
         run: |
-          pip install -U -e .[tests] black pyflakes isort
+          python -m pip install --upgrade pip tox
       - name: Run lint
-        run: |
-          pyflakes channels tests
-          black --check --diff channels tests
-          isort --check-only --diff channels tests
+        run: tox -e qa
