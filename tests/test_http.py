@@ -256,6 +256,7 @@ class MockHandler(AsgiHandler):
         return HttpResponse("fake")
 
 
+@pytest.mark.django_db
 @pytest.mark.asyncio
 async def test_handler_basic():
     """
@@ -271,6 +272,7 @@ async def test_handler_basic():
     assert body_stream.read() == b""
 
 
+@pytest.mark.django_db
 @pytest.mark.asyncio
 async def test_handler_body_single():
     """
@@ -288,6 +290,7 @@ async def test_handler_body_single():
     assert body_stream.read() == b"chunk one \x01 chunk two"
 
 
+@pytest.mark.django_db
 @pytest.mark.asyncio
 async def test_handler_body_multiple():
     """
@@ -309,6 +312,7 @@ async def test_handler_body_multiple():
     assert body_stream.read() == b"chunk one \x01 chunk two"
 
 
+@pytest.mark.django_db
 @pytest.mark.asyncio
 async def test_handler_body_ignore_extra():
     """
