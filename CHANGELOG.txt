@@ -4,6 +4,8 @@ https://channels.readthedocs.io/en/latest/releases
 3.0.0 (UNRELEASED)
 ------------------
 
+* Added support for Python 3.9.
+
 * Dropped support for Python 3.5, which is now end-of-life.
 
 

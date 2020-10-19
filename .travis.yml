@@ -3,14 +3,15 @@ dist: xenial
 language: python
 
 python:
+  - "3.9"
   - "3.8"
   - "3.7"
   - "3.6"
 
 env:
-  - DJANGO="Django~=2.2.8"
-  - DJANGO="Django==3.0.*"
   - DJANGO="Django>=3.1,<3.2"
+  - DJANGO="Django==3.0.*"
+  - DJANGO="Django~=2.2.8"
 
 install:
   - pip install -U attrs pytest  # Travis comes with an old version pre-installed.
