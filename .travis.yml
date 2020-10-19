@@ -29,9 +29,6 @@ stages:
 
 jobs:
   include:
-    - python: "3.5"
-      env: DJANGO="Django==2.2.*"
-
     - stage: lint
       install: pip install -U -e .[tests] black pyflakes isort
       script:

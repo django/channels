@@ -1,6 +1,13 @@
 Full release notes, with more details and upgrade information, are available at:
 https://channels.readthedocs.io/en/latest/releases
 
+3.0.0 (UNRELEASED)
+------------------
+
+* Dropped support for Python 3.5, which is now end-of-life.
+
+
+
 2.4.0 (2019-12-18)
 ------------------
 
