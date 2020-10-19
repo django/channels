@@ -11,6 +11,7 @@ from channels.layers import get_channel_layer
 from channels.testing import WebsocketCommunicator
 
 
+@pytest.mark.django_db
 @pytest.mark.asyncio
 async def test_websocket_consumer():
     """
@@ -50,6 +51,7 @@ async def test_websocket_consumer():
     assert "disconnected" in results
 
 
+@pytest.mark.django_db
 @pytest.mark.asyncio
 async def test_websocket_consumer_subprotocol():
     """
@@ -70,6 +72,7 @@ async def test_websocket_consumer_subprotocol():
     assert subprotocol == "subprotocol2"
 
 
+@pytest.mark.django_db
 @pytest.mark.asyncio
 async def test_websocket_consumer_groups():
     """
@@ -231,6 +234,7 @@ async def test_async_websocket_consumer_specific_channel_layer():
         await communicator.disconnect()
 
 
+@pytest.mark.django_db
 @pytest.mark.asyncio
 async def test_json_websocket_consumer():
     """

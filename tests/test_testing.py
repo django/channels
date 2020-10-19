@@ -66,6 +66,7 @@ class KwargsWebSocketApp(WebsocketConsumer):
         self.send(text_data=self.scope["url_route"]["kwargs"]["message"])
 
 
+@pytest.mark.django_db
 @pytest.mark.asyncio
 async def test_websocket_communicator():
     """
@@ -92,6 +93,7 @@ async def test_websocket_communicator():
     await communicator.disconnect()
 
 
+@pytest.mark.django_db
 @pytest.mark.asyncio
 async def test_websocket_application():
     """
@@ -109,6 +111,7 @@ async def test_websocket_application():
     await communicator.disconnect()
 
 
+@pytest.mark.django_db
 @pytest.mark.asyncio
 async def test_timeout_disconnect():
     """
@@ -150,6 +153,7 @@ paths = [
 ]
 
 
+@pytest.mark.django_db
 @pytest.mark.asyncio
 @pytest.mark.parametrize("path", paths)
 async def test_connection_scope(path):
