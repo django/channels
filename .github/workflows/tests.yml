@@ -31,7 +31,7 @@ jobs:
           path: |
             ~/.cache/pip
             .tox
-          key: ${{ env.pythonLocation}}-${{ runner.os }}-pip-${{ hashFiles('**/tox.ini') }}
+          key: ${{ env.pythonLocation}}-${{ runner.os }}-pip-${{ hashFiles('**setup.py', '**/tox.ini') }}
           restore-keys: |
             ${{ env.pythonLocation}}-${{ runner.os }}-pip-
       - name: Install dependencies
@@ -56,7 +56,6 @@ jobs:
         with:
           path: |
             ~/.cache/pip
-            .tox
           key: ${{ env.pythonLocation}}-${{ runner.os }}-pip-${{ hashFiles('**/tox.ini') }}
           restore-keys: |
             ${{ env.pythonLocation}}-${{ runner.os }}-pip-
