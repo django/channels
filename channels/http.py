@@ -5,6 +5,7 @@ import sys
 import tempfile
 import traceback
 
+from asgiref.sync import async_to_sync, sync_to_async
 from django import http
 from django.conf import settings
 from django.core import signals
@@ -14,7 +15,6 @@ from django.http import FileResponse, HttpResponse, HttpResponseServerError
 from django.urls import set_script_prefix
 from django.utils.functional import cached_property
 
-from asgiref.sync import async_to_sync, sync_to_async
 from channels.exceptions import RequestAborted, RequestTimeout
 
 logger = logging.getLogger("django.request")

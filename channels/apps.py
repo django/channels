@@ -1,9 +1,8 @@
-from django.apps import AppConfig
-
 # We import this here to ensure the reactor is installed very early on
 # in case other packages accidentally import twisted.internet.reactor
 # (e.g. raven does this).
 import daphne.server
+from django.apps import AppConfig
 
 assert daphne.server  # pyflakes doesn't support ignores
 

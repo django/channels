@@ -2,6 +2,8 @@ import datetime
 import logging
 import sys
 
+from daphne.endpoints import build_endpoint_description_strings
+from daphne.server import Server
 from django.apps import apps
 from django.conf import settings
 from django.core.management import CommandError
@@ -9,8 +11,6 @@ from django.core.management.commands.runserver import Command as RunserverComman
 
 from channels import __version__
 from channels.routing import get_default_application
-from daphne.endpoints import build_endpoint_description_strings
-from daphne.server import Server
 
 from ...staticfiles import StaticFilesWrapper
 
