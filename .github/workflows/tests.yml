@@ -28,7 +28,9 @@ jobs:
       - uses: actions/cache@v2
         name: Configure pip caching
         with:
-          path: ~/.cache/pip
+          path: |
+            ~/.cache/pip
+            .tox
           key: ${{ env.pythonLocation}}-${{ runner.os }}-pip-${{ hashFiles('**/tox.ini') }}
           restore-keys: |
             ${{ env.pythonLocation}}-${{ runner.os }}-pip-
@@ -52,7 +54,9 @@ jobs:
       - uses: actions/cache@v2
         name: Configure pip caching
         with:
-          path: ~/.cache/pip
+          path: |
+            ~/.cache/pip
+            .tox
           key: ${{ env.pythonLocation}}-${{ runner.os }}-pip-${{ hashFiles('**/tox.ini') }}
           restore-keys: |
             ${{ env.pythonLocation}}-${{ runner.os }}-pip-
