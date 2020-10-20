@@ -47,7 +47,7 @@ class ProtocolTypeRouter:
     def __init__(self, application_mapping):
         self.application_mapping = application_mapping
         if "http" not in self.application_mapping:
-            self.application_mapping["http"] = AsgiHandler
+            self.application_mapping["http"] = AsgiHandler()
 
     async def __call__(self, scope, receive, send):
         if scope["type"] in self.application_mapping:

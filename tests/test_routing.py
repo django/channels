@@ -35,7 +35,7 @@ async def test_protocol_type_router():
     assert await router({"type": "http"}, None, None) == "http"
     # Test defaulting to AsgiHandler
     router = ProtocolTypeRouter({"websocket": MockApplication(return_value="ws")})
-    assert router.application_mapping["http"] == AsgiHandler
+    assert isinstance(router.application_mapping["http"], AsgiHandler)
     # Test an unmatched type
     with pytest.raises(ValueError):
         await router({"type": "aprs"}, None, None)
