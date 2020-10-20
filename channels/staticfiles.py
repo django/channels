@@ -32,19 +32,23 @@ class StaticFilesWrapper:
         """
         return path.startswith(self.base_url[2]) and not self.base_url[1]
 
-    def __call__(self, scope):
+    def __call__(self, scope, receive, send):
         # Only even look at HTTP requests
         if scope["type"] == "http" and self._should_handle(scope["path"]):
             # Serve static content
-            return StaticFilesHandler(dict(scope, static_base_url=self.base_url))
+            return StaticFilesHandler()(
+                dict(scope, static_base_url=self.base_url), receive, send
+            )
         # Hand off to the main app
-        return self.application(scope)
+        return self.application(scope, receive, send)
 
 
 class StaticFilesHandler(AsgiHandler):
     """
     Subclass of AsgiHandler that serves directly from its get_response.
     """
+
+    # TODO: Review hierarchy here. Do we NEED to inherit BaseHandler, AsgiHandler?
 
     def file_path(self, url):
         """
