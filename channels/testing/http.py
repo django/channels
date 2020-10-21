@@ -31,7 +31,7 @@ class HttpCommunicator(ApplicationCommunicator):
 
     async def get_response(self, timeout=1):
         """
-        Get the application's response. Returns a dict with keys of
+        Get the application's full response. Returns a dict with keys of
         "body", "headers" and "status".
         """
         # If we've not sent the request yet, do so
@@ -54,3 +54,36 @@ class HttpCommunicator(ApplicationCommunicator):
         del response_start["type"]
         response_start.setdefault("headers", [])
         return response_start
+
+    async def send_request(self):
+        """
+        Sends the request to the application without then waiting for
+         headers or any response.
+        """
+        if not self.sent_request:
+            self.sent_request = True
+            await self.send_input({"type": "http.request", "body": self.body})
+
+    async def get_response_start(self, timeout=1):
+        """
+        Gets the start of the response (its headers and status code)
+        """
+        response_start = await self.receive_output(timeout)
+        assert response_start["type"] == "http.response.start"
+
+        # Return structured info
+        del response_start["type"]
+        response_start.setdefault("headers", [])
+        return response_start
+
+    async def get_body_chunk(self, timeout=1):
+        """
+        Gets one chunk of body.
+        """
+        chunk = await self.receive_output(timeout)
+        assert chunk["type"] == "http.response.body"
+        assert isinstance(chunk["body"], bytes)
+        if not chunk.get("more_body", False):
+            await self.wait(timeout)
+
+        return chunk["body"]
