@@ -1,0 +1,21 @@
+3.0.0 Release Notes
+===================
+
+TODO
+
+* Update to ASGI v3: update init and call **if you implemented** these yourself.
+  (Otherwise you should be good.)
+
+* Built-in `AsgiHandler` is deprecated. Update to Django 3.0+ and use its version.
+
+* Explicitly specify `"http"` in ProtocolTypeRouter. (Deprecate auto usage.)
+
+* Update your `routing.py` to an `asgi.py`
+
+* What else breaks? Anything?
+
+* Dropped Python 3.5
+
+* Added support for Python 3.9
+
+* Will require Daphne v???
