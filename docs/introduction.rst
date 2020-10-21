@@ -42,7 +42,7 @@ pieces that might handle chat messaging, or notifications - and tie them
 together with URL routing, protocol detection and other handy things to
 make a full application.
 
-We treat HTTP and the existing Django application as parts of a bigger whole.
+We treat HTTP and the existing Django application as part of a bigger whole.
 Traditional Django views are still there with Channels and still useable - with
 Django's native ASGI support, or a Channels provided version for Django 2.2 -
 but you can now also write custom HTTP long-polling handling, or WebSocket
