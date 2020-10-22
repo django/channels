@@ -29,7 +29,7 @@ jobs:
         name: Configure pip caching
         with:
           path: ~/.cache/pip
-          key:${{ env.pythonLocation}}-${{ runner.os }}-pip-${{ hashFiles('**/tox.ini') }}
+          key: ${{ env.pythonLocation}}-${{ runner.os }}-pip-${{ hashFiles('**/tox.ini') }}
           restore-keys: |
             ${{ env.pythonLocation}}-${{ runner.os }}-pip-
       - name: Install dependencies
