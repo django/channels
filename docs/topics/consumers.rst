@@ -93,7 +93,7 @@ When should you use ``AsyncConsumer`` and when should you use ``SyncConsumer``?
 The main thing to consider is what you're talking to. If you call a slow
 synchronous function from inside an ``AsyncConsumer`` you're going to hold up
 the entire event loop, so they're only useful if you're also calling async
-code (for example, using ``aiohttp`` to fetch 20 pages in parallel).
+code (for example, using ``HTTPX`` to fetch 20 pages in parallel).
 
 If you're calling any part of Django's ORM or other synchronous code, you
 should use a ``SyncConsumer``, as this will run the whole consumer in a thread
@@ -170,7 +170,7 @@ You can read more in :doc:`/topics/channel_layers`.
 Scope
 -----
 
-Consumers receive the connection's ``scope`` when they are initialised, which
+Consumers receive the connection's ``scope`` when they are called, which
 contains a lot of the information you'd find on the ``request`` object in a
 Django view. It's available as ``self.scope`` inside the consumer's methods.
 
