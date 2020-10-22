@@ -238,31 +238,41 @@ Put the following code in ``chat/routing.py``:
     from . import consumers
 
     websocket_urlpatterns = [
-        re_path(r'ws/chat/(?P<room_name>\w+)/$', consumers.ChatConsumer),
+        re_path(r'ws/chat/(?P<room_name>\w+)/$', consumers.ChatConsumer()),
     ]
 
 (Note we use ``re_path()`` due to limitations in :ref:`URLRouter <urlrouter>`.)
 
 The next step is to point the root routing configuration at the **chat.routing**
-module. In ``mysite/routing.py``, import ``AuthMiddlewareStack``, ``URLRouter``,
+module. In ``mysite/asgi.py``, import ``AuthMiddlewareStack``, ``URLRouter``,
 and ``chat.routing``; and insert a ``'websocket'`` key in the
 ``ProtocolTypeRouter`` list in the following format:
 
 .. code-block:: python
 
-    # mysite/routing.py
+    # mysite/asgi.py
+    import os
+
     from channels.auth import AuthMiddlewareStack
     from channels.routing import ProtocolTypeRouter, URLRouter
+    from django.core.asgi import get_asgi_application
     import chat.routing
 
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")
+
     application = ProtocolTypeRouter({
-        # (http->django views is added by default)
-        'websocket': AuthMiddlewareStack(
+      "http": get_asgi_application(),
+      "websocket": AuthMiddlewareStack(
             URLRouter(
                 chat.routing.websocket_urlpatterns
             )
         ),
     })
+
+.. note::
+    For Django 2.2 recall that the ``http`` key to ``ProtocolTypeRouter`` uses
+    Channel's ``AsgiHandler``. This stays the same. The ``websocket`` key is
+    new, and that's the same for all versions.
 
 This root routing configuration specifies that when a connection is made to the
 Channels development server, the ``ProtocolTypeRouter`` will first inspect the type
@@ -292,6 +302,7 @@ Channels development server:
       Applying auth.0001_initial... OK
       Applying admin.0001_initial... OK
       Applying admin.0002_logentry_remove_auto_add... OK
+      Applying admin.0003_logentry_add_action_flag_choices... OK
       Applying contenttypes.0002_remove_content_type_name... OK
       Applying auth.0002_alter_permission_name_max_length... OK
       Applying auth.0003_alter_user_email_max_length... OK
@@ -301,6 +312,9 @@ Channels development server:
       Applying auth.0007_alter_validators_add_error_messages... OK
       Applying auth.0008_alter_user_username_max_length... OK
       Applying auth.0009_alter_user_last_name_max_length... OK
+      Applying auth.0010_alter_group_name_max_length... OK
+      Applying auth.0011_update_proxy_permissions... OK
+      Applying auth.0012_alter_user_first_name_max_length... OK
       Applying sessions.0001_initial... OK
     $ python3 manage.py runserver
 
@@ -367,7 +381,7 @@ It should look like:
 
     # mysite/settings.py
     # Channels
-    ASGI_APPLICATION = 'mysite.routing.application'
+    ASGI_APPLICATION = 'mysite.asgi.application'
     CHANNEL_LAYERS = {
         'default': {
             'BACKEND': 'channels_redis.core.RedisChannelLayer',

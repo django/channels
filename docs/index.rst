@@ -5,25 +5,19 @@ Channels is a project that takes Django and extends its abilities beyond
 HTTP - to handle WebSockets, chat protocols, IoT protocols, and more. It's
 built on a Python specification called `ASGI <http://asgi.readthedocs.io>`_.
 
-It does this by taking the core of Django and layering a fully asynchronous
-layer underneath, running Django itself in a synchronous mode but handling
-connections and sockets asynchronously, and giving you the choice to write
-in either style.
+Channels builds upon the native ASGI support available in Django since v3.0,
+and provides an implementation itself for Django v2.2. Django still handles
+traditional HTTP, whilst Channels give you the choice to handle other
+connections in either a synchronous or asynchronous style.
 
 To get started understanding Channels, read our :doc:`introduction`,
-which will walk through how things work. If you're upgrading from Channels 1,
-take a look at :doc:`one-to-two` to get an overview of the changes; things
-are substantially different.
-
-If you would like complete code examples to read alongside the documentation
-or experiment on, the `channels-examples <https://github.com/andrewgodwin/channels-examples/>`_
-repository contains well-commented example Channels projects.
+which will walk through how things work. If you're upgrading from Channels 2,
+take a look at :doc:`releases/3.0.0` to get an overview of the changes.
 
 .. warning::
-   This is documentation for the **2.x series** of Channels. If you are looking
-   for documentation for the legacy Channels 1, you can select ``1.x`` from the
-   versions selector in the bottom-left corner.
-
+   This is documentation for the **3.x series** of Channels. If you are looking
+   for documentation for older versions, you can select ``2.x`` or ``1.x`` from
+   the versions selector in the bottom-left corner.
 
 Projects
 --------
@@ -37,7 +31,6 @@ Channels is comprised of several packages:
 
 This documentation covers the system as a whole; individual release notes and
 instructions can be found in the individual repositories.
-
 
 .. _topics:
 

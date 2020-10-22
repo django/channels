@@ -1,10 +1,11 @@
 Introduction
 ============
 
-Welcome to Channels! Channels changes Django to weave asynchronous code
-underneath and through Django's synchronous core, allowing Django projects
-to handle not only HTTP, but protocols that require long-running connections
-too - WebSockets, MQTT, chatbots, amateur radio, and more.
+Welcome to Channels!
+
+Channels wraps Django's native asynchronous view support, allowing Django
+projects to handle not only HTTP, but protocols that require long-running
+connections too - WebSockets, MQTT, chatbots, amateur radio, and more.
 
 It does this while preserving Django's synchronous and easy-to-use nature,
 allowing you to choose how you write your code - synchronous in a style like
@@ -12,7 +13,7 @@ Django views, fully asynchronous, or a mixture of both. On top of this, it
 provides integrations with Django's auth system, session system, and more,
 making it easier than ever to extend your HTTP-only project to other protocols.
 
-It also bundles this event-driven architecture with *channel layers*,
+Channels also bundles this event-driven architecture with *channel layers*,
 a system that allows you to easily communicate between processes, and separate
 your project into different processes.
 
@@ -41,9 +42,9 @@ pieces that might handle chat messaging, or notifications - and tie them
 together with URL routing, protocol detection and other handy things to
 make a full application.
 
-We treat HTTP and the existing Django views as parts of a bigger whole.
-Traditional Django views are still there with Channels and still useable -
-we wrap them up in an ASGI application called ``channels.http.AsgiHandler`` -
+We treat HTTP and the existing Django application as part of a bigger whole.
+Traditional Django views are still there with Channels and still useable - with
+Django's native ASGI support, or a Channels provided version for Django 2.2 -
 but you can now also write custom HTTP long-polling handling, or WebSocket
 receivers, and have that code sit alongside your existing code. URL routing,
 middleware - they are all just ASGI applications.
@@ -64,7 +65,7 @@ the path a web request was made from, or the originating IP address of a
 WebSocket, or the user messaging a chatbot - and persists throughout the
 connection.
 
-For HTTP, the scope just lasts a single request. For WebSocket, it lasts for
+For HTTP, the scope just lasts a single request. For WebSockets, it lasts for
 the lifetime of the socket (but changes if the socket closes and reconnects).
 For other protocols, it varies based on how the protocol's ASGI spec is written;
 for example, it's likely that a chatbot protocol would keep one scope open
@@ -79,7 +80,7 @@ happening within that scope to decide what to do with.
 
 An example with HTTP:
 
-* The user makes a HTTP request.
+* The user makes an HTTP request.
 * We open up a new ``http`` type scope with details of the request's path,
   method, headers, etc.
 * We send a ``http.request`` event with the HTTP body content
@@ -91,15 +92,15 @@ An example with a chatbot:
 
 * The user sends a first message to the chatbot.
 * This opens a scope containing the user's username, chosen name, and user ID.
-* The application is given a ``chat.received_message`` event with the event text.
-  It does not have to respond, but could send one, two or more other chat messages
-  back as ``chat.send_message`` events if it wanted to.
-* The user sends more messages to the chatbot and more ``chat.received_message``
-  events are generated.
+* The application is given a ``chat.received_message`` event with the event
+  text. It does not have to respond, but could send one, two or more other chat
+  messages back as ``chat.send_message`` events if it wanted to.
+* The user sends more messages to the chatbot and more
+  ``chat.received_message`` events are generated.
 * After a timeout or when the application process is restarted the scope is
   closed.
 
-Within the lifetime of a scope - be that a chat, a HTTP request, a socket
+Within the lifetime of a scope - be that a chat, an HTTP request, a socket
 connection or something else - you will have one application instance handling
 all the events from it, and you can persist things onto the application
 instance as well. You can choose to write a raw ASGI application if you wish,
@@ -184,7 +185,7 @@ You can read more about consumers in :doc:`/topics/consumers`.
 Routing and Multiple Protocols
 ------------------------------
 
-You can combine multiple Consumers (which are, remember, their own ASGI apps)
+You can combine multiple consumers (which are, remember, their own ASGI apps)
 into one bigger app that represents your project using routing:
 
 .. code-block:: python
@@ -290,7 +291,11 @@ WebSocket views by just adding the right middleware around them:
 
 .. code-block:: python
 
+    from channels.routing import ProtocolTypeRouter
+    from django.core.asgi import get_asgi_application
+
     application = ProtocolTypeRouter({
+        "http": get_asgi_application(),
         "websocket": AuthMiddlewareStack(
             URLRouter([
                 url(r"^front(end)/$", consumers.AsyncChatConsumer),

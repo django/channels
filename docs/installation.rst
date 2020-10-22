@@ -21,22 +21,45 @@ Once that's done, you should add ``channels`` to your
         'channels',
     )
 
-Then, make a default routing in ``myproject/routing.py``:
+Then, adjust your project's ``asgi.py`` file, e.g. ``myproject/asgi.py``, to
+wrap the Django ASGI application::
 
-.. code-block:: python
+      import os
 
-    from channels.routing import ProtocolTypeRouter
+      from channels.routing import ProtocolTypeRouter
+      from django.core.asgi import get_asgi_application
 
-    application = ProtocolTypeRouter({
-        # Empty for now (http->django views is added by default)
-    })
+      os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mysite.settings')
+
+      application = ProtocolTypeRouter({
+          "http": get_asgi_application(),
+          # Just HTTP for now. (We can add other protocols later.)
+      })
+
+.. note::
+    Django 2.2 doesn't have inbuilt ASGI support so we need to use Channel's
+    fallback alternative. Create ``myproject/asgi.py`` like this::
+
+        import os
+
+        import django
+        from channels.http import AsgiHandler
+        from channels.routing import ProtocolTypeRouter
+
+        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mysite.settings')
+        django.setup()
+
+        application = ProtocolTypeRouter({
+          "http": AsgiHandler(),
+          # Just HTTP for now. (We can add other protocols later.)
+        })
 
 And finally, set your ``ASGI_APPLICATION`` setting to point to that routing
 object as your root application:
 
 .. code-block:: python
 
-    ASGI_APPLICATION = "myproject.routing.application"
+    ASGI_APPLICATION = "myproject.asgi.application"
 
 That's it! Once enabled, ``channels`` will integrate itself into Django and
 take control of the ``runserver`` command. See :doc:`introduction` for more.

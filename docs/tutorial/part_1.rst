@@ -10,8 +10,8 @@ The room view will use a WebSocket to communicate with the Django server and
 listen for any messages that are posted.
 
 We assume that you are familiar with basic concepts for building a Django site.
-If not we recommend you complete `the Django tutorial`_ first and then come back
-to this tutorial.
+If not we recommend you complete `the Django tutorial`_ first and then come
+back to this tutorial.
 
 We assume that you have `Django installed`_ already. You can tell Django is
 installed and which version by running the following command in a shell prompt
@@ -28,8 +28,8 @@ Channels is installed by running the following command:
 
     $ python3 -c 'import channels; print(channels.__version__)'
 
-This tutorial is written for Channels 2.0, which supports Python 3.5+ and Django
-1.11+. If the Channels version does not match, you can refer to the tutorial for
+This tutorial is written for Channels 3.0, which supports Python 3.6+ and Django
+2.2+. If the Channels version does not match, you can refer to the tutorial for
 your version of Channels by using the version switcher at the bottom left corner
 of this page, or update Channels to the newest version.
 
@@ -72,9 +72,14 @@ following contents:
         manage.py
         mysite/
             __init__.py
+            asgi.py
             settings.py
             urls.py
             wsgi.py
+
+.. note::
+    Django 2.2 will not have the ``asgi.py`` file. Don't worry, you can create
+    it in a moment.
 
 Creating the Chat app
 ---------------------
@@ -248,15 +253,15 @@ You'll see the following output on the command line:
 
 .. code-block:: text
 
+    Watching for file changes with StatReloader
     Performing system checks...
 
     System check identified no issues (0 silenced).
 
-    You have 13 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): admin, auth, contenttypes, sessions.
+    You have 18 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): admin, auth, contenttypes, sessions.
     Run 'python manage.py migrate' to apply them.
-
-    February 18, 2018 - 22:08:39
-    Django version 1.11.10, using settings 'mysite.settings'
+    October 21, 2020 - 18:49:39
+    Django version 3.1.2, using settings 'mysite.settings'
     Starting development server at http://127.0.0.1:8000/
     Quit the server with CONTROL-C.
 
@@ -278,20 +283,45 @@ So far we've just created a regular Django app; we haven't used the Channels
 library at all. Now it's time to integrate Channels.
 
 Let's start by creating a root routing configuration for Channels. A Channels
-:doc:`routing configuration </topics/routing>` is similar to a Django URLconf in that it tells Channels
-what code to run when an HTTP request is received by the Channels server.
+:doc:`routing configuration </topics/routing>` is an ASGI application that is
+similar to a Django URLconf, in that it tells Channels what code to run when an
+HTTP request is received by the Channels server.
 
-We'll start with an empty routing configuration.
-Create a file ``mysite/routing.py`` and include the following code:
+Start by adjusting the ``mysite/asgi.py`` file to include the following code:
 
 .. code-block:: python
 
-    # mysite/routing.py
-    from channels.routing import ProtocolTypeRouter
+      # mysite/asgi.py
+      import os
 
-    application = ProtocolTypeRouter({
-        # (http->django views is added by default)
-    })
+      from channels.routing import ProtocolTypeRouter
+      from django.core.asgi import get_asgi_application
+
+      os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mysite.settings')
+
+      application = ProtocolTypeRouter({
+          "http": get_asgi_application(),
+          # Just HTTP for now. (We can add other protocols later.)
+      })
+
+.. note::
+    Django 2.2 doesn't have inbuilt ASGI support so we need to use Channel's
+    fallback alternative. Create ``mysite/asgi.py`` like this::
+
+        # mysite/asgi.py
+        import os
+
+        import django
+        from channels.http import AsgiHandler
+        from channels.routing import ProtocolTypeRouter
+
+        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mysite.settings')
+        django.setup()
+
+        application = ProtocolTypeRouter({
+          "http": AsgiHandler(),
+          # Just HTTP for now. (We can add other protocols later.)
+        })
 
 Now add the Channels library to the list of installed apps.
 Edit the ``mysite/settings.py`` file and add ``'channels'`` to the
@@ -319,7 +349,7 @@ of it:
 
     # mysite/settings.py
     # Channels
-    ASGI_APPLICATION = 'mysite.routing.application'
+    ASGI_APPLICATION = 'mysite.asgi.application'
 
 With Channels now in the installed apps, it will take control of the
 ``runserver`` command, replacing the standard Django development server with
@@ -346,29 +376,25 @@ You'll see the following output on the command line:
 
 .. code-block:: text
 
+    Watching for file changes with StatReloader
     Performing system checks...
 
     System check identified no issues (0 silenced).
 
-    You have 13 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): admin, auth, contenttypes, sessions.
+    You have 18 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): admin, auth, contenttypes, sessions.
     Run 'python manage.py migrate' to apply them.
-
-    February 18, 2018 - 22:16:23
-    Django version 1.11.10, using settings 'mysite.settings'
-    Starting ASGI/Channels development server at http://127.0.0.1:8000/
+    October 21, 2020 - 19:08:48
+    Django version 3.1.2, using settings 'mysite.settings'
+    Starting ASGI/Channels version 3.0.0 development server at http://127.0.0.1:8000/
     Quit the server with CONTROL-C.
-    2018-02-18 22:16:23,729 - INFO - server - HTTP/2 support not enabled (install the http2 and tls Twisted extras)
-    2018-02-18 22:16:23,730 - INFO - server - Configuring endpoint tcp:port=8000:interface=127.0.0.1
-    2018-02-18 22:16:23,731 - INFO - server - Listening on TCP address 127.0.0.1:8000
 
 .. note::
     Ignore the warning about unapplied database migrations.
     We won't be using a database in this tutorial.
 
-Notice the line beginning with
-``Starting ASGI/Channels development server at http://127.0.0.1:8000/``.
-This indicates that the Channels development server has taken over from the
-Django development server.
+Notice the line beginning with ``Starting ASGI/Channels version 3.0.0
+development server at http://127.0.0.1:8000/``. This indicates that the
+Channels development server has taken over from the Django development server.
 
 Go to http://127.0.0.1:8000/chat/ in your browser and you should still see the
 index page that we created before.
