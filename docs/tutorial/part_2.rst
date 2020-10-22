@@ -238,31 +238,41 @@ Put the following code in ``chat/routing.py``:
     from . import consumers
 
     websocket_urlpatterns = [
-        re_path(r'ws/chat/(?P<room_name>\w+)/$', consumers.ChatConsumer),
+        re_path(r'ws/chat/(?P<room_name>\w+)/$', consumers.ChatConsumer()),
     ]
 
 (Note we use ``re_path()`` due to limitations in :ref:`URLRouter <urlrouter>`.)
 
 The next step is to point the root routing configuration at the **chat.routing**
-module. In ``mysite/routing.py``, import ``AuthMiddlewareStack``, ``URLRouter``,
+module. In ``mysite/asgi.py``, import ``AuthMiddlewareStack``, ``URLRouter``,
 and ``chat.routing``; and insert a ``'websocket'`` key in the
 ``ProtocolTypeRouter`` list in the following format:
 
 .. code-block:: python
 
-    # mysite/routing.py
+    # mysite/asgi.py
+    import os
+
     from channels.auth import AuthMiddlewareStack
     from channels.routing import ProtocolTypeRouter, URLRouter
+    from django.core.asgi import get_asgi_application
     import chat.routing
 
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")
+
     application = ProtocolTypeRouter({
-        # (http->django views is added by default)
-        'websocket': AuthMiddlewareStack(
+      "http": get_asgi_application(),
+      "websocket": AuthMiddlewareStack(
             URLRouter(
                 chat.routing.websocket_urlpatterns
             )
         ),
     })
+
+.. note::
+    For Django 2.2 recall that the ``http`` key to ``ProtocolTypeRouter`` uses
+    Channel's ``AsgiHandler``. This stays the same. The ``websocket`` key is
+    new, and that's the same for all versions.
 
 This root routing configuration specifies that when a connection is made to the
 Channels development server, the ``ProtocolTypeRouter`` will first inspect the type
