@@ -12,14 +12,9 @@ to make a basic task queue or to offload tasks - read more in
 
 .. note::
 
-    Channel layers are an entirely optional part of Channels as of version 2.0.
-    If you don't want to use them, just leave ``CHANNEL_LAYERS`` unset, or
-    set it to the empty dict ``{}``.
-
-    Messages across channel layers also go to consumers/ASGI application
-    instances, just like events from the client, and so they now need a
-    ``type`` key as well. See more below.
-
+    Channel layers are an entirely optional part of Channels. If you don't want
+    to use them, just leave ``CHANNEL_LAYERS`` unset, or set it to the empty
+    dict ``{}``.
 
 .. warning::
 
@@ -64,15 +59,6 @@ In this example, Redis is running on localhost (127.0.0.1) port 6379:
 In-Memory Channel Layer
 ***********************
 
-.. warning::
-
-    **Not for Production Use.** In-memory channel layers operate each
-    process as a separate layer, which means no cross-process
-    messaging is possible. As the core value of channel layers
-    to provide distributed messaging, in-memory usage will
-    result in sub-optimal performance and data-loss in a
-    multi-instance environment.
-
 Channels also comes packaged with an in-memory Channels Layer. This layer can
 be helpful in for :doc:`/topics/testing` or local-development purposes:
 
@@ -84,12 +70,22 @@ be helpful in for :doc:`/topics/testing` or local-development purposes:
         }
     }
 
+.. warning::
+
+    **Do Not Use In Production**
+
+    In-memory channel layers operate with each process as a separate layer.
+    This means that no cross-process messaging is possible. As the core value
+    of channel layers is to provide distributed messaging, in-memory usage will
+    result in sub-optimal performance, and ultimately data-loss in a
+    multi-instance environment.
+
 Synchronous Functions
 ---------------------
 
-By default the ``send()``, ``group_send()``, ``group_add()`` and other functions
-are async functions, meaning you have to ``await`` them. If you need to call
-them from synchronous code, you'll need to use the handy
+By default the ``send()``, ``group_send()``, ``group_add()`` and other
+functions are async functions, meaning you have to ``await`` them. If you need
+to call them from synchronous code, you'll need to use the handy
 ``asgiref.sync.async_to_sync`` wrapper:
 
 .. code-block:: python
@@ -102,18 +98,14 @@ them from synchronous code, you'll need to use the handy
 What To Send Over The Channel Layer
 -----------------------------------
 
-Unlike in Channels 1, the channel layer is only for high-level
-application-to-application communication. When you send a message, it is
-received by the consumers listening to the group or channel on the other end,
-and not transported to that consumer's socket directly.
+The channel layer is for high-level application-to-application communication.
+When you send a message, it is received by the consumers listening to the group
+or channel on the other end. What this means is that you should send high-level
+events over the channel layer, and then have consumers handle those events, and
+do appropriate low-level networking to their attached client.
 
-What this means is that you should send high-level events over the channel
-layer, and then have consumers handle those events and do appropriate low-level
-networking to their attached client.
-
-For example, the `multichat example <https://github.com/andrewgodwin/channels-examples/tree/master/multichat>`_
-in Andrew Godwin's ``channels-examples`` repository sends events like this
-over the channel layer:
+For example, a chat application could send events like this over the channel
+layer:
 
 .. code-block:: python
 
