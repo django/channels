@@ -19,7 +19,7 @@ For convenience, these are also provided as a combined callable called
 ``channels.session``.
 
 To use the middleware, wrap it around the appropriate level of consumer
-in your ``routing.py``:
+in your ``asgi.py``:
 
 .. code-block:: python
 
@@ -32,7 +32,7 @@ in your ``routing.py``:
 
         "websocket": SessionMiddlewareStack(
             URLRouter([
-                url(r"^front(end)/$", consumers.AsyncChatConsumer),
+                url(r"^front(end)/$", consumers.AsyncChatConsumer.as_asgi()),
             ])
         ),
 
@@ -51,7 +51,8 @@ To access the session, use ``self.scope["session"]`` in your consumer code:
             self.scope["session"]["seed"] = random.randint(1, 1000)
 
 ``SessionMiddleware`` respects all the same Django settings as the default
-Django session framework, like SESSION_COOKIE_NAME and SESSION_COOKIE_DOMAIN.
+Django session framework, like ``SESSION_COOKIE_NAME`` and
+``SESSION_COOKIE_DOMAIN``.
 
 
 Session Persistence
