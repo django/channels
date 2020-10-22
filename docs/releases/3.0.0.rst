@@ -1,27 +1,35 @@
 3.0.0 Release Notes
 ===================
 
-TODO
+Update to ASGI 3
+----------------
 
-* Update to ASGI v3: update init and call **if you implemented** these yourself.
+* Consumers are *single-callables*, taking the scope at the beginning of the
+  request. You'll need to update init and call **if you implemented** these yourself.
   (Otherwise you should be good.)
 
-  * Means you need to instantiate your consumers when setting up your routing::
+* Consumers now have an ``as_asgi()`` class method you need to call when
+  setting up your routing::
 
-      websocket_urlpatterns = [
-        re_path(r'ws/chat/(?P<room_name>\w+)/$', consumers.ChatConsumer()),
-      ]
+    websocket_urlpatterns = [
+      re_path(r'ws/chat/(?P<room_name>\w+)/$', consumers.ChatConsumer.as_asgi()),
+    ]
 
-    Consumers are *single-callables*, taking the scope at the beginning of the
-    request.
+  This returns an ASGI application that will instantiate the consumer per-request.
+
+  It's similar to Django's ``as_view()``, which serves the same purpose. You
+  can pass ``initkwargs`` if your consumer requires them.
+
+* Middleware will also need to be updated to ASGI v3 signature.
+
+Other Bits
+----------
 
 * Built-in `AsgiHandler` is deprecated. Update to Django 3.0+ and use its version.
 
 * Explicitly specify `"http"` in ProtocolTypeRouter. (Deprecate auto usage.)
 
 * Update your `routing.py` to an `asgi.py`
-
-* What else breaks? Anything?
 
 * Dropped Python 3.5
 

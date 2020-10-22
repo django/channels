@@ -238,14 +238,19 @@ Put the following code in ``chat/routing.py``:
     from . import consumers
 
     websocket_urlpatterns = [
-        re_path(r'ws/chat/(?P<room_name>\w+)/$', consumers.ChatConsumer()),
+        re_path(r'ws/chat/(?P<room_name>\w+)/$', consumers.ChatConsumer.as_asgi()),
     ]
+
+We call the ``as_asgi()`` classmethod in order to get an ASGI application that
+will instantiate an instance of our consumer for each user-connection. This is
+similar to Django's ``as_view()``, which plays the same role for per-request
+Django view instances.
 
 (Note we use ``re_path()`` due to limitations in :ref:`URLRouter <urlrouter>`.)
 
-The next step is to point the root routing configuration at the **chat.routing**
-module. In ``mysite/asgi.py``, import ``AuthMiddlewareStack``, ``URLRouter``,
-and ``chat.routing``; and insert a ``'websocket'`` key in the
+The next step is to point the root routing configuration at the
+**chat.routing** module. In ``mysite/asgi.py``, import ``AuthMiddlewareStack``,
+``URLRouter``, and ``chat.routing``; and insert a ``'websocket'`` key in the
 ``ProtocolTypeRouter`` list in the following format:
 
 .. code-block:: python

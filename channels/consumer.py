@@ -80,6 +80,26 @@ class AsyncConsumer:
         """
         await self.base_send(message)
 
+    @classmethod
+    def as_asgi(cls, **initkwargs):
+        """
+        Return an ASGI v3 single callable that instantiates a consumer instance
+        per scope. Similar in purpose to Django's as_view().
+
+        initkwargs will be used to instantiate the consumer instance.
+        """
+
+        async def app(scope, receive, send):
+            consumer = cls(**initkwargs)
+            return await consumer(scope, receive, send)
+
+        app.consumer_class = cls
+        app.consumer_initkwargs = initkwargs
+
+        # take name and docstring from class
+        functools.update_wrapper(app, cls, updated=())
+        return app
+
 
 class SyncConsumer(AsyncConsumer):
     """
