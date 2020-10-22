@@ -23,37 +23,45 @@ more protocol-specific routing underneath there.
 Channels expects you to be able to define a single *root application*, and
 provide the path to it as the ``ASGI_APPLICATION`` setting (think of this as
 being analogous to the ``ROOT_URLCONF`` setting in Django). There's no fixed
-rule as to where you need to put the routing and the root application,
-but we recommend putting them in a project-level file called ``routing.py``,
-next to ``urls.py``. You can read more about deploying Channels projects and
-settings in :doc:`/deploying`.
+rule as to where you need to put the routing and the root application, but we
+recommend following Django's conventions and putting them in a project-level
+file called ``asgi.py``, next to ``urls.py``. You can read more about deploying
+Channels projects and settings in :doc:`/deploying`.
 
-Here's an example of what that ``routing.py`` might look like:
+Here's an example of what that ``asgi.py`` might look like:
 
 .. code-block:: python
 
-    from django.conf.urls import url
+    import os
 
-    from channels.routing import ProtocolTypeRouter, URLRouter
     from channels.auth import AuthMiddlewareStack
+    from channels.routing import ProtocolTypeRouter, URLRouter
+    from django.conf.urls import url
+    from django.core.asgi import get_asgi_application
 
     from chat.consumers import AdminChatConsumer, PublicChatConsumer
-    from aprs_news.consumers import APRSNewsConsumer
+
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")
 
     application = ProtocolTypeRouter({
+        # Django's ASGI application to handle traditional HTTP requests
+        "http": get_asgi_application()
 
         # WebSocket chat handler
         "websocket": AuthMiddlewareStack(
             URLRouter([
-                url(r"^chat/admin/$", AdminChatConsumer),
-                url(r"^chat/$", PublicChatConsumer),
+                url(r"^chat/admin/$", AdminChatConsumer.as_asgi()),
+                url(r"^chat/$", PublicChatConsumer.as_asgi()),
             ])
         ),
-
-        # Using the third-party project frequensgi, which provides an APRS protocol
-        "aprs": APRSNewsConsumer,
-
     })
+
+.. note::
+  We call the ``as_asgi()`` classmethod when routing our consumers. This
+  returns an ASGI wrapper application that will instantiate a new consumer
+  instance for each connection or scope. This is similar to Django's
+  ``as_view()``, which plays the same role for per-request instances of
+  class-bases views.
 
 It's possible to have routers from third-party apps, too, or write your own,
 but we'll go over the built-in Channels ones here.
@@ -64,8 +72,8 @@ ProtocolTypeRouter
 
 ``channels.routing.ProtocolTypeRouter``
 
-This should be the
-top level of your ASGI application stack and the main entry in your routing file.
+This should be the top level of your ASGI application stack and the main entry
+in your routing file.
 
 It lets you dispatch to one of a number of other ASGI applications based on the
 ``type`` value present in the ``scope``. Protocols will define a fixed type
@@ -82,14 +90,9 @@ applications that serve them:
         "websocket": some_other_app,
     })
 
-If a ``http`` argument is not provided, it will default to the Django view
-system's ASGI interface, ``channels.http.AsgiHandler``, which means that for
-most projects that aren't doing custom long-poll HTTP handling, you can simply
-not specify a ``http`` option and leave it to work the "normal" Django way.
-
 If you want to split HTTP handling between long-poll handlers and Django views,
-use a URLRouter with ``channels.http.AsgiHandler`` specified as the last entry
-with a match-everything pattern.
+use a URLRouter using Django's ``get_asgi_application()`` specified as the last
+entry with a match-everything pattern.
 
 .. _urlrouter:
 
@@ -98,15 +101,16 @@ URLRouter
 
 ``channels.routing.URLRouter``
 
-Routes ``http`` or ``websocket`` type connections via their HTTP path. Takes
-a single argument, a list of Django URL objects (either ``path()`` or ``url()``):
+Routes ``http`` or ``websocket`` type connections via their HTTP path. Takes a
+single argument, a list of Django URL objects (either ``path()`` or
+``re_path()``):
 
 .. code-block:: python
 
     URLRouter([
-        url(r"^longpoll/$", LongPollConsumer),
-        url(r"^notifications/(?P<stream>\w+)/$", LongPollConsumer),
-        url(r"", AsgiHandler),
+        re_path(r"^longpoll/$", LongPollConsumer),
+        re_path(r"^notifications/(?P<stream>\w+)/$", LongPollConsumer),
+        re_path(r"", get_asgi_application()),
     ])
 
 Any captured groups will be provided in ``scope`` as the key ``url_route``, a
