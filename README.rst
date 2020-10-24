@@ -1,8 +1,8 @@
 Django Channels
 ===============
 
-.. image:: https://api.travis-ci.org/django/channels.svg
-    :target: https://travis-ci.org/django/channels
+.. image:: https://github.com/django/channels/workflows/Tests/badge.svg?branch=master
+    :target: https://github.com/django/channels/actions
 
 .. image:: https://readthedocs.org/projects/channels/badge/?version=latest
     :target: https://channels.readthedocs.io/en/latest/?badge=latest
