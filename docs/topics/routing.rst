@@ -32,7 +32,7 @@ Here's an example of what that ``routing.py`` might look like:
 
 .. code-block:: python
 
-    from django.conf.urls import url
+    from django.urls import re_path
 
     from channels.routing import ProtocolTypeRouter, URLRouter
     from channels.auth import AuthMiddlewareStack
@@ -45,8 +45,8 @@ Here's an example of what that ``routing.py`` might look like:
         # WebSocket chat handler
         "websocket": AuthMiddlewareStack(
             URLRouter([
-                url(r"^chat/admin/$", AdminChatConsumer),
-                url(r"^chat/$", PublicChatConsumer),
+                re_path(r"^chat/admin/$", AdminChatConsumer),
+                re_path(r"^chat/$", PublicChatConsumer),
             ])
         ),
 
@@ -99,14 +99,14 @@ URLRouter
 ``channels.routing.URLRouter``
 
 Routes ``http`` or ``websocket`` type connections via their HTTP path. Takes
-a single argument, a list of Django URL objects (either ``path()`` or ``url()``):
+a single argument, a list of Django URL objects (either ``path()`` or ``re_path()``):
 
 .. code-block:: python
 
     URLRouter([
-        url(r"^longpoll/$", LongPollConsumer),
-        url(r"^notifications/(?P<stream>\w+)/$", LongPollConsumer),
-        url(r"", AsgiHandler),
+        re_path(r"^longpoll/$", LongPollConsumer),
+        re_path(r"^notifications/(?P<stream>\w+)/$", LongPollConsumer),
+        re_path(r"", AsgiHandler),
     ])
 
 Any captured groups will be provided in ``scope`` as the key ``url_route``, a

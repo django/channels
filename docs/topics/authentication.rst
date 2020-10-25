@@ -23,7 +23,7 @@ in your ``routing.py``:
 
 .. code-block:: python
 
-    from django.conf.urls import url
+    from django.urls import re_path
 
     from channels.routing import ProtocolTypeRouter, URLRouter
     from channels.auth import AuthMiddlewareStack
@@ -34,7 +34,7 @@ in your ``routing.py``:
 
         "websocket": AuthMiddlewareStack(
             URLRouter([
-                url(r"^front(end)/$", consumers.AsyncChatConsumer),
+                re_path(r"^front(end)/$", consumers.AsyncChatConsumer),
             ])
         ),
 

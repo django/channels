@@ -191,8 +191,8 @@ into one bigger app that represents your project using routing:
 .. code-block:: python
 
     application = URLRouter([
-        url(r"^chat/admin/$", AdminChatConsumer),
-        url(r"^chat/$", PublicChatConsumer),
+        re_path(r"^chat/admin/$", AdminChatConsumer),
+        re_path(r"^chat/$", PublicChatConsumer),
     ])
 
 Channels is not just built around the world of HTTP and WebSockets - it also
@@ -221,8 +221,8 @@ WebSockets and chat requests:
     application = ProtocolTypeRouter({
 
         "websocket": URLRouter([
-            url(r"^chat/admin/$", AdminChatConsumer),
-            url(r"^chat/$", PublicChatConsumer),
+            re_path(r"^chat/admin/$", AdminChatConsumer),
+            re_path(r"^chat/$", PublicChatConsumer),
         ]),
 
         "telegram": ChattyBotConsumer,
@@ -298,7 +298,7 @@ WebSocket views by just adding the right middleware around them:
         "http": get_asgi_application(),
         "websocket": AuthMiddlewareStack(
             URLRouter([
-                url(r"^front(end)/$", consumers.AsyncChatConsumer),
+                re_path(r"^front(end)/$", consumers.AsyncChatConsumer),
             ])
         ),
     })
