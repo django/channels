@@ -45,9 +45,11 @@ async def test_per_scope_consumers():
 
     class TestConsumer(AsyncHttpConsumer):
         async def handle(self, body):
+            body = f"{self.__class__.__name__} {id(self)}"
+
             await self.send_response(
                 200,
-                repr(self).encode("utf-8"),
+                body.encode("utf-8"),
                 headers={b"Content-Type": b"text/plain"},
             )
 
