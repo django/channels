@@ -108,8 +108,8 @@ single argument, a list of Django URL objects (either ``path()`` or
 .. code-block:: python
 
     URLRouter([
-        re_path(r"^longpoll/$", LongPollConsumer),
-        re_path(r"^notifications/(?P<stream>\w+)/$", LongPollConsumer),
+        re_path(r"^longpoll/$", LongPollConsumer.as_asgi()),
+        re_path(r"^notifications/(?P<stream>\w+)/$", LongPollConsumer.as_asgi()),
         re_path(r"", get_asgi_application()),
     ])
 
