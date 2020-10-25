@@ -61,7 +61,7 @@ Here's an example of what that ``asgi.py`` might look like:
   returns an ASGI wrapper application that will instantiate a new consumer
   instance for each connection or scope. This is similar to Django's
   ``as_view()``, which plays the same role for per-request instances of
-  class-bases views.
+  class-based views.
 
 It's possible to have routers from third-party apps, too, or write your own,
 but we'll go over the built-in Channels ones here.
