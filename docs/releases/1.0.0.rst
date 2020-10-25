@@ -104,7 +104,7 @@ They also now forward all ``websocket.connect`` and ``websocket.disconnect``
 messages to all of their sub-consumers, so it's much easier to compose things
 together from code that also works outside the context of multiplexing.
 
-For more, read the updated :doc:`/generic` docs.
+For more, read the updated ``/generic`` docs.
 
 
 Delay Server
@@ -112,7 +112,7 @@ Delay Server
 
 A built-in delay server, launched with `manage.py rundelay`, now ships if you
 wish to use it. It needs some extra initial setup and uses a database for
-persistence; see :doc:`/delay` for more information.
+persistence; see ``/delay`` for more information.
 
 
 Minor Changes
