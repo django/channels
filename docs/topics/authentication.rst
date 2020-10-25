@@ -19,11 +19,11 @@ requires ``CookieMiddleware``. For convenience, these are also provided
 as a combined callable called ``AuthMiddlewareStack`` that includes all three.
 
 To use the middleware, wrap it around the appropriate level of consumer
-in your ``routing.py``:
+in your ``asgi.py``:
 
 .. code-block:: python
 
-    from django.conf.urls import url
+    from django.urls import re_path
 
     from channels.routing import ProtocolTypeRouter, URLRouter
     from channels.auth import AuthMiddlewareStack
@@ -34,7 +34,7 @@ in your ``routing.py``:
 
         "websocket": AuthMiddlewareStack(
             URLRouter([
-                url(r"^front(end)/$", consumers.AsyncChatConsumer),
+                re_path(r"^front(end)/$", consumers.AsyncChatConsumer.as_asgi()),
             ])
         ),
 
@@ -88,33 +88,17 @@ query string and uses that:
         Custom middleware (insecure) that takes user IDs from the query string.
         """
 
-        def __init__(self, inner):
+        def __init__(self, app):
             # Store the ASGI application we were passed
-            self.inner = inner
+            self.app = app
 
-        def __call__(self, scope):
-            return QueryAuthMiddlewareInstance(scope, self)
-
-    class QueryAuthMiddlewareInstance:
-        """
-        Inner class that is instantiated once per scope.
-        """
-
-        def __init__(self, scope, middleware):
-            self.middleware = middleware
-            self.scope = dict(scope)
-            self.inner = self.middleware.inner
-
-        async def __call__(self, receive, send):
+        async def __call__(self, scope, receive, send):
             # Look up user from query string (you should also do things like
             # checking if it is a valid user ID, or if scope["user"] is already
             # populated).
-            self.scope['user'] = await get_user(int(self.scope["query_string"]))
+            scope['user'] = await get_user(int(self.scope["query_string"]))
 
-            # Instantiate our inner application
-            inner = self.inner(self.scope)
-
-            return await inner(receive, send)
+            return await self.app(scope, receive, send)
 
 The same principles can be applied to authenticate over non-HTTP protocols;
 for example, you might want to use someone's chat username from a chat protocol
