@@ -1,4 +1,7 @@
+import django
+
 __version__ = "2.4.0"
 
-default_app_config = "channels.apps.ChannelsConfig"
+if django.VERSION < (3, 2):
+    default_app_config = "channels.apps.ChannelsConfig"
 DEFAULT_CHANNEL_LAYER = "default"
