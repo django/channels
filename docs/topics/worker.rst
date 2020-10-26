@@ -14,7 +14,7 @@ names, as a simple, very-low-latency task queue.
 
     We recommend you use it for work that does not need guarantees around
     being complete (at-most-once delivery), and for work that needs more
-    guarantees, look into a separate dedicated task queue like Celery.
+    guarantees, look into a separate dedicated task queue.
 
 Setting up background tasks works in two parts - sending the events, and then
 setting up the consumers to receive and process the events.
