@@ -8,15 +8,30 @@ To help with testing, Channels provides test helpers called *Communicators*,
 which allow you to wrap up an ASGI application (like a consumer) into its own
 event loop and ask it questions.
 
-They do, however, require that you have asynchronous support in your test suite.
-While you can do this yourself, we recommend using ``py.test`` with its ``asyncio``
-plugin, which is how we'll illustrate tests below.
+`Since Django 3.1, you can test asynchronous code
+<https://docs.djangoproject.com/en/3.1/topics/testing/tools/#testing-
+asynchronous-code>`_ using Django's ``TestCase``. Alternately, you can use
+``pytest`` with its ``asyncio`` plugin.
 
 
 Setting Up Async Tests
 ----------------------
 
-Firstly, you need to get ``py.test`` set up with async test support, and
+To use Django's ``TestCase`` you simply define an ``async def`` test method in
+order to provide the appropriate async context::
+
+    from django.test import TestCase
+    from channels.testing import HttpCommunicator
+    from myproject.myapp.consumers import MyConsumer
+
+    class MyTests(TestCase):
+        async def test_my_consumer(self):
+            communicator = HttpCommunicator(MyConsumer, "GET", "/test/")
+            response = await communicator.get_response()
+            self.assertEqual(response["body"], b"test response")
+            self.assertEqual(response["status"], 200)
+
+To use ``pytest`` you need to set it up with async test support, and
 presumably Django test support as well. You can do this by installing the
 ``pytest-django`` and ``pytest-asyncio`` packages:
 
@@ -27,7 +42,7 @@ presumably Django test support as well. You can do this by installing the
 Then, you need to decorate the tests you want to run async with
 ``pytest.mark.asyncio``. Note that you can't mix this with ``unittest.TestCase``
 subclasses; you have to write async tests as top-level test functions in the
-native ``py.test`` style:
+native ``pytest`` style:
 
 .. code-block:: python
 
@@ -41,10 +56,6 @@ native ``py.test`` style:
         response = await communicator.get_response()
         assert response["body"] == b"test response"
         assert response["status"] == 200
-
-If you have normal Django views, you can continue to test those with the
-standard Django test tools and client. You only need the async setup for
-code that's written as consumers.
 
 There's a few variants of the Communicator - a plain one for generic usage,
 and one each for HTTP and WebSockets specifically that have shortcut methods,
