@@ -4,6 +4,7 @@ import logging
 import sys
 import tempfile
 import traceback
+import warnings
 
 from asgiref.sync import async_to_sync, sync_to_async
 from django import http
@@ -169,6 +170,11 @@ class AsgiHandler(base.BaseHandler):
     chunk_size = 512 * 1024
 
     def __init__(self):
+        msg = (
+            "Channel's inbuilt http protocal AsgiHandler is deprecated. "
+            "Use Django's get_asgi_application() instead."
+        )
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
         super(AsgiHandler, self).__init__()
         self.load_middleware()
 

@@ -1,6 +1,5 @@
-from __future__ import unicode_literals
-
 import importlib
+import warnings
 
 from asgiref.compatibility import guarantee_single_callable
 from django.conf import settings
@@ -38,6 +37,20 @@ def get_default_application():
     return value
 
 
+DEPRECATION_MSG = """
+Using ProtocolTypeRouter without an explicit "http" key is deprecated.
+Given that you have not passed the "http" you likely should use Django's
+get_asgi_application():
+
+    from django.core.asgi import get_asgi_application
+
+    application = ProtocolTypeRouter(
+        "http": get_asgi_application()
+        # Other protocols here.
+    )
+"""
+
+
 class ProtocolTypeRouter:
     """
     Takes a mapping of protocol type names to other Application instances,
@@ -47,6 +60,7 @@ class ProtocolTypeRouter:
     def __init__(self, application_mapping):
         self.application_mapping = application_mapping
         if "http" not in self.application_mapping:
+            warnings.warn(DEPRECATION_MSG, DeprecationWarning, stacklevel=2)
             self.application_mapping["http"] = AsgiHandler()
 
     async def __call__(self, scope, receive, send):

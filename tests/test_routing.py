@@ -20,6 +20,7 @@ class MockApplication:
 
 
 @pytest.mark.asyncio
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 async def test_protocol_type_router():
     """
     Tests the ProtocolTypeRouter
