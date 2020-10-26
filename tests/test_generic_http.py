@@ -1,4 +1,5 @@
 import json
+import time
 
 import pytest
 
@@ -44,8 +45,12 @@ async def test_per_scope_consumers():
     """
 
     class TestConsumer(AsyncHttpConsumer):
+        def __init__(self):
+            super().__init__()
+            self.time = time.time()
+
         async def handle(self, body):
-            body = f"{self.__class__.__name__} {id(self)}"
+            body = f"{self.__class__.__name__} {id(self)} {self.time}"
 
             await self.send_response(
                 200,
