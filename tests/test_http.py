@@ -258,6 +258,7 @@ class MockHandler(AsgiHandler):
 
 @pytest.mark.django_db
 @pytest.mark.asyncio
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 async def test_handler_basic():
     """
     Tests very basic request handling, no body.
@@ -274,6 +275,7 @@ async def test_handler_basic():
 
 @pytest.mark.django_db
 @pytest.mark.asyncio
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 async def test_handler_body_single():
     """
     Tests request handling with a single-part body
@@ -292,6 +294,7 @@ async def test_handler_body_single():
 
 @pytest.mark.django_db
 @pytest.mark.asyncio
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 async def test_handler_body_multiple():
     """
     Tests request handling with a multi-part body
@@ -314,6 +317,7 @@ async def test_handler_body_multiple():
 
 @pytest.mark.django_db
 @pytest.mark.asyncio
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 async def test_handler_body_ignore_extra():
     """
     Tests request handling ignores anything after more_body: False
@@ -372,6 +376,7 @@ async def test_sessions():
 
 
 class MiddlewareTests(unittest.TestCase):
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_middleware_caching(self):
         """
         Tests that middleware is only loaded once
