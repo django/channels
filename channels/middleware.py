@@ -17,20 +17,10 @@ class BaseMiddleware:
 
     async def __call__(self, scope, receive, send):
         """
-        ASGI constructor; can insert things into the scope, but not
-        run asynchronous code.
+        ASGI application; can insert things into the scope and run asynchronous
+        code.
         """
         # Copy scope to stop changes going upstream
         scope = dict(scope)
-        # Allow subclasses to change the scope
-        self.populate_scope(scope)
-        # Partially bind it to our coroutine entrypoint along with the scope
-        return await self.coroutine_call(self.inner, scope, receive, send)
-
-    async def coroutine_call(self, inner, scope, receive, send):
-        """
-        ASGI coroutine; where we can resolve items in the scope
-        (but you can't modify it at the top level here!)
-        """
-        await self.resolve_scope(scope)
-        await inner(scope, receive, send)
+        # Run the inner application along with the scope
+        return await self.inner(scope, receive, send)
