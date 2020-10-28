@@ -5,9 +5,9 @@ The Channels 3 update brings Channels into line with Django's own async ASGI
 support, introduced with Django 3.0.
 
 Channels now integrates with Django's async HTTP handling, whilst continuing to
-give support for WebSockets, and other exciting consumer types.
+support WebSockets and other exciting consumer types.
 
-Channels 3 supports Django 3.x, and beyond, as well continuing to support the
+Channels 3 supports Django 3.x and beyond, as well continuing to support the
 Django 2.2 LTS. We will support Django 2.2 at least until the Django 3.2 LTS is
 released, yet may drop support after that, but before Django 2.2 is officially
 end-of-life.
@@ -17,38 +17,37 @@ the latest Python versions, so 3.9 at the time of release.
 
 In both our Django and Python support, we reflect the reality that async Python
 and async Django are still both evolving rapidly. Many issues we see simply
-disappear if you update. If you want to be doing async you should make sure
-you're on the latest versions.
+disappear if you update. Whatever you are doing with async, you should make
+sure you're on the latest versions.
 
-The highlight of this release is the upgrade to ASGI v3, and the integration
-with Django's ASGI support that it entails. There are also two additional
-deprecations that you will need to deal with if you are updating an existing
-application.
+The highlight of this release is the upgrade to ASGI v3, which allows integration
+with Django's ASGI support. There are also two additional deprecations that you
+will need to deal with if you are updating an existing application.
 
 
 Update to ASGI 3
 ----------------
 
-* Consumers are now ASGI 3 *single-callables*::
+* Consumers are now ASGI 3 *single-callables* with the signature::
 
     application(scope, receive, send)
 
   For generic consumers this change should be largely transparent, but you will
   need to update ``__init__()`` (no longer taking the scope) and ``__call__()``
-  (now taking the scope) **if you implemented** these yourself.
+  (now taking the scope) **if you implemented these yourself**.
 
 * Consumers now have an ``as_asgi()`` class method you need to call when
   setting up your routing::
 
     websocket_urlpatterns = [
-      re_path(r'ws/chat/(?P<room_name>\w+)/$', consumers.ChatConsumer.as_asgi()),
+        re_path(r'ws/chat/(?P<room_name>\w+)/$', consumers.ChatConsumer.as_asgi()),
     ]
 
   This returns an ASGI application that will instantiate the consumer
   per-request. It's similar to Django's ``as_view()``, which serves the same purpose. You
-  can pass ``**initkwargs`` if your consumer requires them.
+  can pass in keyword arguments for initialization if your consumer requires them.
 
-* Middleware will also need to be updated to ASGI v3 signature.
+* Middleware will also need to be updated to the ASGI v3 signature.
 
 Deprecations
 ------------
@@ -63,10 +62,10 @@ Deprecations
 
       from django.core.asgi import get_asgi_application
 
-      application = ProtocolTypeRouter(
-          "http": get_asgi_application()
+      application = ProtocolTypeRouter({
+          "http": get_asgi_application(),
           # Other protocols here.
-      )
+      })
 
   Once the deprecation is removed, when we drop support for Django 2.2, not
   specifying an ``"http"`` key will mean that your application will not handle
