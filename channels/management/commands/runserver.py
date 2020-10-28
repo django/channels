@@ -2,7 +2,6 @@ import datetime
 import logging
 import sys
 
-from daphne.cli import ASGI3Middleware
 from daphne.endpoints import build_endpoint_description_strings
 from daphne.server import Server
 from django.apps import apps
@@ -105,7 +104,7 @@ class Command(RunserverCommand):
         endpoints = build_endpoint_description_strings(host=self.addr, port=self.port)
         try:
             self.server_cls(
-                application=ASGI3Middleware(self.get_application(options)),
+                application=self.get_application(options),
                 endpoints=endpoints,
                 signal_handlers=not options["use_reloader"],
                 action_logger=self.log_action,
