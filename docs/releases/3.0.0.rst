@@ -47,7 +47,9 @@ Update to ASGI 3
   per-request. It's similar to Django's ``as_view()``, which serves the same purpose. You
   can pass in keyword arguments for initialization if your consumer requires them.
 
-* Middleware will also need to be updated to the ASGI v3 signature.
+* Middleware will also need to be updated to the ASGI v3 signature. The
+  ``channels.middleware.BaseMiddleware`` class is simplified, and available as
+  an example. You probably don't need to actually subclass it under ASGI 3.
 
 Deprecations
 ------------

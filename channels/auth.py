@@ -171,6 +171,15 @@ class AuthMiddleware(BaseMiddleware):
     async def resolve_scope(self, scope):
         scope["user"]._wrapped = await get_user(scope)
 
+    async def __call__(self, scope, receive, send):
+        scope = dict(scope)
+        # Scope injection/mutation per this middleware's needs.
+        self.populate_scope(scope)
+        # Grab the finalized/resolved scope
+        await self.resolve_scope(scope)
+
+        return await super().__call__(scope, receive, send)
+
 
 # Handy shortcut for applying all three layers at once
 def AuthMiddlewareStack(inner):
