@@ -129,7 +129,7 @@ class RequestTests(unittest.TestCase):
                 "path": "/test/",
                 "headers": {
                     "content-type": b"multipart/form-data; boundary=BOUNDARY",
-                    "content-length": str(len(body)).encode("ascii"),
+                    "content-length": str(len(body)).encode("latin1"),
                 },
             },
             BytesIO(body),
@@ -226,7 +226,7 @@ class RequestTests(unittest.TestCase):
             "path": "/test/",
             "headers": {
                 "content-type": b"multipart/form-data; boundary=BOUNDARY",
-                "content-length": str(len(body)).encode("ascii"),
+                "content-length": str(len(body)).encode("latin1"),
             },
         }
 
@@ -239,6 +239,22 @@ class RequestTests(unittest.TestCase):
             # There is no exception, since the setting should not take into
             # account the size of the file upload data.
             AsgiRequest(scope, BytesIO(body)).POST
+
+    def test_latin1_headers(self):
+        request = AsgiRequest(
+            {
+                "http_version": "1.1",
+                "method": "GET",
+                "path": "/test2/",
+                "headers": {
+                    "host": b"example.com",
+                    "foo": bytes("äbcd", encoding="latin1"),
+                },
+            },
+            BytesIO(b""),
+        )
+
+        self.assertEqual(request.headers["foo"], "äbcd")
 
 
 # Handler tests

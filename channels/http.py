@@ -312,13 +312,13 @@ class AsgiHandler(base.BaseHandler):
         response_headers = []
         for header, value in response.items():
             if isinstance(header, str):
-                header = header.encode("ascii")
+                header = header.encode("latin")
             if isinstance(value, str):
                 value = value.encode("latin1")
             response_headers.append((bytes(header), bytes(value)))
         for c in response.cookies.values():
             response_headers.append(
-                (b"Set-Cookie", c.output(header="").encode("ascii").strip())
+                (b"Set-Cookie", c.output(header="").encode("latin1").strip())
             )
         # Make initial response message
         yield {

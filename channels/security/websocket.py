@@ -28,7 +28,7 @@ class OriginValidator:
             if header_name == b"origin":
                 try:
                     # Set ResultParse
-                    parsed_origin = urlparse(header_value.decode("ascii"))
+                    parsed_origin = urlparse(header_value.decode("latin1"))
                 except UnicodeDecodeError:
                     pass
         # Check to see if the origin header is valid
