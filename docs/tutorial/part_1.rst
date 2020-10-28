@@ -285,7 +285,7 @@ library at all. Now it's time to integrate Channels.
 Let's start by creating a root routing configuration for Channels. A Channels
 :doc:`routing configuration </topics/routing>` is an ASGI application that is
 similar to a Django URLconf, in that it tells Channels what code to run when an
-HTTP request is received by the Channels server.
+WebSocket request is received by the Channels server.
 
 Start by adjusting the ``mysite/asgi.py`` file to include the following code:
 
@@ -300,7 +300,7 @@ Start by adjusting the ``mysite/asgi.py`` file to include the following code:
       os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mysite.settings')
 
       application = ProtocolTypeRouter({
-          "http": get_asgi_application(),
+          # "http": get_asgi_application(),
           # Just HTTP for now. (We can add other protocols later.)
       })
 
@@ -319,9 +319,12 @@ Start by adjusting the ``mysite/asgi.py`` file to include the following code:
         django.setup()
 
         application = ProtocolTypeRouter({
-          "http": AsgiHandler(),
+          # "http": AsgiHandler(),
           # Just HTTP for now. (We can add other protocols later.)
         })
+
+In this case we want that only WebSockets are manage by ASGI so we disable http
+on mysite/asgi.py.
 
 Now add the Channels library to the list of installed apps.
 Edit the ``mysite/settings.py`` file and add ``'channels'`` to the
