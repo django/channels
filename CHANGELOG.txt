@@ -1,13 +1,14 @@
 Full release notes, with more details and upgrade information, are available at:
 https://channels.readthedocs.io/en/latest/releases
 
-3.0.0 (UNRELEASED)
+3.0.0 (2020-10-30)
 ------------------
 
-* Added support for Python 3.9.
+Updated to ASGI v3, and added support for Django 3.0+.
 
-* Dropped support for Python 3.5, which is now end-of-life.
-
+This is a major version change requiring updates to consumers and middleware.
+Please see the full `Version 3.0.0 release notes
+<https://channels.readthedocs.io/en/latest/releases/3.0.0.html>`_ for details.
 
 
 2.4.0 (2019-12-18)
