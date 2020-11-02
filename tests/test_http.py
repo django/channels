@@ -391,6 +391,40 @@ async def test_sessions():
     assert re.compile(r"Path").search(value) is not None
 
 
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.asyncio
+async def test_muliple_sessions():
+    """
+    Create two application instances and test then out of order to verify that
+    separate scopes are used.
+    """
+
+    async def inner(scope, receive, send):
+        send(scope["path"])
+
+    class SimpleHttpApp(AsyncConsumer):
+        async def http_request(self, event):
+            await database_sync_to_async(self.scope["session"].save)()
+            assert self.scope["method"] == "GET"
+            await self.send(
+                {"type": "http.response.start", "status": 200, "headers": []}
+            )
+            await self.send(
+                {"type": "http.response.body", "body": self.scope["path"].encode()}
+            )
+
+    app = SessionMiddlewareStack(SimpleHttpApp.as_asgi())
+
+    first_communicator = HttpCommunicator(app, "GET", "/first/")
+    second_communicator = HttpCommunicator(app, "GET", "/second/")
+
+    second_response = await second_communicator.get_response()
+    assert second_response["body"] == b"/second/"
+
+    first_response = await first_communicator.get_response()
+    assert first_response["body"] == b"/first/"
+
+
 class MiddlewareTests(unittest.TestCase):
     @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_middleware_caching(self):

@@ -8,6 +8,7 @@ from channels.generic.websocket import (
     WebsocketConsumer,
 )
 from channels.layers import get_channel_layer
+from channels.sessions import SessionMiddlewareStack
 from channels.testing import WebsocketCommunicator
 
 
@@ -51,6 +52,47 @@ async def test_websocket_consumer():
     # Close out
     await communicator.disconnect()
     assert "disconnected" in results
+
+
+@pytest.mark.django_db
+@pytest.mark.asyncio
+async def test_multiple_websocket_consumers_with_sessions():
+    """
+    Tests that multiple consumers use the correct scope when using
+    SessionMiddleware.
+    """
+
+    class TestConsumer(WebsocketConsumer):
+        def connect(self):
+            self.accept()
+
+        def receive(self, text_data=None, bytes_data=None):
+            path = self.scope["path"]
+            self.send(text_data=path)
+
+    app = SessionMiddlewareStack(TestConsumer.as_asgi())
+
+    # Create to communicators.
+    communicator = WebsocketCommunicator(app, "/first/")
+    second_communicator = WebsocketCommunicator(app, "/second/")
+
+    connected, _ = await communicator.connect()
+    assert connected
+    connected, _ = await second_communicator.connect()
+    assert connected
+
+    # Test out of order
+    await second_communicator.send_to(text_data="Echo Path")
+    response = await second_communicator.receive_from()
+    assert response == "/second/"
+
+    await communicator.send_to(text_data="Echo Path")
+    response = await communicator.receive_from()
+    assert response == "/first/"
+
+    # Close out
+    await communicator.disconnect()
+    await second_communicator.disconnect()
 
 
 @pytest.mark.django_db
