@@ -121,13 +121,10 @@ class CookieMiddleware:
         )
 
 
-class SessionMiddleware:
+class InstanceSessionWrapper:
     """
-    Class that adds Django sessions (from HTTP cookies) to the
-    scope. Works with HTTP or WebSocket protocol types (or anything that
-    provides a "headers" entry in the scope).
-
-    Requires the CookieMiddleware to be higher up in the stack.
+    Populates the session in application instance scope, and wraps send to save
+    the session.
     """
 
     # Message types that trigger a session save if it's modified
@@ -136,17 +133,12 @@ class SessionMiddleware:
     # Message types that can carry session cookies back
     cookie_response_message_types = ["http.response.start"]
 
-    def __init__(self, inner):
-        self.inner = inner
+    def __init__(self, scope, send):
         self.cookie_name = settings.SESSION_COOKIE_NAME
         self.session_store = import_module(settings.SESSION_ENGINE).SessionStore
 
-    async def __call__(self, scope, receive, send):
-        """
-        We intercept the send() callable so we can do session saves and
-        add session cookie overrides to send back.
-        """
         self.scope = dict(scope)
+
         if "session" in self.scope:
             # There's already session middleware of some kind above us, pass
             # that through
@@ -162,14 +154,14 @@ class SessionMiddleware:
             self.scope["session"] = LazyObject()
             self.activated = True
 
-        # Resolve the session now we can do it in a blocking way
+        # Override send
+        self.real_send = send
+
+    async def resolve_session(self):
         session_key = self.scope["cookies"].get(self.cookie_name)
         self.scope["session"]._wrapped = await database_sync_to_async(
             self.session_store
         )(session_key)
-        # Override send
-        self.real_send = send
-        return await self.inner(self.scope, receive, self.send)
 
     async def send(self, message):
         """
@@ -236,6 +228,30 @@ class SessionMiddleware:
                 "request completed. The user may have logged "
                 "out in a concurrent request, for example."
             )
+
+
+class SessionMiddleware:
+    """
+    Class that adds Django sessions (from HTTP cookies) to the
+    scope. Works with HTTP or WebSocket protocol types (or anything that
+    provides a "headers" entry in the scope).
+
+    Requires the CookieMiddleware to be higher up in the stack.
+    """
+
+    def __init__(self, inner):
+        self.inner = inner
+
+    async def __call__(self, scope, receive, send):
+        """
+        Instantiate a session wrapper for this scope, resolve the session and
+        call the inner application.
+        """
+        wrapper = InstanceSessionWrapper(scope, send)
+
+        await wrapper.resolve_session()
+
+        return await self.inner(wrapper.scope, receive, wrapper.send)
 
 
 # Shortcut to include cookie middleware
