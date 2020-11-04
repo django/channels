@@ -1,0 +1,10 @@
+3.0.1 Release Notes
+===================
+
+Channels 3.0.1 fixes a bug in Channels 3.0.
+
+Bugfixes
+--------
+
+* Fixes a bug in Channels 3.0 where ``SessionMiddleware`` would not correctly
+  isolate per-instance scopes.
