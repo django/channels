@@ -1,6 +1,13 @@
 Full release notes, with more details and upgrade information, are available at:
 https://channels.readthedocs.io/en/latest/releases
 
+3.0.1 (2020-11-4)
+-----------------
+
+* Fixes a bug in Channels 3.0 where ``SessionMiddleware`` would not correctly
+  isolate per-instance scopes.
+
+
 3.0.0 (2020-10-30)
 ------------------
 
