@@ -58,7 +58,7 @@ class CookieMiddleware:
         domain=None,
         secure=False,
         httponly=False,
-        samesite=None,
+        samesite="lax",
     ):
         """
         Sets a cookie in the passed HTTP response message.
@@ -101,7 +101,12 @@ class CookieMiddleware:
             cookies[key]["secure"] = True
         if httponly:
             cookies[key]["httponly"] = True
-        if samesite:
+        if samesite is not None:
+            assert samesite.lower() in [
+                "strict",
+                "lax",
+                "none",
+            ], "samesite must be either 'strict', 'lax' or 'none'"
             cookies[key]["samesite"] = samesite
         # Write out the cookies to the response
         for c in cookies.values():
@@ -215,7 +220,7 @@ class InstanceSessionWrapper:
                             path=settings.SESSION_COOKIE_PATH,
                             secure=settings.SESSION_COOKIE_SECURE or None,
                             httponly=settings.SESSION_COOKIE_HTTPONLY or None,
-                            samesite=settings.SESSION_COOKIE_SAMESITE or None,
+                            samesite=settings.SESSION_COOKIE_SAMESITE,
                         )
         # Pass up the send
         return await self.real_send(message)
