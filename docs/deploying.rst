@@ -33,7 +33,7 @@ Here's an example of what that ``asgi.py`` might look like:
 
     application = ProtocolTypeRouter({
         # Django's ASGI application to handle traditional HTTP requests
-        "http": get_asgi_application()
+        "http": get_asgi_application(),
 
         # WebSocket chat handler
         "websocket": AuthMiddlewareStack(
