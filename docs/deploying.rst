@@ -22,18 +22,23 @@ Here's an example of what that ``asgi.py`` might look like:
 
     import os
 
-    from channels.auth import AuthMiddlewareStack
-    from channels.routing import ProtocolTypeRouter, URLRouter
     from django.conf.urls import url
     from django.core.asgi import get_asgi_application
 
-    from chat.consumers import AdminChatConsumer, PublicChatConsumer
-
+    # Fetch Django ASGI application early to ensure AppRegistry is populated
+    # before importing consumers and AuthMiddlewareStack that may import ORM
+    # models. 
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")
+    django_asgi_app = get_asgi_application()
+    
+    from channels.auth import AuthMiddlewareStack
+    from channels.routing import ProtocolTypeRouter, URLRouter
+
+    from chat.consumers import AdminChatConsumer, PublicChatConsumer
 
     application = ProtocolTypeRouter({
         # Django's ASGI application to handle traditional HTTP requests
-        "http": get_asgi_application(),
+        "http": django_asgi_app,
 
         # WebSocket chat handler
         "websocket": AuthMiddlewareStack(
@@ -43,7 +48,6 @@ Here's an example of what that ``asgi.py`` might look like:
             ])
         ),
     })
-
 
 Setting up a channel backend
 ----------------------------
