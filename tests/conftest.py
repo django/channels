@@ -30,4 +30,4 @@ def samesite(request, settings):
 @pytest.fixture
 def samesite_invalid(settings):
     """Set samesite flag to strict."""
-    settings.SESSION_COOKIE_SAMESITE = 'Hello'
+    settings.SESSION_COOKIE_SAMESITE = "Hello"

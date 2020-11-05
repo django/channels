@@ -389,9 +389,7 @@ class SimpleHttpApp(AsyncConsumer):
         await database_sync_to_async(self.scope["session"].save)()
         assert self.scope["path"] == "/test/"
         assert self.scope["method"] == "GET"
-        await self.send(
-            {"type": "http.response.start", "status": 200, "headers": []}
-        )
+        await self.send({"type": "http.response.start", "status": 200, "headers": []})
         await self.send({"type": "http.response.body", "body": b"test response"})
 
 
