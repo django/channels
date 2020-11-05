@@ -191,8 +191,8 @@ into one bigger app that represents your project using routing:
 .. code-block:: python
 
     application = URLRouter([
-        url(r"^chat/admin/$", AdminChatConsumer),
-        url(r"^chat/$", PublicChatConsumer),
+        url(r"^chat/admin/$", AdminChatConsumer.as_asgi()),
+        url(r"^chat/$", PublicChatConsumer.as_asgi(),
     ])
 
 Channels is not just built around the world of HTTP and WebSockets - it also
@@ -221,11 +221,11 @@ WebSockets and chat requests:
     application = ProtocolTypeRouter({
 
         "websocket": URLRouter([
-            url(r"^chat/admin/$", AdminChatConsumer),
-            url(r"^chat/$", PublicChatConsumer),
+            url(r"^chat/admin/$", AdminChatConsumer.as_asgi()),
+            url(r"^chat/$", PublicChatConsumer.as_asgi()),
         ]),
 
-        "telegram": ChattyBotConsumer,
+        "telegram": ChattyBotConsumer.as_asgi(),
     })
 
 The goal of Channels is to let you build out your Django projects to work
@@ -291,14 +291,17 @@ WebSocket views by just adding the right middleware around them:
 
 .. code-block:: python
 
-    from channels.routing import ProtocolTypeRouter
+    from django.urls import re_path
     from django.core.asgi import get_asgi_application
+
+    from channels.routing import ProtocolTypeRouter, URLRouter
+    from channels.auth import AuthMiddlewareStack
 
     application = ProtocolTypeRouter({
         "http": get_asgi_application(),
         "websocket": AuthMiddlewareStack(
             URLRouter([
-                url(r"^front(end)/$", consumers.AsyncChatConsumer),
+                re_path(r"^front(end)/$", consumers.AsyncChatConsumer.as_asgi()),
             ])
         ),
     })
