@@ -1,6 +1,17 @@
 Full release notes, with more details and upgrade information, are available at:
 https://channels.readthedocs.io/en/latest/releases
 
+
+3.0.2 (2020-11-9)
+-----------------
+
+* Fixes a bug in Channels 3.0 where `StaticFilesWrapper` was not updated to
+  the ASGI 3 single-callable interface.
+
+* Users of the ``runworker`` command should ensure to update ``asgiref`` to
+  version 3.3.1 or later.
+
+
 3.0.1 (2020-11-4)
 -----------------
 
@@ -26,6 +37,7 @@ Please see the full `Version 3.0.0 release notes
 
 * Drops compatibility with all Django versions lower than 2.2.
 
+
 2.3.1 (2019-10-23)
 ------------------
 
@@ -42,6 +54,7 @@ Please see the full `Version 3.0.0 release notes
   ``stream``, rather than the whole ``body`` as bytes. Test cases instantiating
   requests directly will likely need to be updated to wrap the provided body
   in, e.g., `io.BytesIO`.
+
 
 2.2.0 (2019-04-14)
 ------------------

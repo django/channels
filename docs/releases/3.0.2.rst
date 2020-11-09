@@ -1,0 +1,14 @@
+3.0.2 Release Notes
+===================
+
+Channels 3.0.2 fixes a bug in Channels 3.0.1
+
+Bugfixes
+--------
+
+* Fixes a bug in Channels 3.0 where `StaticFilesWrapper` was not updated to
+  the ASGI 3 single-callable interface.
+
+* Users of the ``runworker`` command should ensure to update ``asgiref`` to
+  version 3.3.1 or later, where an issue in ``asgiref.server.StatelessServer``
+  was addressed.
