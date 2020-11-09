@@ -15,8 +15,9 @@ class StaticFilesWrapper:
     files, passing them off to Django's static file serving.
     """
 
-    def __init__(self, application):
+    def __init__(self, application, staticfiles_handler=None):
         self.application = application
+        self.staticfiles_handler_class = staticfiles_handler or StaticFilesHandler
         self.base_url = urlparse(self.get_base_url())
 
     def get_base_url(self):
@@ -28,19 +29,19 @@ class StaticFilesWrapper:
         Checks if the path should be handled. Ignores the path if:
 
         * the host is provided as part of the base_url
-        * the request's path isn't under the media path (or equal)
+        * the request's path isn't under the static files path (or equal)
         """
         return path.startswith(self.base_url[2]) and not self.base_url[1]
 
-    def __call__(self, scope, receive, send):
+    async def __call__(self, scope, receive, send):
         # Only even look at HTTP requests
         if scope["type"] == "http" and self._should_handle(scope["path"]):
             # Serve static content
-            return StaticFilesHandler()(
+            return await self.staticfiles_handler_class()(
                 dict(scope, static_base_url=self.base_url), receive, send
             )
         # Hand off to the main app
-        return self.application(scope, receive, send)
+        return await self.application(scope, receive, send)
 
 
 class StaticFilesHandler(AsgiHandler):
