@@ -196,7 +196,7 @@ application, as shown in this example:
 .. code-block:: python
 
     from channels.testing import WebsocketCommunicator
-    communicator = WebsocketCommunicator(SimpleWebsocketApp, "/testws/")
+    communicator = WebsocketCommunicator(SimpleWebsocketApp.as_asgi(), "/testws/")
     connected, subprotocol = await communicator.connect()
     assert connected
     # Test sending text
@@ -229,7 +229,7 @@ or keyword arguments in the ``scope``:
 
     from channels.testing import WebsocketCommunicator
     application = URLRouter([
-        url(r"^testws/(?P<message>\w+)/$", KwargsWebSocketApp),
+        url(r"^testws/(?P<message>\w+)/$", KwargsWebSocketApp.as_asgi()),
     ])
     communicator = WebsocketCommunicator(application, "/testws/test/")
     connected, subprotocol = await communicator.connect()
