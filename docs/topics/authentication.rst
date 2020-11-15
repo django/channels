@@ -96,7 +96,7 @@ query string and uses that:
             # Look up user from query string (you should also do things like
             # checking if it is a valid user ID, or if scope["user"] is already
             # populated).
-            scope['user'] = await get_user(int(self.scope["query_string"]))
+            scope['user'] = await get_user(int(scope["query_string"]))
 
             return await self.app(scope, receive, send)
 
