@@ -35,9 +35,8 @@ async def await_many_dispatch(consumer_callables, dispatch):
     from them to the dispatch awaitable as they come in.
     """
     # Start them all off as tasks
-    loop = asyncio.get_event_loop()
     tasks = [
-        loop.create_task(consumer_callable())
+        asyncio.ensure_future(consumer_callable())
         for consumer_callable in consumer_callables
     ]
     try:
