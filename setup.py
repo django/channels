@@ -1,5 +1,14 @@
+import os
 from setuptools import find_packages, setup
 from channels import __version__
+
+install_requires = [
+    'Django>=2.2',
+    'asgiref>=3.2.10,<4',
+]
+
+if not os.getenv('CHANNELS_SLIM_INSTALL'):
+    install_requires.append('daphne>=3.0,<4')
 
 setup(
     name='channels',
@@ -12,11 +21,7 @@ setup(
     packages=find_packages(exclude=['tests']),
     include_package_data=True,
     python_requires='>=3.6',
-    install_requires=[
-        'Django>=2.2',
-        'asgiref>=3.2.10,<4',
-        'daphne>=3.0,<4',
-    ],
+    install_requires=install_requires,
     extras_require={
         'tests': [
             "pytest",

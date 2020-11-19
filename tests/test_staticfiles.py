@@ -25,10 +25,7 @@ class MockStaticHandler:
 
 
 def request_for_path(path, type="http"):
-    return {
-        "type": type,
-        "path": path,
-    }
+    return {"type": type, "path": path}
 
 
 @pytest.mark.asyncio

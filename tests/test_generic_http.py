@@ -53,9 +53,7 @@ async def test_per_scope_consumers():
             body = f"{self.__class__.__name__} {id(self)} {self.time}"
 
             await self.send_response(
-                200,
-                body.encode("utf-8"),
-                headers={b"Content-Type": b"text/plain"},
+                200, body.encode("utf-8"), headers={b"Content-Type": b"text/plain"}
             )
 
     app = TestConsumer.as_asgi()
