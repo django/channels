@@ -6,7 +6,8 @@ from .websocket import WebsocketCommunicator  # noqa
 
 if DAPHNE_INSTALLED:
     from .live import ChannelsLiveServerTestCase  # noqa
-
+else:
+    ChannelsLiveServerTestCase = None
 
 __all__ = [
     "ApplicationCommunicator",
