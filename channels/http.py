@@ -5,6 +5,7 @@ import sys
 import tempfile
 import traceback
 import warnings
+from functools import partial
 
 from asgiref.sync import async_to_sync, sync_to_async
 from django import http
@@ -219,7 +220,7 @@ class AsgiHandler(base.BaseHandler):
         body_file.seek(0)
         return body_file
 
-    @sync_to_async
+    @partial(sync_to_async, thread_sensitive=False)
     def handle(self, body):
         """
         Synchronous message processing.
