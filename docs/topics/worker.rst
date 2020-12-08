@@ -58,8 +58,8 @@ name. We recommend you use ProtocolTypeRouter and ChannelNameRouter (see
     application = ProtocolTypeRouter({
         ...
         "channel": ChannelNameRouter({
-            "thumbnails-generate": consumers.GenerateConsumer,
-            "thumbnails-delete": consumers.DeleteConsumer,
+            "thumbnails-generate": consumers.GenerateConsumer.as_asgi(),
+            "thumbnails-delete": consumers.DeleteConsumer.as_asgi(),
         }),
     })
 
