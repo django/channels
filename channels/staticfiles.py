@@ -51,11 +51,15 @@ class StaticFilesHandler(AsgiHandler):
 
     # TODO: Review hierarchy here. Do we NEED to inherit BaseHandler, AsgiHandler?
 
+    async def __call__(self, scope, receive, send):
+        self.static_base_url = scope["static_base_url"][2]
+        return await super().__call__(scope, receive, send)
+
     def file_path(self, url):
         """
         Returns the relative path to the media file on disk for the given URL.
         """
-        relative_url = url[len(self.scope["static_base_url"][2]) :]
+        relative_url = url[len(self.static_base_url) :]
         return url2pathname(relative_url)
 
     def serve(self, request):

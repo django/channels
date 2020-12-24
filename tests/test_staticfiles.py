@@ -1,6 +1,6 @@
 import pytest
 
-from channels.staticfiles import StaticFilesWrapper
+from channels.staticfiles import StaticFilesHandler, StaticFilesWrapper
 
 
 @pytest.fixture(autouse=True)
@@ -99,3 +99,27 @@ def test_is_single_callable():
         "StaticFilesWrapper should be recognized as a single callable by "
         "asgiref compatibility tools"
     )
+
+
+@pytest.mark.asyncio
+async def test_staticfiles_handler_can_generate_file_path():
+    """
+    StaticFilesHandler.file_path must not rely on scope being assigned to self.
+    """
+
+    class MockedHandler(StaticFilesHandler):
+        async def __call__(self, scope, receive, send):
+            # Equivalent setUp from real __call__.
+            request = self.request_class(scope, "")
+            self.static_base_url = scope["static_base_url"][2]
+            # Method under test.
+            return self.file_path(request.path)
+
+    wrapper = StaticFilesWrapper(
+        MockApplication("application"), staticfiles_handler=MockedHandler
+    )
+    scope = request_for_path("/static/image.png")
+    scope["method"] = "GET"
+    assert (
+        await wrapper(scope, None, None) == "/image.png"
+    ), "StaticFilesWrapper should serve paths under the STATIC_URL path"
