@@ -188,8 +188,6 @@ class AsgiHandler(base.BaseHandler):
                 "The AsgiHandler can only handle HTTP connections, not %s"
                 % scope["type"]
             )
-        self.scope = scope
-        self.send = async_to_sync(send)
 
         # Receive the HTTP request body as a stream object.
         try:
@@ -197,7 +195,7 @@ class AsgiHandler(base.BaseHandler):
         except RequestAborted:
             return
         # Launch into body handling (and a synchronous subthread).
-        await self.handle(body_stream)
+        await self.handle(scope, async_to_sync(send), body_stream)
 
     async def read_body(self, receive):
         """Reads a HTTP body from an ASGI connection."""
@@ -220,19 +218,19 @@ class AsgiHandler(base.BaseHandler):
         return body_file
 
     @sync_to_async
-    def handle(self, body):
+    def handle(self, scope, send, body):
         """
         Synchronous message processing.
         """
         # Set script prefix from message root_path, turning None into empty string
-        script_prefix = self.scope.get("root_path", "") or ""
+        script_prefix = scope.get("root_path", "") or ""
         if settings.FORCE_SCRIPT_NAME:
             script_prefix = settings.FORCE_SCRIPT_NAME
         set_script_prefix(script_prefix)
-        signals.request_started.send(sender=self.__class__, scope=self.scope)
+        signals.request_started.send(sender=self.__class__, scope=scope)
         # Run request through view system
         try:
-            request = self.request_class(self.scope, body)
+            request = self.request_class(scope, body)
         except UnicodeDecodeError:
             logger.warning(
                 "Bad Request (UnicodeDecodeError)",
@@ -255,7 +253,7 @@ class AsgiHandler(base.BaseHandler):
                 response.block_size = 1024 * 512
         # Transform response into messages, which we yield back to caller
         for response_message in self.encode_response(response):
-            self.send(response_message)
+            send(response_message)
         # Close the response now we're done with it
         response.close()
 

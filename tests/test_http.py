@@ -351,6 +351,35 @@ async def test_handler_body_ignore_extra():
     assert body_stream.read() == b"chunk one"
 
 
+@pytest.mark.django_db
+@pytest.mark.asyncio
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
+async def test_handler_concurrent_requests():
+    """
+    Tests request handling ignores anything after more_body: False
+    """
+    scope = {"type": "http", "http_version": "1.1", "method": "GET", "path": "/test/"}
+    handler = MockHandler()
+    comm_1 = ApplicationCommunicator(handler, {**scope})
+    comm_2 = ApplicationCommunicator(handler, {**scope})
+
+    request_1 = comm_1.send_input(
+        {"type": "http.request", "body": b"request 1", "more_body": False}
+    )
+    request_2 = comm_2.send_input(
+        {"type": "http.request", "body": b"request 2", "more_body": False}
+    )
+
+    await request_1
+    await request_2
+
+    await comm_1.receive_output(1)  # response start
+    await comm_1.receive_output(1)  # response body
+
+    await comm_2.receive_output(1)  # response start
+    await comm_2.receive_output(1)  # response body
+
+
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.asyncio
 async def test_sessions():
