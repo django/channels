@@ -1,11 +1,22 @@
 Full release notes, with more details and upgrade information, are available at:
 https://channels.readthedocs.io/en/latest/releases
 
+3.0.3 (2020-12-24)
+------------------
+
+* Fixed a bug in Channels 3.0 where the legacy ``channels.http.AsgiHandler``
+  would not correctly isolate per-request scopes.
+
+  This is a security release for CVE-2020-35681. Please see the `Version 3.0.3
+  release notes
+  <https://channels.readthedocs.io/en/latest/releases/3.0.3.html>`_ for full
+  details.
+
 
 3.0.2 (2020-11-9)
 -----------------
 
-* Fixes a bug in Channels 3.0 where `StaticFilesWrapper` was not updated to
+* Fixes a bug in Channels 3.0 where ``StaticFilesWrapper`` was not updated to
   the ASGI 3 single-callable interface.
 
 * Users of the ``runworker`` command should ensure to update ``asgiref`` to
