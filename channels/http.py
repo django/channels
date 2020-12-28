@@ -171,7 +171,7 @@ class AsgiHandler(base.BaseHandler):
 
     def __init__(self):
         msg = (
-            "Channel's inbuilt http protocal AsgiHandler is deprecated. "
+            "Channel's inbuilt http protocol AsgiHandler is deprecated. "
             "Use Django's get_asgi_application() instead."
         )
         warnings.warn(msg, DeprecationWarning, stacklevel=2)
