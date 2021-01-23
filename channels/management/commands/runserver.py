@@ -1,4 +1,5 @@
 import datetime
+import warnings
 import logging
 import sys
 
@@ -20,6 +21,7 @@ logger = logging.getLogger("django.channels.server")
 class Command(RunserverCommand):
     protocol = "http"
     server_cls = Server
+    old_showwarning = None
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
@@ -103,6 +105,7 @@ class Command(RunserverCommand):
         # build the endpoint description string from host/port options
         endpoints = build_endpoint_description_strings(host=self.addr, port=self.port)
         try:
+            self.old_showwarning = warnings.showwarning
             self.server_cls(
                 application=self.get_application(options),
                 endpoints=endpoints,
@@ -111,6 +114,7 @@ class Command(RunserverCommand):
                 http_timeout=self.http_timeout,
                 root_path=getattr(settings, "FORCE_SCRIPT_NAME", "") or "",
                 websocket_handshake_timeout=self.websocket_handshake_timeout,
+                ready_callable=self.restore_showwarnings,
             ).run()
             logger.debug("Daphne exited")
         except KeyboardInterrupt:
@@ -118,6 +122,10 @@ class Command(RunserverCommand):
             if shutdown_message:
                 self.stdout.write(shutdown_message)
             return
+
+    def restore_showwarnings(self):
+        if self.old_showwarning:
+            warnings.showwarning = self.old_showwarning
 
     def get_application(self, options):
         """
