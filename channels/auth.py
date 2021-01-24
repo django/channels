@@ -12,7 +12,6 @@ from django.contrib.auth import (
 from django.contrib.auth.models import AnonymousUser
 from django.utils.crypto import constant_time_compare
 from django.utils.functional import LazyObject
-from django.utils.translation import LANGUAGE_SESSION_KEY
 
 from channels.db import database_sync_to_async
 from channels.middleware import BaseMiddleware
@@ -126,11 +125,7 @@ def logout(scope):
         user = None
     if user is not None:
         user_logged_out.send(sender=user.__class__, request=None, user=user)
-    # remember language choice saved to session
-    language = session.get(LANGUAGE_SESSION_KEY)
     session.flush()
-    if language is not None:
-        session[LANGUAGE_SESSION_KEY] = language
     if "user" in scope:
         scope["user"] = AnonymousUser()
 
