@@ -1,7 +1,7 @@
 import datetime
-import warnings
 import logging
 import sys
+import warnings
 
 from daphne.endpoints import build_endpoint_description_strings
 from daphne.server import Server
