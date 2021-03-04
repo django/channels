@@ -12,6 +12,13 @@ These projects from the community are developed on top of Channels:
 * DjangoChannelsJsonRpc_, a wrapper for the JSON-RPC protocol.
 * channels-demultiplexer_, a (de)multiplexer for ``AsyncJsonWebsocketConsumer`` consumers.
 
+Community Tutorials
+===================
+
+Here are some Channels tutorials from around the community:
+
+* kafka-integration_, a writeup on integrating Kafka with Channels.
+
 If you'd like to add your project, please submit a PR with a link and brief description.
 
 .. _Beatserver: https://github.com/rajasimon/beatserver
@@ -22,3 +29,4 @@ If you'd like to add your project, please submit a PR with a link and brief desc
 .. _Apollo: https://github.com/maliesa96/apollo
 .. _DjangoChannelsJsonRpc: https://github.com/millerf/django-channels2-jsonrpc
 .. _channels-demultiplexer: https://github.com/csdenboer/channels-demultiplexer
+.. _kafka-integration: https://gist.github.com/CosmicReindeer/da071d027050cfe0a03df3b500f2f44b
