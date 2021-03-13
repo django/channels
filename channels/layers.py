@@ -247,11 +247,11 @@ class InMemoryChannelLayer(BaseChannelLayer):
         queue = self.channels.setdefault(channel, asyncio.Queue())
 
         # Do a plain direct receive
-        _, message = await queue.get()
-
-        # Delete if empty
-        if queue.empty():
-            del self.channels[channel]
+        try:
+            _, message = await queue.get()
+        finally:
+            if queue.empty():
+                del self.channels[channel]
 
         return message
 
@@ -274,17 +274,14 @@ class InMemoryChannelLayer(BaseChannelLayer):
         """
         # Channel cleanup
         for channel, queue in list(self.channels.items()):
-            remove = False
             # See if it's expired
             while not queue.empty() and queue._queue[0][0] < time.time():
                 queue.get_nowait()
-                remove = True
-            # Any removal prompts group discard
-            if remove:
+                # Any removal prompts group discard
                 self._remove_from_groups(channel)
-            # Is the channel now empty and needs deleting?
-            if not queue:
-                del self.channels[channel]
+                # Is the channel now empty and needs deleting?
+                if queue.empty():
+                    del self.channels[channel]
 
         # Group Expiration
         timeout = int(time.time()) - self.group_expiry

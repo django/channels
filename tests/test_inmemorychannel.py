@@ -106,3 +106,65 @@ async def test_groups_channel_full(channel_layer):
     await channel_layer.group_send("test-group", {"type": "message.1"})
     await channel_layer.group_send("test-group", {"type": "message.1"})
     await channel_layer.group_send("test-group", {"type": "message.1"})
+
+
+@pytest.mark.asyncio
+async def test_expiry_single():
+    """
+    Tests that a message can expire.
+    """
+    channel_layer = InMemoryChannelLayer(expiry=0.1)
+    await channel_layer.send("test-channel-1", {"type": "message.1"})
+    assert len(channel_layer.channels) == 1
+
+    await asyncio.sleep(0.1)
+
+    # Message should have expired and been dropped.
+    with pytest.raises(asyncio.TimeoutError):
+        async with async_timeout.timeout(0.5):
+            await channel_layer.receive("test-channel-1")
+
+    # Channel should be cleaned up.
+    assert len(channel_layer.channels) == 0
+
+
+@pytest.mark.asyncio
+async def test_expiry_unread():
+    """
+    Tests that a message on a channel can expire and be cleaned up even if
+    the channel is not read from again.
+    """
+    channel_layer = InMemoryChannelLayer(expiry=0.1)
+    await channel_layer.send("test-channel-1", {"type": "message.1"})
+
+    await asyncio.sleep(0.1)
+
+    await channel_layer.send("test-channel-2", {"type": "message.2"})
+    assert len(channel_layer.channels) == 2
+    assert (await channel_layer.receive("test-channel-2"))["type"] == "message.2"
+    # Both channels should be cleaned up.
+    assert len(channel_layer.channels) == 0
+
+
+@pytest.mark.asyncio
+async def test_expiry_multi():
+    """
+    Tests that multiple messages can expire.
+    """
+    channel_layer = InMemoryChannelLayer(expiry=0.1)
+    await channel_layer.send("test-channel-1", {"type": "message.1"})
+    await channel_layer.send("test-channel-1", {"type": "message.2"})
+    await channel_layer.send("test-channel-1", {"type": "message.3"})
+    assert (await channel_layer.receive("test-channel-1"))["type"] == "message.1"
+
+    await asyncio.sleep(0.1)
+    await channel_layer.send("test-channel-1", {"type": "message.4"})
+    assert (await channel_layer.receive("test-channel-1"))["type"] == "message.4"
+
+    # The second and third message should have expired and been dropped.
+    with pytest.raises(asyncio.TimeoutError):
+        async with async_timeout.timeout(0.5):
+            await channel_layer.receive("test-channel-1")
+
+    # Channel should be cleaned up.
+    assert len(channel_layer.channels) == 0
