@@ -29,4 +29,4 @@ If you'd like to add your project, please submit a PR with a link and brief desc
 .. _Apollo: https://github.com/maliesa96/apollo
 .. _DjangoChannelsJsonRpc: https://github.com/millerf/django-channels2-jsonrpc
 .. _channels-demultiplexer: https://github.com/csdenboer/channels-demultiplexer
-.. _kafka-integration: https://gist.github.com/CosmicReindeer/da071d027050cfe0a03df3b500f2f44b
+.. _kafka-integration: https://gist.github.com/aryan340/da071d027050cfe0a03df3b500f2f44b
