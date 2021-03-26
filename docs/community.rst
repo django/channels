@@ -11,6 +11,7 @@ These projects from the community are developed on top of Channels:
 * Apollo_, a real-time polling application for corporate and academic environments.
 * DjangoChannelsJsonRpc_, a wrapper for the JSON-RPC protocol.
 * channels-demultiplexer_, a (de)multiplexer for ``AsyncJsonWebsocketConsumer`` consumers.
+* channels_postgres_, a Django Channels channel layer that uses PostgreSQL as its backing store.
 
 Community Tutorials
 ===================
@@ -30,3 +31,4 @@ If you'd like to add your project, please submit a PR with a link and brief desc
 .. _DjangoChannelsJsonRpc: https://github.com/millerf/django-channels2-jsonrpc
 .. _channels-demultiplexer: https://github.com/csdenboer/channels-demultiplexer
 .. _kafka-integration: https://gist.github.com/aryan340/da071d027050cfe0a03df3b500f2f44b
+.. _channels_postgres: https://github.com/danidee10/channels_postgres
