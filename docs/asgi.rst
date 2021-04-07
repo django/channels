@@ -16,18 +16,15 @@ The full ASGI spec can be found at http://asgi.readthedocs.io
 Summary
 -------
 
-An ASGI application is a callable that takes a scope and returns a coroutine
-callable, that takes receive and send methods. It's usually written as a class:
+ASGI is structured as a single asynchronous callable, which takes a dict ``scope``
+and two callables ``receive`` and ``send``:
 
 .. code-block:: python
 
-    class Application:
-
-        def __init__(self, scope):
-            ...
-
-        async def __call__(self, receive, send):
-            ...
+    async def application(scope, receive, send):
+        event = await receive()
+        ...
+        await send({"type": "websocket.send", ...})
 
 The ``scope`` dict defines the properties of a connection, like its remote IP (for
 HTTP) or username (for a chat protocol), and the lifetime of a connection.
