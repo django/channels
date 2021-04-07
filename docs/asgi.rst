@@ -17,8 +17,7 @@ Summary
 -------
 
 ASGI is structured as a single asynchronous callable, which takes a dict ``scope``
-and two callables ``receive`` and ``send``. In its simplest form, an application
-can be written as an asynchronous function, like this:
+and two callables ``receive`` and ``send``:
 
 .. code-block:: python
 
