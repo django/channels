@@ -2,20 +2,18 @@ import asyncio
 
 import async_timeout
 import pytest
-from async_generator import async_generator, yield_
 
 from channels.exceptions import ChannelFull
 from channels.layers import InMemoryChannelLayer
 
 
 @pytest.fixture()
-@async_generator
 async def channel_layer():
     """
     Channel layer fixture that flushes automatically.
     """
     channel_layer = InMemoryChannelLayer(capacity=3)
-    await yield_(channel_layer)
+    yield channel_layer
     await channel_layer.flush()
     await channel_layer.close()
 
