@@ -17,15 +17,21 @@ to a user object in the ``scope``.
 ``AuthMiddleware`` requires ``SessionMiddleware`` to function, which itself
 requires ``CookieMiddleware``. For convenience, these are also provided
 as a combined callable called ``AuthMiddlewareStack`` that includes all three.
+You have to setup django before importing ``AuthMiddlewareStack`` or ``AuthMiddleware``.
 
 To use the middleware, wrap it around the appropriate level of consumer
 in your ``asgi.py``:
 
 .. code-block:: python
 
+    import django
     from django.urls import re_path
 
     from channels.routing import ProtocolTypeRouter, URLRouter
+
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mysite.settings')
+    django.setup()
+    
     from channels.auth import AuthMiddlewareStack
 
     from myapp import consumers
