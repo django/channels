@@ -9,7 +9,6 @@ from django.contrib.auth import (
     user_logged_in,
     user_logged_out,
 )
-from django.contrib.auth.models import AnonymousUser
 from django.utils.crypto import constant_time_compare
 from django.utils.functional import LazyObject
 
@@ -24,6 +23,9 @@ def get_user(scope):
     Return the user model instance associated with the given scope.
     If no user is retrieved, return an instance of `AnonymousUser`.
     """
+    # postpone model import to avoid ImproperlyConfigured error before Django setup is complete.
+    from django.contrib.auth.models import AnonymousUser
+
     if "session" not in scope:
         raise ValueError(
             "Cannot find session in scope. You should wrap your consumer in "
@@ -112,6 +114,9 @@ def logout(scope):
     """
     Remove the authenticated user's ID from the request and flush their session data.
     """
+    # postpone model import to avoid ImproperlyConfigured error before Django setup is complete.
+    from django.contrib.auth.models import AnonymousUser
+
     if "session" not in scope:
         raise ValueError(
             "Login cannot find session in scope. You should wrap your "
