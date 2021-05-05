@@ -22,17 +22,15 @@ Here's an example of what that ``asgi.py`` might look like:
 
     import os
 
+    from channels.auth import AuthMiddlewareStack
+    from channels.routing import ProtocolTypeRouter, URLRouter
     from django.conf.urls import url
     from django.core.asgi import get_asgi_application
 
-    # Fetch Django ASGI application early to ensure Django settings are 
-    # configured and the AppRegistry is populated before importing consumers
-    # and AuthMiddlewareStack that may use ORM models or the settings.
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")
+    # Initialize Django ASGI application early to ensure the AppRegistry
+    # is populated before importing code that may import ORM models.
     django_asgi_app = get_asgi_application()
-    
-    from channels.auth import AuthMiddlewareStack
-    from channels.routing import ProtocolTypeRouter, URLRouter
 
     from chat.consumers import AdminChatConsumer, PublicChatConsumer
 

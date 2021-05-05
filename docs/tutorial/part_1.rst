@@ -1,6 +1,10 @@
 Tutorial Part 1: Basic Setup
 ============================
 
+.. note::
+    If you encounter any issue during your coding session, please see the :doc:`/topics/troubleshooting` section.
+
+
 In this tutorial we will build a simple chat server. It will have two pages:
 
 * An index view that lets you type the name of a chat room to join.

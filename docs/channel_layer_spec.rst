@@ -301,7 +301,7 @@ limitation that they only use the following characters:
 * Hyphen ``-``
 * Underscore ``_``
 * Period ``.``
-* Question mark ``?`` (only to delineiate single-reader channel names,
+* Question mark ``?`` (only to delineate single-reader channel names,
   and only one per name)
 * Exclamation mark ``!`` (only to delineate process-specific channel names,
   and only one per name)

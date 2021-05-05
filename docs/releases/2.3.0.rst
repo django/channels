@@ -14,7 +14,7 @@ Backwards Incompatible Changes
 ------------------------------
 
 As a result of the reworked body handling, ``AsgiRequest.__init__()`` is
-adjusted to expecte a file-like ``stream``, rather than the whole ``body`` as
+adjusted to expect a file-like ``stream``, rather than the whole ``body`` as
 bytes.
 
 Test cases instantiating requests directly will likely need to be updated to
