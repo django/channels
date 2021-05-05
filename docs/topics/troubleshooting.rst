@@ -24,20 +24,4 @@ which means it needs to be called before any ORM models are imported.
 
 The working code order would look like this:
 
-.. code-block:: python
-
-    from channels.routing import ProtocolTypeRouter, URLRouter
-    from django.core.asgi import get_asgi_application
-    # Initialize Django ASGI application early to ensure the AppRegistry
-    # is populated before importing code that may import ORM models.
-    django_asgi_app = get_asgi_application()
-
-    # custom code may cause ORM models import
-    from myapp.routing import websocket_urlpatterns
-
-    application = ProtocolTypeRouter(
-        {
-            "http": django_asgi_app,
-            "websocket": AuthMiddlewareStack(URLRouter(websocket_urlpatterns)),
-        }
-    )
+.. include:: ../includes/asgi_example.rst
