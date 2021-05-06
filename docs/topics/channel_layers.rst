@@ -112,7 +112,7 @@ layer:
     await self.channel_layer.group_send(
         room.group_name,
         {
-            "type": "chat.message",
+            "type": "chat_message",
             "room_id": room_id,
             "username": self.scope["user"].username,
             "message": message,
