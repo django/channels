@@ -214,8 +214,6 @@ class InMemoryChannelLayer(BaseChannelLayer):
 
     # Channel layer API
 
-    extensions = ["groups", "flush"]
-
     async def send(self, channel, message):
         """
         Send a message onto a (general or specific) channel.
