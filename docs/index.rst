@@ -53,6 +53,7 @@ Topics
    topics/testing
    topics/worker
    deploying
+   topics/troubleshooting
 
 
 Reference

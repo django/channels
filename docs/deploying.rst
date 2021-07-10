@@ -18,36 +18,8 @@ is almost certainly going to be your top-level (Protocol Type) router.
 
 Here's an example of what that ``asgi.py`` might look like:
 
-.. code-block:: python
+.. include:: ./includes/asgi_example.rst
 
-    import os
-
-    from django.conf.urls import url
-    from django.core.asgi import get_asgi_application
-
-    # Fetch Django ASGI application early to ensure Django settings are 
-    # configured and the AppRegistry is populated before importing consumers
-    # and AuthMiddlewareStack that may use ORM models or the settings.
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")
-    django_asgi_app = get_asgi_application()
-    
-    from channels.auth import AuthMiddlewareStack
-    from channels.routing import ProtocolTypeRouter, URLRouter
-
-    from chat.consumers import AdminChatConsumer, PublicChatConsumer
-
-    application = ProtocolTypeRouter({
-        # Django's ASGI application to handle traditional HTTP requests
-        "http": django_asgi_app,
-
-        # WebSocket chat handler
-        "websocket": AuthMiddlewareStack(
-            URLRouter([
-                url(r"^chat/admin/$", AdminChatConsumer.as_asgi()),
-                url(r"^chat/$", PublicChatConsumer.as_asgi()),
-            ])
-        ),
-    })
 
 Setting up a channel backend
 ----------------------------

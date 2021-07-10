@@ -30,31 +30,8 @@ Channels projects and settings in :doc:`/deploying`.
 
 Here's an example of what that ``asgi.py`` might look like:
 
-.. code-block:: python
+.. include:: ../includes/asgi_example.rst
 
-    import os
-
-    from channels.auth import AuthMiddlewareStack
-    from channels.routing import ProtocolTypeRouter, URLRouter
-    from django.conf.urls import url
-    from django.core.asgi import get_asgi_application
-
-    from chat.consumers import AdminChatConsumer, PublicChatConsumer
-
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")
-
-    application = ProtocolTypeRouter({
-        # Django's ASGI application to handle traditional HTTP requests
-        "http": get_asgi_application(),
-
-        # WebSocket chat handler
-        "websocket": AuthMiddlewareStack(
-            URLRouter([
-                url(r"^chat/admin/$", AdminChatConsumer.as_asgi()),
-                url(r"^chat/$", PublicChatConsumer.as_asgi()),
-            ])
-        ),
-    })
 
 .. note::
   We call the ``as_asgi()`` classmethod when routing our consumers. This

@@ -48,7 +48,7 @@ Composability
 
 ASGI applications, like WSGI ones, are designed to be composable, and this
 includes Channels' routing and middleware components like ``ProtocolTypeRouter``
-and ``SessionMiddeware``. These are just ASGI applications that take other
+and ``SessionMiddleware``. These are just ASGI applications that take other
 ASGI applications as arguments, so you can pass around just one top-level
 application for a whole Django project and dispatch down to the right consumer
 based on what sort of connection you're handling.
