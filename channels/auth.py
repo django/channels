@@ -23,7 +23,8 @@ def get_user(scope):
     Return the user model instance associated with the given scope.
     If no user is retrieved, return an instance of `AnonymousUser`.
     """
-    # postpone model import to avoid ImproperlyConfigured error before Django setup is complete.
+    # postpone model import to avoid ImproperlyConfigured error before Django
+    # setup is complete.
     from django.contrib.auth.models import AnonymousUser
 
     if "session" not in scope:
@@ -59,7 +60,8 @@ def login(scope, user, backend=None):
     """
     Persist a user id and a backend in the request.
     This way a user doesn't have to re-authenticate on every request.
-    Note that data set during the anonymous session is retained when the user logs in.
+    Note that data set during the anonymous session is retained when the user
+    logs in.
     """
     if "session" not in scope:
         raise ValueError(
@@ -112,9 +114,11 @@ def login(scope, user, backend=None):
 @database_sync_to_async
 def logout(scope):
     """
-    Remove the authenticated user's ID from the request and flush their session data.
+    Remove the authenticated user's ID from the request and flush their session
+    data.
     """
-    # postpone model import to avoid ImproperlyConfigured error before Django setup is complete.
+    # postpone model import to avoid ImproperlyConfigured error before Django
+    # setup is complete.
     from django.contrib.auth.models import AnonymousUser
 
     if "session" not in scope:
