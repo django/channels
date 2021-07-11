@@ -1,0 +1,27 @@
+3.0.4 Release Notes
+===================
+
+Channels 3.0.4 is a bugfix release in the 2.0 series.
+
+
+Bugfixes & Small Changes
+------------------------
+
+* Usage of ``urlparse`` in ``OriginValidator`` is corrected to maintain
+  compatibility with recent point-releases of Python.
+
+* The import of ``django.contrib.auth.models.AnonymousUser`` in
+  ``channels.auth`` is deferred until runtime, in order to avoid errors if
+  ``AuthMiddleware`` or ``AuthMiddlewareStack`` were imported before
+  ``django.setup()`` was run.
+
+* ``CookieMiddleware`` adds support for the ``samesite`` flag.
+
+* ``WebsocketConsumer.init()`` and ``AsyncWebsocketConsumer.init()`` no longer
+  make a bad `super()` call to ``object.init()``.
+
+
+Backwards Incompatible Changes
+------------------------------
+
+None.

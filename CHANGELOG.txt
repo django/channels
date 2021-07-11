@@ -1,6 +1,17 @@
 Full release notes, with more details and upgrade information, are available at:
 https://channels.readthedocs.io/en/latest/releases
 
+
+3.0.4 (2021-07-11)
+------------------
+
+Channels 3.0.4 is a bugfix release in the 3.0 series.
+
+Please see the `Version 3.0.4 release notes
+<https://channels.readthedocs.io/en/latest/releases/3.0.4.html>`_ for full
+details.
+
+
 3.0.3 (2020-12-28)
 ------------------
 
