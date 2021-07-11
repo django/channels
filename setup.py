@@ -21,7 +21,7 @@ setup(
         'tests': [
             "pytest",
             "pytest-django",
-            "pytest-asyncio==0.14.0",
+            "pytest-asyncio",
             "async-timeout",
             "coverage~=4.5",
         ],
