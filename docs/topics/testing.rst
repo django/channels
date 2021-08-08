@@ -26,7 +26,7 @@ order to provide the appropriate async context::
 
     class MyTests(TestCase):
         async def test_my_consumer(self):
-            communicator = HttpCommunicator(MyConsumer, "GET", "/test/")
+            communicator = HttpCommunicator(MyConsumer.as_asgi(), "GET", "/test/")
             response = await communicator.get_response()
             self.assertEqual(response["body"], b"test response")
             self.assertEqual(response["status"], 200)
@@ -52,7 +52,7 @@ native ``pytest`` style:
 
     @pytest.mark.asyncio
     async def test_my_consumer():
-        communicator = HttpCommunicator(MyConsumer, "GET", "/test/")
+        communicator = HttpCommunicator(MyConsumer.as_asgi(), "GET", "/test/")
         response = await communicator.get_response()
         assert response["body"] == b"test response"
         assert response["status"] == 200
@@ -80,7 +80,7 @@ To construct it, pass it an application and a scope:
 .. code-block:: python
 
     from channels.testing import ApplicationCommunicator
-    communicator = ApplicationCommunicator(MyConsumer, {"type": "http", ...})
+    communicator = ApplicationCommunicator(MyConsumer.as_asgi(), {"type": "http", ...})
 
 send_input
 ~~~~~~~~~~
@@ -163,7 +163,7 @@ options:
 .. code-block:: python
 
     from channels.testing import HttpCommunicator
-    communicator = HttpCommunicator(MyHttpConsumer, "GET", "/test/")
+    communicator = HttpCommunicator(MyHttpConsumer.as_asgi(), "GET", "/test/")
 
 And then wait for its response:
 
