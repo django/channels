@@ -166,7 +166,7 @@ asynchronous functions, you can write fully asynchronous consumers:
 
 .. code-block:: python
 
-    class PingConsumer(AsyncConsumer):
+    class PingConsumer(AsyncWebsocketConsumer):
         async def websocket_connect(self, message):
             await self.send({
                 "type": "websocket.accept",
