@@ -366,12 +366,8 @@ the Channels development server.
 .. note::
     The Channels development server will conflict with any other third-party
     apps that require an overloaded or replacement runserver command.
-    An example of such a conflict is with `whitenoise.runserver_nostatic`_ from
-    `whitenoise`_. In order to solve such issues, try moving ``channels`` to the
-    top of your ``INSTALLED_APPS`` or remove the offending app altogether.
-
-.. _whitenoise.runserver_nostatic: https://github.com/evansd/whitenoise/issues/77
-.. _whitenoise: https://github.com/evansd/whitenoise
+    In order to solve such issues, try moving ``channels`` to the top of your
+    ``INSTALLED_APPS`` or remove the offending app altogether.
 
 Let's ensure that the Channels development server is working correctly.
 Run the following command:
