@@ -29,7 +29,7 @@ Configuration
 Channel layers are configured via the ``CHANNEL_LAYERS`` Django setting.
 
 You can get the default channel layer from a project with
-``channels.layers.get_channel_layer()``, but if you are using consumers a copy
+``channels.layers.get_channel_layer()``, but if you are using consumers, then a copy
 is automatically provided for you on the consumer as ``self.channel_layer``.
 
 Redis Channel Layer
@@ -37,7 +37,7 @@ Redis Channel Layer
 
 `channels_redis`_ is the only official Django-maintained channel layer
 supported for production use. The layer uses Redis as its backing store,
-and supports both a single-server and sharded configurations, as well as
+and it supports both a single-server and sharded configurations as well as
 group support. To use this layer you'll need to install the `channels_redis`_
 package.
 
@@ -60,7 +60,7 @@ In-Memory Channel Layer
 ***********************
 
 Channels also comes packaged with an in-memory Channels Layer. This layer can
-be helpful in for :doc:`/topics/testing` or local-development purposes:
+be helpful in :doc:`/topics/testing` or for local-development purposes:
 
 .. code-block:: python
 
@@ -221,9 +221,9 @@ Not only for cases like a chat where you want to send incoming messages to
 everyone in the room, but even for sending to an individual user who might have
 more than one browser tab or device connected.
 
-You can construct your own solution for this if you like, using your existing
-datastores, or use the Groups system built-in to some channel layers. Groups
-are a broadcast system that:
+You can construct your own solution for this if you like using your existing
+datastores, or you can use the Groups system built-in to some channel layers. Groups
+is a broadcast system that:
 
 * Allows you to add and remove channel names from named groups, and send to
   those named groups.
