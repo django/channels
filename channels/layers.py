@@ -153,19 +153,13 @@ class BaseChannelLayer:
                         "Specific channel names in receive() must end at the !"
                     )
                 return True
-        raise TypeError(
-            "Channel name must be a valid unicode string containing only ASCII "
-            + "alphanumerics, hyphens, or periods, not '{}'.".format(name)
-        )
+        raise TypeError(self.invalid_name_error("Channel"))
 
     def valid_group_name(self, name):
         if self.match_type_and_length(name):
             if bool(self.group_name_regex.match(name)):
                 return True
-        raise TypeError(
-            "Group name must be a valid unicode string containing only ASCII "
-            + "alphanumerics, hyphens, or periods."
-        )
+        raise TypeError(self.invalid_name_error("Group"))
 
     def valid_channel_names(self, names, receive=False):
         _non_empty_list = True if names else False
