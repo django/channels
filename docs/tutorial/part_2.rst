@@ -487,9 +487,9 @@ Several parts of the new ``ChatConsumer`` code deserve further explanation:
 * ``self.room_group_name = 'chat_%s' % self.room_name``
     * Constructs a Channels group name directly from the user-specified room
       name, without any quoting or escaping.
-    * Group names may only contain letters, digits, hyphens, and periods.
-      Therefore this example code will fail on room names that have other
-      characters.
+    * Group names may only contain alphanumerics, hyphens, underscores, or
+      periods. Therefore this example code will fail on room names that have
+      other characters.
 
 * ``async_to_sync(self.channel_layer.group_add)(...)``
     * Joins a group.
