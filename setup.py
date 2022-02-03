@@ -14,7 +14,7 @@ setup(
     python_requires='>=3.7',
     install_requires=[
         'Django>=2.2',
-        'asgiref>=3.3.1,<4',
+        'asgiref>=3.5.0,<4',
         'daphne>=3.0,<4',
     ],
     extras_require={
