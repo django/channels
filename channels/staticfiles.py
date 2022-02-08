@@ -6,7 +6,10 @@ from django.contrib.staticfiles import utils
 from django.contrib.staticfiles.views import serve
 from django.http import Http404
 
-from .http import AsgiHandler
+try:
+    from django.core.handlers.asgi import ASGIHandler
+except ImportError:
+    from .http import AsgiHandler as ASGIHandler
 
 
 class StaticFilesWrapper:
@@ -44,7 +47,7 @@ class StaticFilesWrapper:
         return await self.application(scope, receive, send)
 
 
-class StaticFilesHandler(AsgiHandler):
+class StaticFilesHandler(ASGIHandler):
     """
     Subclass of AsgiHandler that serves directly from its get_response.
     """
@@ -68,7 +71,7 @@ class StaticFilesHandler(AsgiHandler):
         """
         return serve(request, self.file_path(request.path), insecure=True)
 
-    def get_response(self, request):
+    async def get_response_async(self, request):
         """
         Always tries to serve a static file as you don't even get into this
         handler subclass without the wrapper directing you here.
