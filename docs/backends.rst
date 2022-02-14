@@ -1,20 +1,20 @@
 Channel Layer Types
 ===================
 
-Multiple choices of backend are available, to fill different tradeoffs of
-complexity, throughput and scalability. You can also write your own backend if
-you wish; the spec they confirm to is called :doc:`ASGI <asgi>`. Any
+Multiple choices of backend are available to fill different tradeoffs of
+complexity, throughput, and scalability. You can also write your own backend if
+you wish; the spec they conform to is called :doc:`ASGI <asgi>`. Any
 ASGI-compliant channel layer can be used.
 
 Redis
 -----
 
-The Redis layer is the recommended backend to run Channels with, as it
-supports both high throughput on a single Redis server as well as the ability
+The Redis layer is the recommended backend to run Channels with.  It supports
+both high throughput on a single Redis server as well as the ability
 to run against a set of Redis servers in a sharded mode.
 
 To use the Redis layer, simply install it from PyPI (it lives in a separate
-package, as we didn't want to force a dependency on the redis-py for the main
+package because we didn't want to force a dependency on redis-py for the main
 install)::
 
     pip install -U asgi_redis
@@ -55,7 +55,7 @@ them; we recommend you always have at least ten workers for each Redis server
 to ensure good distribution. Workers will, however, change server periodically
 (every five seconds or so) so queued messages should eventually get a response.
 
-Note that if you change the set of sharding servers you will need to restart
+Note that if you change the set of sharding servers, then you will need to restart
 all interface servers and workers with the new set before anything works,
 and any in-flight messages will be lost (even with persistence, some will);
 the consistent hashing model relies on all running clients having the same
@@ -69,11 +69,11 @@ RabbitMQ layer is comparable to Redis in terms of latency and
 throughput.  It can work with single RabbitMQ node and with Erlang
 cluster.
 
-You need to install layer package from PyPI::
+You need to install the RabbitMQ layer package from PyPI::
 
     pip install -U asgi_rabbitmq
 
-To use it you also need provide link to the virtual host with granted
+To use it you also need provide a link to the virtual host with granted
 permissions::
 
     CHANNEL_LAYERS = {
