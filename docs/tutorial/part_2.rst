@@ -261,12 +261,16 @@ The next step is to point the root routing configuration at the
     from channels.auth import AuthMiddlewareStack
     from channels.routing import ProtocolTypeRouter, URLRouter
     from django.core.asgi import get_asgi_application
-    import chat.routing
 
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")
+    # Initialize Django ASGI application early to ensure the AppRegistry
+    # is populated before importing code that may import ORM models.
+    django_asgi_app = get_asgi_application()
+
+    import chat.routing
 
     application = ProtocolTypeRouter({
-      "http": get_asgi_application(),
+      "http": django_asgi_app,
       "websocket": AuthMiddlewareStack(
             URLRouter(
                 chat.routing.websocket_urlpatterns
@@ -487,9 +491,9 @@ Several parts of the new ``ChatConsumer`` code deserve further explanation:
 * ``self.room_group_name = 'chat_%s' % self.room_name``
     * Constructs a Channels group name directly from the user-specified room
       name, without any quoting or escaping.
-    * Group names may only contain letters, digits, hyphens, and periods.
-      Therefore this example code will fail on room names that have other
-      characters.
+    * Group names may only contain alphanumerics, hyphens, underscores, or
+      periods. Therefore this example code will fail on room names that have
+      other characters.
 
 * ``async_to_sync(self.channel_layer.group_add)(...)``
     * Joins a group.
