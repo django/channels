@@ -53,9 +53,11 @@ Put the following code in ``chat/tests.py``:
     from selenium import webdriver
     from selenium.webdriver.common.action_chains import ActionChains
     from selenium.webdriver.support.wait import WebDriverWait
+    import multiprocessing
 
     class ChatTests(ChannelsLiveServerTestCase):
         serve_static = True  # emulate StaticLiveServerTestCase
+        multiprocessing.set_start_method("fork")
 
         @classmethod
         def setUpClass(cls):
@@ -124,17 +126,17 @@ Put the following code in ``chat/tests.py``:
 
         def _open_new_window(self):
             self.driver.execute_script('window.open("about:blank", "_blank");')
-            self.driver.switch_to_window(self.driver.window_handles[-1])
+            self.driver.switch_to.window(self.driver.window_handles[-1])
 
         def _close_all_new_windows(self):
             while len(self.driver.window_handles) > 1:
-                self.driver.switch_to_window(self.driver.window_handles[-1])
+                self.driver.switch_to.window(self.driver.window_handles[-1])
                 self.driver.execute_script('window.close();')
             if len(self.driver.window_handles) == 1:
-                self.driver.switch_to_window(self.driver.window_handles[0])
+                self.driver.switch_to.window(self.driver.window_handles[0])
 
         def _switch_to_window(self, window_index):
-            self.driver.switch_to_window(self.driver.window_handles[window_index])
+            self.driver.switch_to.window(self.driver.window_handles[window_index])
 
         def _post_message(self, message):
             ActionChains(self.driver).send_keys(message + '\n').perform()
