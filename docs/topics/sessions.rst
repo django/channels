@@ -32,7 +32,7 @@ in your ``asgi.py``:
 
         "websocket": SessionMiddlewareStack(
             URLRouter([
-                url(r"^front(end)/$", consumers.AsyncChatConsumer.as_asgi()),
+                path("frontend/", consumers.AsyncChatConsumer.as_asgi()),
             ])
         ),
 

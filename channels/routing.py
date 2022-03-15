@@ -107,8 +107,8 @@ class URLRouter:
     Routes to different applications/consumers based on the URL path.
 
     Works with anything that has a ``path`` key, but intended for WebSocket
-    and HTTP. Uses Django's django.conf.urls objects for resolution -
-    url() or path().
+    and HTTP. Uses Django's django.urls objects for resolution -
+    path() or re_path().
     """
 
     #: This router wants to do routing based on scope[path] or

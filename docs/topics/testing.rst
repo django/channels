@@ -229,7 +229,7 @@ or keyword arguments in the ``scope``:
 
     from channels.testing import WebsocketCommunicator
     application = URLRouter([
-        url(r"^testws/(?P<message>\w+)/$", KwargsWebSocketApp.as_asgi()),
+        path("testws/<message>/", KwargsWebSocketApp.as_asgi()),
     ])
     communicator = WebsocketCommunicator(application, "/testws/test/")
     connected, subprotocol = await communicator.connect()
