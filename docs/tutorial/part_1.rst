@@ -232,15 +232,14 @@ In the ``chat/urls.py`` file include the following code:
     ]
 
 The next step is to point the root URLconf at the **chat.urls** module.
-In ``mysite/urls.py``, add an import for **django.conf.urls.include** and
+In ``mysite/urls.py``, add an import for **django.urls.include** and
 insert an **include()** in the **urlpatterns** list, so you have:
 
 .. code-block:: python
 
     # mysite/urls.py
-    from django.conf.urls import include
-    from django.urls import path
     from django.contrib import admin
+    from django.urls import include, path
 
     urlpatterns = [
         path('chat/', include('chat.urls')),

@@ -191,8 +191,8 @@ into one bigger app that represents your project using routing:
 .. code-block:: python
 
     application = URLRouter([
-        url(r"^chat/admin/$", AdminChatConsumer.as_asgi()),
-        url(r"^chat/$", PublicChatConsumer.as_asgi(),
+        path("chat/admin/", AdminChatConsumer.as_asgi()),
+        path("chat/", PublicChatConsumer.as_asgi(),
     ])
 
 Channels is not just built around the world of HTTP and WebSockets - it also
@@ -221,8 +221,8 @@ WebSockets and chat requests:
     application = ProtocolTypeRouter({
 
         "websocket": URLRouter([
-            url(r"^chat/admin/$", AdminChatConsumer.as_asgi()),
-            url(r"^chat/$", PublicChatConsumer.as_asgi()),
+            path("chat/admin/", AdminChatConsumer.as_asgi()),
+            path("chat/", PublicChatConsumer.as_asgi()),
         ]),
 
         "telegram": ChattyBotConsumer.as_asgi(),
@@ -291,8 +291,8 @@ WebSocket views by just adding the right middleware around them:
 
 .. code-block:: python
 
-    from django.urls import re_path
     from django.core.asgi import get_asgi_application
+    from django.urls import re_path
 
     # Initialize Django ASGI application early to ensure the AppRegistry
     # is populated before importing code that may import ORM models.

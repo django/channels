@@ -33,7 +33,6 @@ A simplified ``asgi.py`` script will look like this:
 
     import os
 
-    from django.conf.urls import url
     from django.core.asgi import get_asgi_application
 
     # Fetch Django ASGI application early to ensure AppRegistry is populated
