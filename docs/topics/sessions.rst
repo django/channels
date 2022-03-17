@@ -24,16 +24,19 @@ in your ``asgi.py``:
 .. code-block:: python
 
     from channels.routing import ProtocolTypeRouter, URLRouter
+    from channels.security.websocket import AllowedHostsOriginValidator
     from channels.sessions import SessionMiddlewareStack
 
     from myapp import consumers
 
     application = ProtocolTypeRouter({
 
-        "websocket": SessionMiddlewareStack(
-            URLRouter([
-                path("frontend/", consumers.AsyncChatConsumer.as_asgi()),
-            ])
+        "websocket": AllowedHostsOriginValidator(
+            SessionMiddlewareStack(
+                URLRouter([
+                    path("frontend/", consumers.AsyncChatConsumer.as_asgi()),
+                ])
+            )
         ),
 
     })
