@@ -96,11 +96,10 @@ class OriginValidator:
 
         # Get ResultParse object
         parsed_pattern = urlparse(pattern.lower())
-        if parsed_origin.hostname is None:
-            return False
+
         if not parsed_pattern.scheme:
             pattern_hostname = urlparse("//" + pattern).hostname or pattern
-            return is_same_domain(parsed_origin.hostname, pattern_hostname)
+            return self._is_same_domain(parsed_origin.hostname, pattern_hostname)
         # Get origin.port or default ports for origin or None
         origin_port = self.get_origin_port(parsed_origin)
         # Get pattern.port or default ports for pattern or None
@@ -109,10 +108,16 @@ class OriginValidator:
         if (
             parsed_pattern.scheme == parsed_origin.scheme
             and origin_port == pattern_port
-            and is_same_domain(parsed_origin.hostname, parsed_pattern.hostname)
+            and self._is_same_domain(parsed_origin.hostname, parsed_pattern.hostname)
         ):
             return True
         return False
+    
+    def _is_same_domain(self, host, pattern):
+        if not pattern:
+            return True
+        
+        return host is not None and is_same_domain(host, pattern)
 
     def get_origin_port(self, origin):
         """
