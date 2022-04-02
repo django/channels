@@ -141,7 +141,7 @@ Put the following code in ``chat/tests.py``:
 
         @property
         def _chat_log_value(self):
-            return self.driver.find_element_by_css_selector('#chat-log').get_property('value')
+            return self.driver.find_element(by=By.CSS_SELECTOR, value="#chat-log").get_property('value')
 
 Our test suite extends ``ChannelsLiveServerTestCase`` rather than Django's usual
 suites for end-to-end tests (``StaticLiveServerTestCase`` or ``LiveServerTestCase``) so
