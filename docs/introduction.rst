@@ -263,7 +263,15 @@ point-to-point and broadcast messaging.
     Channel layers are an optional part of Channels, and can be disabled if you
     want (by setting the ``CHANNEL_LAYERS`` setting to an empty value).
 
-(insert cross-process example here)
+    #In a consumer
+    self.channel_layer.send(
+        'event', 
+        {
+            'type': 'message',
+            'channel': channel,
+            'text': text,
+        }
+    )
 
 You can also send messages to a dedicated process that's listening on its own,
 fixed channel name:
