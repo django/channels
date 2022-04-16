@@ -263,7 +263,7 @@ The next step is to point the root routing configuration at the
     from channels.security.websocket import AllowedHostsOriginValidator
     from django.core.asgi import get_asgi_application
 
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mysite.settings')
     # Initialize Django ASGI application early to ensure the AppRegistry
     # is populated before importing code that may import ORM models.
     django_asgi_app = get_asgi_application()
@@ -271,8 +271,8 @@ The next step is to point the root routing configuration at the
     import chat.routing
 
     application = ProtocolTypeRouter({
-      "http": django_asgi_app,
-      "websocket": AllowedHostsOriginValidator(
+        "http": django_asgi_app,
+        "websocket": AllowedHostsOriginValidator(
             AuthMiddlewareStack(
                 URLRouter(
                     chat.routing.websocket_urlpatterns
@@ -306,7 +306,7 @@ Channels development server:
 
 .. code-block:: sh
 
-    $ python manage.py migrate
+    $ python3 manage.py migrate
     Operations to perform:
       Apply all migrations: admin, auth, contenttypes, sessions
     Running migrations:
