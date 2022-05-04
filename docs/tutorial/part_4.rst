@@ -52,6 +52,7 @@ Put the following code in ``chat/tests.py``:
     from channels.testing import ChannelsLiveServerTestCase
     from selenium import webdriver
     from selenium.webdriver.common.action_chains import ActionChains
+    from selenium.webdriver.common.by import By
     from selenium.webdriver.support.wait import WebDriverWait
 
     class ChatTests(ChannelsLiveServerTestCase):
@@ -124,14 +125,14 @@ Put the following code in ``chat/tests.py``:
 
         def _open_new_window(self):
             self.driver.execute_script('window.open("about:blank", "_blank");')
-            self.driver.switch_to.window(self.driver.window_handles[-1])
+            self._switch_to_window(-1)
 
         def _close_all_new_windows(self):
             while len(self.driver.window_handles) > 1:
-                self.driver.switch_to.window(self.driver.window_handles[-1])
+                self._switch_to_window(-1)
                 self.driver.execute_script('window.close();')
             if len(self.driver.window_handles) == 1:
-                self.driver.switch_to.window(self.driver.window_handles[0])
+                self._switch_to_window(0)
 
         def _switch_to_window(self, window_index):
             self.driver.switch_to.window(self.driver.window_handles[window_index])
