@@ -3,10 +3,10 @@ Community Projects
 
 These projects from the community are developed on top of Channels:
 
-* Beatserver_, a periodic task scheduler for django channels.
-* EventStream_, a library to push data using Server-Sent Events (SSE) protocol.
-* DjangoChannelsRestFramework_, a framework that providers DRF like consumers for channels.
-* ChannelsMultiplexer_, a JsonConsumer Multiplexer for channels.
+* Beatserver_, a periodic task scheduler for Django Channels.
+* EventStream_, a library to push data using the Server-Sent Events (SSE) protocol.
+* DjangoChannelsRestFramework_, a framework that provides DRF-like consumers for Channels.
+* ChannelsMultiplexer_, a JsonConsumer Multiplexer for Channels.
 * DjangoChannelsIRC_, an interface server and matching generic consumers for IRC.
 * Apollo_, a real-time polling application for corporate and academic environments.
 * DjangoChannelsJsonRpc_, a wrapper for the JSON-RPC protocol.
