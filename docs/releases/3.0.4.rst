@@ -1,7 +1,7 @@
 3.0.4 Release Notes
 ===================
 
-Channels 3.0.4 is a bugfix release in the 2.0 series.
+Channels 3.0.4 is a bugfix release in the 3.0 series.
 
 
 Bugfixes & Small Changes

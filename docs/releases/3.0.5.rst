@@ -1,0 +1,15 @@
+3.0.5 Release Notes
+===================
+
+Channels 3.0.5 is a bugfix release in the 3.0 series.
+
+Bugfixes & Small Changes
+------------------------
+
+* Removed use of ``providing_args`` keyword argument to consumer started
+  signal, as support for this was removed in Django 4.0.
+
+Backwards Incompatible Changes
+------------------------------
+
+* Drops support for end-of-life Python 3.6 and Django 3.0 and 3.1.
