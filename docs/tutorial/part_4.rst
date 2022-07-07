@@ -26,7 +26,7 @@ Install Selenium. Run the following command:
     $ python3 -m pip install selenium
 
 .. _Install the Chrome web browser: https://www.google.com/chrome/
-.. _Install chromedriver: https://sites.google.com/a/chromium.org/chromedriver/getting-started
+.. _Install chromedriver: https://sites.google.com/chromium.org/driver/getting-started
 
 Create a new file ``chat/tests.py``. Your app directory should now look like:
 
