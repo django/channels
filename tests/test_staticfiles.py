@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 from channels.staticfiles import StaticFilesHandler, StaticFilesWrapper
@@ -121,5 +123,5 @@ async def test_staticfiles_handler_can_generate_file_path():
     scope = request_for_path("/static/image.png")
     scope["method"] = "GET"
     assert (
-        await wrapper(scope, None, None) == "/image.png"
+        await wrapper(scope, None, None) == os.path.normpath("/image.png")
     ), "StaticFilesWrapper should serve paths under the STATIC_URL path"
