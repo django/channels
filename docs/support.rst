@@ -63,7 +63,7 @@ General support request
 .. code-block:: text
 
     Sorry, but we can't help out with general support requests here - the issue tracker is for reproduceable bugs and
-    concrete feature requests only! Please see our support documentation (http://channels.readthedocs.io/en/latest/support.html)
+    concrete feature requests only! Please see our support documentation (https://channels.readthedocs.io/en/latest/support.html)
     for more information about where you can get general help.
 
 Non-specific bug/"It doesn't work!"
@@ -73,7 +73,7 @@ Non-specific bug/"It doesn't work!"
 
     I'm afraid we can't address issues without either direct steps to reproduce, or that only happen in a production
     environment, as they may not be problems in the project itself. Our support documentation
-    (http://channels.readthedocs.io/en/latest/support.html) has details about how to take this sort of problem, diagnose it,
+    (https://channels.readthedocs.io/en/latest/support.html) has details about how to take this sort of problem, diagnose it,
     and either fix it yourself, get help from the community, or make it into an actionable issue that we can handle.
 
     Sorry we have to direct you away like this, but we get a lot of support requests every week. If you can reduce the problem
@@ -87,4 +87,4 @@ Problem in application code
 
     It looks like a problem in your application code rather than in Channels itself, so I'm going to close the ticket.
     If you can trace it down to a problem in Channels itself (with exact steps to reproduce on a fresh or small example
-    project - see http://channels.readthedocs.io/en/latest/support.html) please re-open the ticket! Thanks.
+    project - see https://channels.readthedocs.io/en/latest/support.html) please re-open the ticket! Thanks.

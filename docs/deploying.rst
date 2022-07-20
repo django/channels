@@ -125,7 +125,7 @@ You can see more about Daphne and its options
 Alternative Web Servers
 -----------------------
 
-There are also alternative `ASGI <http://asgi.readthedocs.io>`_ servers
+There are also alternative `ASGI <https://asgi.readthedocs.io>`_ servers
 that you can use for serving Channels.
 
 To some degree ASGI web servers should be interchangeable, they should all have
@@ -221,13 +221,13 @@ Have supervisor reread and update its jobs:
     $ sudo supervisorctl update
 
 .. note::
-    Running the daphe command with ``--fd 0`` in the commandline will fail and
+    Running the daphne command with ``--fd 0`` in the commandline will fail and
     result in *[Errno 88] Socket operation on non-socket*.
 
     Supervisor will automatically create the socket, bind, and listen before
     forking the first child in a group. The socket will be passed to each child
     on file descriptor number 0 (zero). See
-    http://supervisord.org/configuration.html#fcgi-program-x-section-settings
+    https://supervisord.org/configuration.html#fcgi-program-x-section-settings
 
 Next, Nginx has to be told to proxy traffic to the running Daphne instances.
 Setup your nginx upstream conf file for your project:
