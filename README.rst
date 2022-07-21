@@ -23,7 +23,7 @@ https://channels.readthedocs.io
 
 Channels is an official Django Project and as such has a deprecation policy.
 Details about what's deprecated or pending deprecation for each release is in
-the `release notes <http://channels.readthedocs.io/en/latest/releases/index.html>`_.
+the `release notes <https://channels.readthedocs.io/en/latest/releases/index.html>`_.
 
 Support can be obtained through several locations - see our
 `support docs <https://channels.readthedocs.io/en/latest/support.html>`_ for more.

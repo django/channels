@@ -3,7 +3,7 @@ Django Channels
 
 Channels is a project that takes Django and extends its abilities beyond
 HTTP - to handle WebSockets, chat protocols, IoT protocols, and more. It's
-built on a Python specification called `ASGI <http://asgi.readthedocs.io>`_.
+built on a Python specification called `ASGI <https://asgi.readthedocs.io>`_.
 
 Channels builds upon the native ASGI support available in Django since v3.0,
 and provides an implementation itself for Django v2.2. Django still handles
