@@ -1,8 +1,8 @@
 Full release notes, with more details and upgrade information, are available at:
 https://channels.readthedocs.io/en/latest/releases
 
-Next Release
-------------
+Next Release (will be 4.0)
+--------------------------
 
 * Added compatiblity with Django 4.1.
 
