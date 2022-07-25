@@ -263,6 +263,8 @@ point-to-point and broadcast messaging.
     Channel layers are an optional part of Channels, and can be disabled if you
     want (by setting the ``CHANNEL_LAYERS`` setting to an empty value).
 
+.. code-block:: python
+
     #In a consumer
     self.channel_layer.send(
         'event', 
