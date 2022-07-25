@@ -4,6 +4,8 @@ https://channels.readthedocs.io/en/latest/releases
 Next Release (will be 4.0)
 --------------------------
 
+* Drops support for Python 3.6.
+* Minimum Django version is now Django 3.2.
 * Added compatiblity with Django 4.1.
 
 3.0.5 (2022-06-24)
