@@ -38,22 +38,21 @@ They are also classified by type:
 You should filter the issues list by the experience level and type of work
 you'd like to do, and then if you want to take something on leave a comment
 and assign yourself to it. If you want advice about how to take on a bug,
-leave a comment asking about it, or pop into the IRC channel at
-``#django-channels`` on Freenode and we'll be happy to help.
+leave a comment asking about it and we'll be happy to help.
 
-The issues are also just a suggested list - any offer to help is welcome as long
-as it fits the project goals, but you should make an issue for the thing you
-wish to do and discuss it first if it's relatively large (but if you just found
-a small bug and want to fix it, sending us a pull request straight away is fine).
+The issues are also just a suggested list - any offer to help is welcome as
+long as it fits the project goals, but you should make an issue for the thing
+you wish to do and discuss it first if it's relatively large (but if you just
+found a small bug and want to fix it, sending us a pull request straight away
+is fine).
 
 
 I'm a novice contributor/developer - can I help?
 ------------------------------------------------
 
-Of course! The issues labelled with ``exp/beginner`` are a perfect place to
-get started, as they're usually small and well defined. If you want help with
-one of them, pop into the IRC channel at ``#django-channels`` on Freenode or
-get in touch with Andrew directly at andrew@aeracode.org.
+Of course! The issues labelled with ``exp/beginner`` are a perfect place to get
+started, as they're usually small and well defined. If you want help with one
+of them, jump in and comment on the ticket if you need input or assistance.
 
 
 How do I get started and run the tests?
@@ -91,30 +90,33 @@ Also, there is a tox.ini file at the root of the repository. Example commands:
 
 .. code-block:: sh
 
-   $ tox -l
-   py36-dj11
-   py36-dj21
-   py36-dj22
-   py37-dj11
-   py37-dj21
-   py37-dj22
+    $ tox -l
+    py37-dj32
+    py38-dj32
+    py39-dj32
+    py310-dj32
+    py38-dj40
+    py38-dj41
+    py38-djmain
+    py39-dj40
+    py39-dj41
+    py39-djmain
+    py310-dj40
+    py310-dj41
+    py310-djmain
+    qa
 
-   # run the test with Python 3.7, on Django 2.2 and Django master branch
-   $ tox -e py37-dj22 && tox -e py37-djmaster
+   # run the test with Python 3.10, on Django 4.1 and Django main branch
+   $ tox -e py310-dj41,py310-djmain
 
 Note that tox can also forward arguments to pytest. When using pdb with pytest,
 forward the ``-s`` option to pytest as such:
 
 .. code-block:: sh
 
-   tox -e py37-dj22 -- -s
+   tox -e py310-dj41 -- -s
 
-Can you pay me for my time?
----------------------------
-
-Unfortunately, the Mozilla funds we previously had are exhausted, so we can
-no longer pay for contributions. Thanks to all who participated!
-
+The ``qa`` environment runs the various linters used by the project.
 
 How do I do a release?
 ----------------------
@@ -127,8 +129,9 @@ If you have commit access, a release involves the following steps:
 * Add a link to the new release notes in ``docs/releases/index.rst``
 * Set the new version in ``__init__.py``
 * Roll all of these up into a single commit and tag it with the new version
-  number. Push the commit and tag, and Travis will automatically build and
-  release the new version to PyPI as long as all tests pass.
+  number. Push the commit and tag.
+* To upload you will need to be added as a maintainer on PyPI.
+  Run `python setup.py sdist bdist_wheel`, and `twine upload`.
 
 The release process for ``channels-redis`` and ``daphne`` is similar, but
 they don't have the two steps in ``docs/``.
