@@ -1,8 +1,6 @@
 class BaseMiddleware:
     """
-    Base class for implementing ASGI middleware. Inherit from this and
-    override the setup() method if you want to do things before you
-    get to.
+    Base class for implementing ASGI middleware.
 
     Note that subclasses of this are not self-safe; don't store state on
     the instance, as it serves multiple application instances. Instead, use
