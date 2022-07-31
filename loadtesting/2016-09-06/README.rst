@@ -7,14 +7,14 @@ In order to handle WebSockets, Channels introduced ASGI, a new interface spec fo
 Channels implemented this spec with Daphne--an HTTP, HTTP2, and WebSocket protocol server.
 
 The load testing completed has been to compare how well Daphne using 1 worker performs with normal HTTP traffic in
-comparison to a WSGI HTTP server. Gunincorn was chosen as its configuration was simple and well-understood.
+comparison to a WSGI HTTP server. Gunicorn was chosen as its configuration was simple and well-understood.
 
 
 Summary of Results
 ~~~~~~~~~~~~~~~~~~
 
 Daphne is not as efficient as its WSGI counterpart. When considering only latency, Daphne can have 10 times the latency
-when under the same traffic load as gunincorn. When considering only throughput, Daphne can have 40-50% of the total
+when under the same traffic load as gunicorn. When considering only throughput, Daphne can have 40-50% of the total
 throughput of gunicorn while still being at 2 times latency.
 
 The results should not be surprising considering the overhead involved. However, these results represent the simplest
@@ -97,7 +97,7 @@ This is the non-channels config. It's a standard Django environment on one machi
 
 **Redis (0.14.0) and Daphne (0.14.3)**
 
-This is the channels config using redis as the backend. It's on one machine, so a local redis confog.
+This is the channels config using redis as the backend. It's on one machine, so a local redis config.
 
 Also, it's a single worker, not multiple, as that's the default config.
 
