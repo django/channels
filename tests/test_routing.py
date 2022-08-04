@@ -2,7 +2,6 @@ import pytest
 from django.core.exceptions import ImproperlyConfigured
 from django.urls import path, re_path
 
-from channels.http import AsgiHandler
 from channels.routing import ChannelNameRouter, ProtocolTypeRouter, URLRouter
 
 
@@ -34,9 +33,6 @@ async def test_protocol_type_router():
     )
     assert await router({"type": "websocket"}, None, None) == "ws"
     assert await router({"type": "http"}, None, None) == "http"
-    # Test defaulting to AsgiHandler
-    router = ProtocolTypeRouter({"websocket": MockApplication(return_value="ws")})
-    assert isinstance(router.application_mapping["http"], AsgiHandler)
     # Test an unmatched type
     with pytest.raises(ValueError):
         await router({"type": "aprs"}, None, None)
