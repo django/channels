@@ -1,8 +1,5 @@
-import os
-
 import pytest
-
-from channels.staticfiles import StaticFilesHandler, StaticFilesWrapper
+from django.contrib.staticfiles.handlers import ASGIStaticFilesHandler
 
 
 @pytest.fixture(autouse=True)
@@ -21,11 +18,6 @@ class MockApplication:
         return self.return_value
 
 
-class MockStaticHandler:
-    async def __call__(self, scope, receive, send):
-        return scope["path"]
-
-
 def request_for_path(path, type="http"):
     return {
         "type": type,
@@ -34,26 +26,8 @@ def request_for_path(path, type="http"):
 
 
 @pytest.mark.asyncio
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
-async def test_staticfiles_wrapper_serves_static_http_requests(settings):
-    settings.STATIC_URL = "/mystatic/"
-
-    application = MockApplication("application")
-
-    wrapper = StaticFilesWrapper(application, staticfiles_handler=MockStaticHandler)
-
-    scope = request_for_path("/mystatic/image.png")
-    assert (
-        await wrapper(scope, None, None) == "/mystatic/image.png"
-    ), "StaticFilesWrapper should serve paths under the STATIC_URL path"
-    assert (
-        not application.was_called
-    ), "The inner application should not be called when serving static files"
-
-
-@pytest.mark.asyncio
 async def test_staticfiles_wrapper_calls_application_for_non_static_http_requests():
-    wrapper = StaticFilesWrapper(MockApplication("application"))
+    wrapper = ASGIStaticFilesHandler(MockApplication("application"))
 
     non_static_path = request_for_path("/path/to/non/static/resource")
     assert (
@@ -70,7 +44,7 @@ async def test_staticfiles_wrapper_calls_application_for_non_static_http_request
 async def test_staticfiles_wrapper_calls_application_for_non_http_paths(settings):
     settings.STATIC_URL = "/mystatic/"
 
-    wrapper = StaticFilesWrapper(MockApplication("application"))
+    wrapper = ASGIStaticFilesHandler(MockApplication("application"))
 
     non_http_static_path = request_for_path("/mystatic/match", type="websocket")
     assert await wrapper(non_http_static_path, None, None) == "application", (
@@ -83,7 +57,7 @@ async def test_staticfiles_wrapper_calls_application_for_non_http_paths(settings
 async def test_staticfiles_wrapper_calls_application_if_static_url_has_host(settings):
     settings.STATIC_URL = "http://hostname.com/mystatic/"
 
-    wrapper = StaticFilesWrapper(MockApplication("application"))
+    wrapper = ASGIStaticFilesHandler(MockApplication("application"))
 
     scope = request_for_path("/mystatic/match")
     assert await wrapper(scope, None, None) == "application", (
@@ -95,33 +69,9 @@ async def test_staticfiles_wrapper_calls_application_if_static_url_has_host(sett
 def test_is_single_callable():
     from asgiref.compatibility import is_double_callable
 
-    wrapper = StaticFilesWrapper(None)
+    wrapper = ASGIStaticFilesHandler(None)
 
     assert not is_double_callable(wrapper), (
         "StaticFilesWrapper should be recognized as a single callable by "
         "asgiref compatibility tools"
     )
-
-
-@pytest.mark.asyncio
-async def test_staticfiles_handler_can_generate_file_path():
-    """
-    StaticFilesHandler.file_path must not rely on scope being assigned to self.
-    """
-
-    class MockedHandler(StaticFilesHandler):
-        async def __call__(self, scope, receive, send):
-            # Equivalent setUp from real __call__.
-            request = self.request_class(scope, "")
-            self.static_base_url = scope["static_base_url"][2]
-            # Method under test.
-            return self.file_path(request.path)
-
-    wrapper = StaticFilesWrapper(
-        MockApplication("application"), staticfiles_handler=MockedHandler
-    )
-    scope = request_for_path("/static/image.png")
-    scope["method"] = "GET"
-    assert await wrapper(scope, None, None) == os.path.normpath(
-        "/image.png"
-    ), "StaticFilesWrapper should serve paths under the STATIC_URL path"
