@@ -6,13 +6,12 @@ from daphne.endpoints import build_endpoint_description_strings
 from daphne.server import Server
 from django.apps import apps
 from django.conf import settings
+from django.contrib.staticfiles.handlers import ASGIStaticFilesHandler
 from django.core.management import CommandError
 from django.core.management.commands.runserver import Command as RunserverCommand
 
 from channels import __version__
 from channels.routing import get_default_application
-
-from ...staticfiles import StaticFilesWrapper
 
 logger = logging.getLogger("django.channels.server")
 
@@ -129,7 +128,7 @@ class Command(RunserverCommand):
         use_static_handler = options.get("use_static_handler", staticfiles_installed)
         insecure_serving = options.get("insecure_serving", False)
         if use_static_handler and (settings.DEBUG or insecure_serving):
-            return StaticFilesWrapper(get_default_application())
+            return ASGIStaticFilesHandler(get_default_application())
         else:
             return get_default_application()
 

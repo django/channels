@@ -1,11 +1,11 @@
 from daphne.testing import DaphneProcess
+from django.contrib.staticfiles.handlers import ASGIStaticFilesHandler
 from django.core.exceptions import ImproperlyConfigured
 from django.db import connections
 from django.test.testcases import TransactionTestCase
 from django.test.utils import modify_settings
 
 from channels.routing import get_default_application
-from channels.staticfiles import StaticFilesWrapper
 
 
 class ChannelsLiveServerTestCase(TransactionTestCase):
@@ -18,7 +18,7 @@ class ChannelsLiveServerTestCase(TransactionTestCase):
 
     host = "localhost"
     ProtocolServerProcess = DaphneProcess
-    static_wrapper = StaticFilesWrapper
+    static_wrapper = ASGIStaticFilesHandler
     serve_static = True
 
     @property
