@@ -4,12 +4,27 @@ https://channels.readthedocs.io/en/latest/releases
 Next Release (will be 4.0)
 --------------------------
 
+TODO: These notes will move to the docs for the release with a short summary and link here.
+
 * Drops support for Python 3.6.
 * Minimum Django version is now Django 3.2.
 * Added compatibility with Django 4.1.
+
+Serving of Django HTTPS applications (whether using sync or async views) under ASGI is now Django's responsibilty.
+
+    TODO: A pass through the docs to update everything is pending.
+
 * Removed deprecated static files handling in favor of ``django.contrib.staticfiles``.
 * Removed deprecated automatic routing of ``http`` protocol handler in ProtocolTypeRouter.
   You must explicitly register the ``http`` handler in your application.
+* Removed the deprecated AsgiHandler, which wrapped Django views, in favour of Django's own ASGI support. You should use
+  Django's ``get_asgi_application`` to provide the ``http`` handler for ProtocolTypeRouter, or an appropriate path for
+  URLRouter, in order to route your Django application.
+* The supporting ``AsgiRequest`` is also removed, as it was only used for ``AsgiHandler``.
+
+  TODO: Repeat the basic asgi.py (née routing.py) example here, which is the minimum folks using the old automatic http
+        handler routing would need to update.
+
 
 3.0.5 (2022-06-24)
 ------------------
