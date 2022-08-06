@@ -74,26 +74,13 @@ def route_pattern_match(route, path):
     Backport of RegexPattern.match for Django versions before 2.0. Returns
     the remaining path and positional and keyword arguments matched.
     """
-    if hasattr(route, "pattern"):
-        match = route.pattern.match(path)
-        if match:
-            path, args, kwargs = match
-            kwargs.update(route.default_args)
-            return path, args, kwargs
-        return match
-
-    # Django<2.0. No converters... :-(
-    match = route.regex.search(path)
+    assert hasattr(route, "pattern")
+    match = route.pattern.match(path)
     if match:
-        # If there are any named groups, use those as kwargs, ignoring
-        # non-named groups. Otherwise, pass all non-named arguments as
-        # positional arguments.
-        kwargs = match.groupdict()
-        args = () if kwargs else match.groups()
-        if kwargs is not None:
-            kwargs.update(route.default_args)
-        return path[match.end() :], args, kwargs
-    return None
+        path, args, kwargs = match
+        kwargs.update(route.default_args)
+        return path, args, kwargs
+    return match
 
 
 class URLRouter:
