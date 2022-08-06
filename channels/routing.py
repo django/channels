@@ -111,6 +111,7 @@ class URLRouter:
                 match = route.pattern.match(path)
                 if match:
                     new_path, args, kwargs = match
+                    # Add defaults to kwargs from the URL pattern.
                     kwargs.update(route.default_args)
                     # Add args or kwargs into the scope
                     outer = scope.get("url_route", {})
