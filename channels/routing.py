@@ -69,20 +69,6 @@ class ProtocolTypeRouter:
             )
 
 
-def route_pattern_match(route, path):
-    """
-    Backport of RegexPattern.match for Django versions before 2.0. Returns
-    the remaining path and positional and keyword arguments matched.
-    """
-    assert hasattr(route, "pattern")
-    match = route.pattern.match(path)
-    if match:
-        path, args, kwargs = match
-        kwargs.update(route.default_args)
-        return path, args, kwargs
-    return match
-
-
 class URLRouter:
     """
     Routes to different applications/consumers based on the URL path.
@@ -122,9 +108,10 @@ class URLRouter:
         # Run through the routes we have until one matches
         for route in self.routes:
             try:
-                match = route_pattern_match(route, path)
+                match = route.pattern.match(path)
                 if match:
                     new_path, args, kwargs = match
+                    kwargs.update(route.default_args)
                     # Add args or kwargs into the scope
                     outer = scope.get("url_route", {})
                     application = guarantee_single_callable(route.callback)
