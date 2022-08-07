@@ -25,6 +25,8 @@ Serving of Django HTTPS applications (whether using sync or async views) under A
   TODO: Repeat the basic asgi.py (née routing.py) example here, which is the minimum folks using the old automatic http
         handler routing would need to update.
 
+* The use of the ``guarantee_single_callable()`` compatibility shim is removed. All applications must be ASGI v3 single
+  callables.
 
 3.0.5 (2022-06-24)
 ------------------
