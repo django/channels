@@ -28,6 +28,18 @@ Serving of Django HTTPS applications (whether using sync or async views) under A
 * The use of the ``guarantee_single_callable()`` compatibility shim is removed. All applications must be ASGI v3 single
   callables.
 
+* The ``runserver`` management command is moved to the Daphne project, in order to allow users of other ASGI servers to
+  use Channels without the overhead of Daphne and Twisted.
+
+  In order to the ``runserver`` command, add ``daphne`` to your ``INSTALLED_APPS``, before ``django.contrib.staticfiles``.
+
+    INSTALLED_APPS = [
+        'daphne',
+        ...
+    ]
+
+  Note the ``runworker`` command remains a part of the ``channels`` app.
+
 3.0.5 (2022-06-24)
 ------------------
 
