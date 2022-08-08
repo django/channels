@@ -1,6 +1,5 @@
 import importlib
 
-from asgiref.compatibility import guarantee_single_callable
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.urls.exceptions import Resolver404
@@ -59,9 +58,7 @@ class ProtocolTypeRouter:
 
     async def __call__(self, scope, receive, send):
         if scope["type"] in self.application_mapping:
-            application = guarantee_single_callable(
-                self.application_mapping[scope["type"]]
-            )
+            application = self.application_mapping[scope["type"]]
             return await application(scope, receive, send)
         else:
             raise ValueError(
@@ -115,7 +112,7 @@ class URLRouter:
                     kwargs.update(route.default_args)
                     # Add args or kwargs into the scope
                     outer = scope.get("url_route", {})
-                    application = guarantee_single_callable(route.callback)
+                    application = route.callback
                     return await application(
                         dict(
                             scope,
@@ -153,9 +150,7 @@ class ChannelNameRouter:
                 + "Did you make sure it's only being used for 'channel' type messages?"
             )
         if scope["channel"] in self.application_mapping:
-            application = guarantee_single_callable(
-                self.application_mapping[scope["channel"]]
-            )
+            application = self.application_mapping[scope["channel"]]
             return await application(scope, receive, send)
         else:
             raise ValueError(
