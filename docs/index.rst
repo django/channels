@@ -5,19 +5,17 @@ Channels is a project that takes Django and extends its abilities beyond
 HTTP - to handle WebSockets, chat protocols, IoT protocols, and more. It's
 built on a Python specification called `ASGI <https://asgi.readthedocs.io>`_.
 
-Channels builds upon the native ASGI support available in Django since v3.0,
-and provides an implementation itself for Django v2.2. Django still handles
-traditional HTTP, whilst Channels give you the choice to handle other
-connections in either a synchronous or asynchronous style.
+Channels builds upon the native ASGI support in Django. Whilst Django still handles
+traditional HTTP, Channels gives you the choice to handle other connections in
+either a synchronous or asynchronous style.
 
 To get started understanding Channels, read our :doc:`introduction`,
-which will walk through how things work. If you're upgrading from Channels 2,
-take a look at :doc:`releases/3.0.0` to get an overview of the changes.
+which will walk through how things work.
 
-.. warning::
-   This is documentation for the **3.x series** of Channels. If you are looking
-   for documentation for older versions, you can select ``2.x`` or ``1.x`` from
-   the versions selector in the bottom-left corner.
+.. note::
+   This is documentation for the **4.x series** of Channels. If you are looking
+   for documentation for older versions, you can select ``3.x``, ``2.x``, or
+   ``1.x`` from the versions selector in the bottom-left corner.
 
 Projects
 --------
