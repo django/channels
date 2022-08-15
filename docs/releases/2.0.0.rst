@@ -15,7 +15,8 @@ changes to the fundamental design and architecture of Channels. Notably:
 * Python 2.7 and 3.4 are no longer supported.
 
 More detailed information on the changes and tips on how to port your
-applications can be found in our :doc:`/one-to-two` documentation.
+applications can be found in our ``/one-to-two`` documentation in the 2.x
+docs version.
 
 
 Backwards Incompatible Changes
@@ -25,7 +26,7 @@ Channels 2 is regrettably not backwards-compatible at all with Channels 1
 applications due to the large amount of re-architecting done to the code and
 the switch from synchronous to asynchronous runtimes.
 
-A :doc:`migration guide </one-to-two>` is available, and a lot of the basic
+A migration guide is available in the 2.x docs version, and a lot of the basic
 concepts are the same, but the basic class structure and imports have changed.
 
 Our apologies for having to make a breaking change like this, but it was the
