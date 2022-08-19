@@ -43,9 +43,9 @@ together with URL routing, protocol detection and other handy things to
 make a full application.
 
 We treat HTTP and the existing Django application as part of a bigger whole.
-Traditional Django views are still there with Channels and still useable - with
-Django's native ASGI support, or a Channels provided version for Django 2.2 -
-but you can now also write custom HTTP long-polling handling, or WebSocket
+Traditional Django views are still there with Channels and still usable - with
+Django's native ASGI support but you can also write custom HTTP
+long-polling handling, or WebSocket
 receivers, and have that code sit alongside your existing code. URL routing,
 middleware - they are all just ASGI applications.
 
@@ -62,7 +62,7 @@ and a series of *events*.
 
 The *scope* is a set of details about a single incoming connection - such as
 the path a web request was made from, or the originating IP address of a
-WebSocket, or the user messaging a chatbot - and persists throughout the
+WebSocket, or the user messaging a chatbot. The scope persists throughout the
 connection.
 
 For HTTP, the scope just lasts a single request. For WebSockets, it lasts for
@@ -76,7 +76,7 @@ During the lifetime of this *scope*, a series of *events* occur. These
 represent user interactions - making a HTTP request, for example, or
 sending a WebSocket frame. Your Channels or ASGI applications will be
 **instantiated once per scope**, and then be fed the stream of *events*
-happening within that scope to decide what to do with.
+happening within that scope to decide what action to take.
 
 An example with HTTP:
 
