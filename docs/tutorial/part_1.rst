@@ -32,8 +32,8 @@ Channels is installed by running the following command:
 
     $ python3 -c 'import channels; print(channels.__version__)'
 
-This tutorial is written for Channels 3.0, which supports Python 3.6+ and Django
-2.2+. If the Channels version does not match, you can refer to the tutorial for
+This tutorial is written for Channels 4.0, which supports Python 3.7+ and Django
+3.2+. If the Channels version does not match, you can refer to the tutorial for
 your version of Channels by using the version switcher at the bottom left corner
 of this page, or update Channels to the newest version.
 
@@ -80,10 +80,6 @@ following contents:
             settings.py
             urls.py
             wsgi.py
-
-.. note::
-    Django 2.2 will not have the ``asgi.py`` file. Don't worry, you can create
-    it in a moment.
 
 Creating the Chat app
 ---------------------
@@ -200,8 +196,9 @@ Put the following code in ``chat/views.py``:
     # chat/views.py
     from django.shortcuts import render
 
+
     def index(request):
-        return render(request, 'chat/index.html')
+        return render(request, "chat/index.html")
 
 To call the view, we need to map it to a URL - and for this we need a URLconf.
 
@@ -227,8 +224,9 @@ In the ``chat/urls.py`` file include the following code:
 
     from . import views
 
+
     urlpatterns = [
-        path('', views.index, name='index'),
+        path("", views.index, name="index"),
     ]
 
 The next step is to point the root URLconf at the **chat.urls** module.
@@ -242,8 +240,8 @@ insert an **include()** in the **urlpatterns** list, so you have:
     from django.urls import include, path
 
     urlpatterns = [
-        path('chat/', include('chat.urls')),
-        path('admin/', admin.site.urls),
+        path("chat/", include("chat.urls")),
+        path("admin/", admin.site.urls),
     ]
 
 Let's verify that the index view works. Run the following command:
@@ -263,8 +261,8 @@ You'll see the following output on the command line:
 
     You have 18 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): admin, auth, contenttypes, sessions.
     Run 'python manage.py migrate' to apply them.
-    October 21, 2020 - 18:49:39
-    Django version 3.1.2, using settings 'mysite.settings'
+    August 19, 2022 - 10:05:13
+    Django version 4.1, using settings 'mysite.settings'
     Starting development server at http://127.0.0.1:8000/
     Quit the server with CONTROL-C.
 
@@ -289,7 +287,7 @@ Integrate the Channels library
 So far we've just created a regular Django app; we haven't used the Channels
 library at all. Now it's time to integrate Channels.
 
-Let's start by creating a root routing configuration for Channels. A Channels
+Let's start by creating a routing configuration for Channels. A Channels
 :doc:`routing configuration </topics/routing>` is an ASGI application that is
 similar to a Django URLconf, in that it tells Channels what code to run when an
 HTTP request is received by the Channels server.
@@ -298,47 +296,32 @@ Start by adjusting the ``mysite/asgi.py`` file to include the following code:
 
 .. code-block:: python
 
-      # mysite/asgi.py
-      import os
+    # mysite/asgi.py
+    import os
 
-      from channels.routing import ProtocolTypeRouter
-      from django.core.asgi import get_asgi_application
+    from channels.routing import ProtocolTypeRouter
+    from django.core.asgi import get_asgi_application
 
-      os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mysite.settings')
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")
 
-      application = ProtocolTypeRouter({
-          "http": get_asgi_application(),
-          # Just HTTP for now. (We can add other protocols later.)
-      })
+    application = ProtocolTypeRouter(
+        {
+            "http": get_asgi_application(),
+            # Just HTTP for now. (We can add other protocols later.)
+        }
+    )
 
-.. note::
-    Django 2.2 doesn't have inbuilt ASGI support so we need to use Channel's
-    fallback alternative. Create ``mysite/asgi.py`` like this::
+Now add the Daphne library to the list of installed apps, in order to enable
+an ASGI versions of the ``runserver`` command.
 
-        # mysite/asgi.py
-        import os
-
-        import django
-        from channels.http import AsgiHandler
-        from channels.routing import ProtocolTypeRouter
-
-        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mysite.settings')
-        django.setup()
-
-        application = ProtocolTypeRouter({
-          "http": AsgiHandler(),
-          # Just HTTP for now. (We can add other protocols later.)
-        })
-
-Now add the Channels library to the list of installed apps.
-Edit the ``mysite/settings.py`` file and add ``'channels'`` to the
+Edit the ``mysite/settings.py`` file and add ``'daphne'`` to the top of the
 ``INSTALLED_APPS`` setting. It'll look like this:
 
 .. code-block:: python
 
     # mysite/settings.py
     INSTALLED_APPS = [
-        'channels',
+        'daphne',
         'chat',
         'django.contrib.admin',
         'django.contrib.auth',
@@ -348,25 +331,25 @@ Edit the ``mysite/settings.py`` file and add ``'channels'`` to the
         'django.contrib.staticfiles',
     ]
 
-You'll also need to point Channels at the root routing configuration.
+You'll also need to point Daphne at the root routing configuration.
 Edit the ``mysite/settings.py`` file again and add the following to the bottom
 of it:
 
 .. code-block:: python
 
     # mysite/settings.py
-    # Channels
-    ASGI_APPLICATION = 'mysite.asgi.application'
+    # Daphne
+    ASGI_APPLICATION = "mysite.asgi.application"
 
-With Channels now in the installed apps, it will take control of the
+With Daphne now in the installed apps, it will take control of the
 ``runserver`` command, replacing the standard Django development server with
-the Channels development server.
+the ASGI compatible version.
 
 .. note::
-    The Channels development server will conflict with any other third-party
+    The Daphne development server will conflict with any other third-party
     apps that require an overloaded or replacement runserver command.
-    In order to solve such issues, try moving ``channels`` to the top of your
-    ``INSTALLED_APPS`` or remove the offending app altogether.
+    In order to solve such issues, make sure ``daphne`` is at the top of your
+    ``INSTALLED_APPS``, or remove the offending app altogether.
 
 Let's ensure that the Channels development server is working correctly.
 Run the following command:
@@ -386,14 +369,13 @@ You'll see the following output on the command line:
 
     You have 18 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): admin, auth, contenttypes, sessions.
     Run 'python manage.py migrate' to apply them.
-    October 21, 2020 - 19:08:48
-    Django version 3.1.2, using settings 'mysite.settings'
-    Starting ASGI/Channels version 3.0.0 development server at http://127.0.0.1:8000/
+    August 19, 2022 - 10:20:28
+    Django version 4.1, using settings 'mysite.settings'
+    Starting ASGI/Daphne version 3.0.2 development server at http://127.0.0.1:8000/
     Quit the server with CONTROL-C.
 
-Notice the line beginning with ``Starting ASGI/Channels version 3.0.0
-development server at http://127.0.0.1:8000/``. This indicates that the
-Channels development server has taken over from the Django development server.
+Notice the line beginning with ``Starting ASGI/Daphne …``. This indicates that the
+Daphne development server has taken over from the Django development server.
 
 Go to http://127.0.0.1:8000/chat/ in your browser and you should still see the
 index page that we created before.
