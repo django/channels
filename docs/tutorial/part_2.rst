@@ -87,13 +87,13 @@ Create the view function for the room view in ``chat/views.py``:
     # chat/views.py
     from django.shortcuts import render
 
+
     def index(request):
-        return render(request, 'chat/index.html', {})
+        return render(request, "chat/index.html")
+
 
     def room(request, room_name):
-        return render(request, 'chat/room.html', {
-            'room_name': room_name
-        })
+        return render(request, "chat/room.html", {"room_name": room_name})
 
 Create the route for the room view in ``chat/urls.py``:
 
@@ -105,8 +105,8 @@ Create the route for the room view in ``chat/urls.py``:
     from . import views
 
     urlpatterns = [
-        path('', views.index, name='index'),
-        path('<str:room_name>/', views.room, name='room'),
+        path("", views.index, name="index"),
+        path("<str:room_name>/", views.room, name="room"),
     ]
 
 Start the Channels development server:
@@ -183,7 +183,9 @@ Put the following code in ``chat/consumers.py``:
 
     # chat/consumers.py
     import json
+
     from channels.generic.websocket import WebsocketConsumer
+
 
     class ChatConsumer(WebsocketConsumer):
         def connect(self):
@@ -194,11 +196,9 @@ Put the following code in ``chat/consumers.py``:
 
         def receive(self, text_data):
             text_data_json = json.loads(text_data)
-            message = text_data_json['message']
+            message = text_data_json["message"]
 
-            self.send(text_data=json.dumps({
-                'message': message
-            }))
+            self.send(text_data=json.dumps({"message": message}))
 
 This is a synchronous WebSocket consumer that accepts all connections, receives
 messages from its client, and echos those messages back to the same client. For
@@ -208,8 +208,8 @@ now it does not broadcast messages to other clients in the same room.
     Channels also supports writing *asynchronous* consumers for greater
     performance. However any asynchronous consumer must be careful to avoid
     directly performing blocking operations, such as accessing a Django model.
-    See the :doc:`/topics/consumers` reference for more information about writing asynchronous
-    consumers.
+    See the :doc:`/topics/consumers` reference for more information about writing
+    asynchronous consumers.
 
 We need to create a routing configuration for the ``chat`` app that has a route to
 the consumer. Create a new file ``chat/routing.py``. Your app directory should now
@@ -238,7 +238,7 @@ Put the following code in ``chat/routing.py``:
     from . import consumers
 
     websocket_urlpatterns = [
-        re_path(r'ws/chat/(?P<room_name>\w+)/$', consumers.ChatConsumer.as_asgi()),
+        re_path(r"ws/chat/(?P<room_name>\w+)/$", consumers.ChatConsumer.as_asgi()),
     ]
 
 We call the ``as_asgi()`` classmethod in order to get an ASGI application that
@@ -248,7 +248,7 @@ Django view instances.
 
 (Note we use ``re_path()`` due to limitations in :ref:`URLRouter <urlrouter>`.)
 
-The next step is to point the root routing configuration at the
+The next step is to point the main ASGI configuration at the
 **chat.routing** module. In ``mysite/asgi.py``, import ``AuthMiddlewareStack``,
 ``URLRouter``, and ``chat.routing``; and insert a ``'websocket'`` key in the
 ``ProtocolTypeRouter`` list in the following format:
@@ -256,6 +256,7 @@ The next step is to point the root routing configuration at the
 .. code-block:: python
 
     # mysite/asgi.py
+    import os
     import os
 
     from channels.auth import AuthMiddlewareStack
@@ -270,21 +271,14 @@ The next step is to point the root routing configuration at the
 
     import chat.routing
 
-    application = ProtocolTypeRouter({
-      "http": django_asgi_app,
-      "websocket": AllowedHostsOriginValidator(
-            AuthMiddlewareStack(
-                URLRouter(
-                    chat.routing.websocket_urlpatterns
-                )
-            )
-        ),
-    })
-
-.. note::
-    For Django 2.2 recall that the ``http`` key to ``ProtocolTypeRouter`` uses
-    Channel's ``AsgiHandler``. This stays the same. The ``websocket`` key is
-    new, and that's the same for all versions.
+    application = ProtocolTypeRouter(
+        {
+            "http": django_asgi_app,
+            "websocket": AllowedHostsOriginValidator(
+                AuthMiddlewareStack(URLRouter(chat.routing.websocket_urlpatterns))
+            ),
+        }
+    )
 
 This root routing configuration specifies that when a connection is made to the
 Channels development server, the ``ProtocolTypeRouter`` will first inspect the type
@@ -393,12 +387,12 @@ It should look like:
 
     # mysite/settings.py
     # Channels
-    ASGI_APPLICATION = 'mysite.asgi.application'
+    ASGI_APPLICATION = "mysite.asgi.application"
     CHANNEL_LAYERS = {
-        'default': {
-            'BACKEND': 'channels_redis.core.RedisChannelLayer',
-            'CONFIG': {
-                "hosts": [('127.0.0.1', 6379)],
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [("127.0.0.1", 6379)],
             },
         },
     }
@@ -429,18 +423,19 @@ following code in ``chat/consumers.py``, replacing the old code:
 
     # chat/consumers.py
     import json
+
     from asgiref.sync import async_to_sync
     from channels.generic.websocket import WebsocketConsumer
 
+
     class ChatConsumer(WebsocketConsumer):
         def connect(self):
-            self.room_name = self.scope['url_route']['kwargs']['room_name']
-            self.room_group_name = 'chat_%s' % self.room_name
+            self.room_name = self.scope["url_route"]["kwargs"]["room_name"]
+            self.room_group_name = "chat_%s" % self.room_name
 
             # Join room group
             async_to_sync(self.channel_layer.group_add)(
-                self.room_group_name,
-                self.channel_name
+                self.room_group_name, self.channel_name
             )
 
             self.accept()
@@ -448,32 +443,25 @@ following code in ``chat/consumers.py``, replacing the old code:
         def disconnect(self, close_code):
             # Leave room group
             async_to_sync(self.channel_layer.group_discard)(
-                self.room_group_name,
-                self.channel_name
+                self.room_group_name, self.channel_name
             )
 
         # Receive message from WebSocket
         def receive(self, text_data):
             text_data_json = json.loads(text_data)
-            message = text_data_json['message']
+            message = text_data_json["message"]
 
             # Send message to room group
             async_to_sync(self.channel_layer.group_send)(
-                self.room_group_name,
-                {
-                    'type': 'chat_message',
-                    'message': message
-                }
+                self.room_group_name, {"type": "chat_message", "message": message}
             )
 
         # Receive message from room group
         def chat_message(self, event):
-            message = event['message']
+            message = event["message"]
 
             # Send message to WebSocket
-            self.send(text_data=json.dumps({
-                'message': message
-            }))
+            self.send(text_data=json.dumps({"message": message}))
 
 When a user posts a message, a JavaScript function will transmit the message
 over WebSocket to a ChatConsumer. The ChatConsumer will receive that message and
@@ -484,14 +472,14 @@ appended to the chat log.
 
 Several parts of the new ``ChatConsumer`` code deserve further explanation:
 
-* ``self.scope['url_route']['kwargs']['room_name']``
+* ``self.scope["url_route"]["kwargs"]["room_name"]``
     * Obtains the ``'room_name'`` parameter from the URL route in ``chat/routing.py``
       that opened the WebSocket connection to the consumer.
     * Every consumer has a :ref:`scope <scope>` that contains information about its connection,
       including in particular any positional or keyword arguments from the URL
       route and the currently authenticated user if any.
 
-* ``self.room_group_name = 'chat_%s' % self.room_name``
+* ``self.room_group_name = "chat_%s" % self.room_name``
     * Constructs a Channels group name directly from the user-specified room
       name, without any quoting or escaping.
     * Group names may only contain alphanumerics, hyphens, underscores, or
@@ -500,7 +488,7 @@ Several parts of the new ``ChatConsumer`` code deserve further explanation:
 
 * ``async_to_sync(self.channel_layer.group_add)(...)``
     * Joins a group.
-    * The async_to_sync(...) wrapper is required because ChatConsumer is a
+    * The ``async_to_sync(...)`` wrapper is required because ChatConsumer is a
       synchronous WebsocketConsumer but it is calling an asynchronous channel
       layer method. (All channel layer methods are asynchronous.)
     * Group names are restricted to ASCII alphanumerics, hyphens, and periods
@@ -510,11 +498,11 @@ Several parts of the new ``ChatConsumer`` code deserve further explanation:
 
 * ``self.accept()``
     * Accepts the WebSocket connection.
-    * If you do not call accept() within the connect() method then the
+    * If you do not call ``accept()`` within the ``connect()`` method then the
       connection will be rejected and closed. You might want to reject a connection
       for example because the requesting user is not authorized to perform the
       requested action.
-    * It is recommended that accept() be called as the *last* action in connect()
+    * It is recommended that ``accept()`` be called as the *last* action in ``connect()``
       if you choose to accept the connection.
 
 * ``async_to_sync(self.channel_layer.group_discard)(...)``
