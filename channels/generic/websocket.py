@@ -102,7 +102,7 @@ class WebsocketConsumer(SyncConsumer):
             raise InvalidChannelLayerError(
                 "BACKEND is unconfigured or doesn't support groups"
             )
-        self.disconnect(message["code"])
+        self.disconnect(message.get("code", 1005))
         raise StopConsumer()
 
     def disconnect(self, code):
@@ -235,7 +235,7 @@ class AsyncWebsocketConsumer(AsyncConsumer):
             raise InvalidChannelLayerError(
                 "BACKEND is unconfigured or doesn't support groups"
             )
-        await self.disconnect(message["code"])
+        await self.disconnect(message.get("code", 1005))
         raise StopConsumer()
 
     async def disconnect(self, code):
