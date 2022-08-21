@@ -1,3 +1,5 @@
+import multiprocessing
+
 from daphne.testing import DaphneProcess
 from django.contrib.staticfiles.handlers import ASGIStaticFilesHandler
 from django.core.exceptions import ImproperlyConfigured
@@ -6,6 +8,9 @@ from django.test.testcases import TransactionTestCase
 from django.test.utils import modify_settings
 
 from channels.routing import get_default_application
+
+# Enforce multiprocessing start method for macOS.
+multiprocessing.set_start_method("fork")
 
 
 class ChannelsLiveServerTestCase(TransactionTestCase):
