@@ -1,8 +1,11 @@
 Full release notes, with more details and upgrade information, are available at:
 https://channels.readthedocs.io/en/latest/releases
 
-Next Release (will be 4.0)
---------------------------
+4.0.0b1 (2022-08-25)
+--------------------
+
+This is a beta release to enable testing of the new Channels, Daphne, and
+channels-redis packages.
 
 TODO: These notes will move to the docs for the release with a short summary and link here.
 
