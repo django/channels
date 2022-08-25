@@ -1,4 +1,4 @@
-__version__ = "3.0.5"
+__version__ = "4.0.0b1"
 
 
 DEFAULT_CHANNEL_LAYER = "default"
