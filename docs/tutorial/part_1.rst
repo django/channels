@@ -25,12 +25,12 @@ installed and which version by running the following command in a shell prompt
 
     $ python3 -m django --version
 
-We also assume that you have :doc:`Channels installed </installation>` already. You can tell
-Channels is installed by running the following command:
+We also assume that you have :doc:`Channels and Daphne installed
+</installation>` already. You can check by running the following command:
 
 .. code-block:: sh
 
-    $ python3 -c 'import channels; print(channels.__version__)'
+    $ python3 -c 'import channels; import daphne; print(channels.__version__, daphne.__version__)'
 
 This tutorial is written for Channels 4.0, which supports Python 3.7+ and Django
 3.2+. If the Channels version does not match, you can refer to the tutorial for
