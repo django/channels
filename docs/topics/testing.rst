@@ -8,8 +8,8 @@ To help with testing, Channels provides test helpers called *Communicators*,
 which allow you to wrap up an ASGI application (like a consumer) into its own
 event loop and ask it questions.
 
-`Since Django 3.1, you can test asynchronous code
-<https://docs.djangoproject.com/en/3.1/topics/testing/tools/#testing-
+`You can test asynchronous code
+<https://docs.djangoproject.com/en/stable/topics/testing/tools/#testing-
 asynchronous-code>`_ using Django's ``TestCase``. Alternately, you can use
 ``pytest`` with its ``asyncio`` plugin.
 

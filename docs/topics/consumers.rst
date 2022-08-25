@@ -1,23 +1,22 @@
 Consumers
 =========
 
-While Channels is built around a basic low-level spec called
-:doc:`ASGI </asgi>`, it's more designed for interoperability than for writing
-complex applications in. So, Channels provides you with Consumers, a rich
-abstraction that allows you to make ASGI applications easily.
+Channels is built around a basic low-level spec called :doc:`ASGI </asgi>`.
+ASGI is more designed for interoperability than for writing complex
+applications in. So, Channels provides you with Consumers, a rich abstraction
+that allows you to create ASGI applications easily.
 
 Consumers do a couple of things in particular:
 
-* Structures your code as a series of functions to be called whenever an
+* Structure your code as a series of functions to be called whenever an
   event happens, rather than making you write an event loop.
 
-* Allow you to write synchronous or async code and deals with handoffs
+* Allow you to write synchronous or async code, and deal with handoffs
   and threading for you.
 
 Of course, you are free to ignore consumers and use the other parts of
 Channels - like routing, session handling and authentication - with any
 ASGI app, but they're generally the best way to write your application code.
-
 
 .. _sync_to_async:
 
@@ -27,7 +26,7 @@ Basic Layout
 A consumer is a subclass of either ``channels.consumer.AsyncConsumer`` or
 ``channels.consumer.SyncConsumer``. As these names suggest, one will expect
 you to write async-capable code, while the other will run your code
-synchronously in a threadpool for you.
+synchronously in a threadpool.
 
 Let's look at a basic example of a ``SyncConsumer``:
 
