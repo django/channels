@@ -1,25 +1,34 @@
 Installation
 ============
 
-Channels is available on PyPI - to install it, just run:
+Channels is available on PyPI - to install it run:
 
 .. code-block:: sh
 
-    python -m pip install -U channels
+    python -m pip install -U channels["daphne"]
 
-Once that's done, you should add ``channels`` to your
+This will install Channels together with the Daphne ASGI application server. If
+you wish to use a different application server you can ``pip install channels`,
+without the optional ``daphe`` add-on.
+
+Once that's done, you should add ``daphne`` to the beginning of your
 ``INSTALLED_APPS`` setting:
 
 .. code-block:: python
 
     INSTALLED_APPS = (
-        'django.contrib.auth',
-        'django.contrib.contenttypes',
-        'django.contrib.sessions',
-        'django.contrib.sites',
+        "daphne",
+        "django.contrib.auth",
+        "django.contrib.contenttypes",
+        "django.contrib.sessions",
+        "django.contrib.sites",
         ...
-        'channels',
     )
+
+This will install the Daphne's ASGI version of the ``runserver`` management
+command.
+
+You can also add ``"channels"`` for Channel's ``runworker`` command.
 
 Then, adjust your project's ``asgi.py`` file, e.g. ``myproject/asgi.py``, to
 wrap the Django ASGI application::
@@ -39,24 +48,6 @@ wrap the Django ASGI application::
           # Just HTTP for now. (We can add other protocols later.)
       })
 
-.. note::
-    Django 2.2 doesn't have inbuilt ASGI support so we need to use Channel's
-    fallback alternative. Create ``myproject/asgi.py`` like this::
-
-        import os
-
-        import django
-        from channels.http import AsgiHandler
-        from channels.routing import ProtocolTypeRouter
-
-        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mysite.settings')
-        django.setup()
-
-        application = ProtocolTypeRouter({
-          "http": AsgiHandler(),
-          # Just HTTP for now. (We can add other protocols later.)
-        })
-
 And finally, set your ``ASGI_APPLICATION`` setting to point to that routing
 object as your root application:
 
@@ -64,17 +55,18 @@ object as your root application:
 
     ASGI_APPLICATION = "myproject.asgi.application"
 
-That's it! Once enabled, ``channels`` will integrate itself into Django and
+That's it! Once enabled, ``daphne`` will integrate itself into Django and
 take control of the ``runserver`` command. See :doc:`introduction` for more.
 
 .. note::
-  Please be wary of any other third-party apps that require an overloaded or
-  replacement ``runserver`` command. Channels provides a separate
-  ``runserver`` command and may conflict with it. An example
-  of such a conflict is with `whitenoise.runserver_nostatic <https://github.com/evansd/whitenoise/issues/77>`_
-  from `whitenoise <https://github.com/evansd/whitenoise>`_. In order to
-  solve such issues, try moving ``channels`` to the top of your ``INSTALLED_APPS``
-  or remove the offending app altogether.
+
+    Please be wary of any other third-party apps that require an overloaded or
+    replacement ``runserver`` command. Daphne provides a separate
+    ``runserver`` command and may conflict with it. An example
+    of such a conflict is with `whitenoise.runserver_nostatic <https://github.com/evansd/whitenoise/issues/77>`_
+    from `whitenoise <https://github.com/evansd/whitenoise>`_. In order to
+    solve such issues, make sure ``daphne`` is at the top of your ``INSTALLED_APPS``
+    or remove the offending app altogether.
 
 
 Installing the latest development version
