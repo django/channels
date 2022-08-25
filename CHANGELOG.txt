@@ -40,6 +40,12 @@ Serving of Django HTTPS applications (whether using sync or async views) under A
 
   Note the ``runworker`` command remains a part of the ``channels`` app.
 
+* Daphne is now an optional dependency. Use:
+
+        pip install 'channels[daphne]'
+
+  … to install.
+
 * Removed the ``consumer_started`` and consumer_finished`` signals, unused since the 2.0 rewrite.
 
 
