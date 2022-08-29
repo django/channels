@@ -9,7 +9,7 @@ Channels is available on PyPI - to install it run:
 
 This will install Channels together with the Daphne ASGI application server. If
 you wish to use a different application server you can ``pip install channels``,
-without the optional ``daphe`` add-on.
+without the optional ``daphne`` add-on.
 
 Once that's done, you should add ``daphne`` to the beginning of your
 ``INSTALLED_APPS`` setting:
