@@ -98,6 +98,8 @@ class BaseChannelLayer:
     common functionality.
     """
 
+    MAX_NAME_LENGTH = 100
+
     def __init__(self, expiry=60, capacity=100, channel_capacity=None):
         self.expiry = expiry
         self.capacity = capacity
@@ -131,7 +133,7 @@ class BaseChannelLayer:
         return self.capacity
 
     def match_type_and_length(self, name):
-        if isinstance(name, str) and (len(name) < 100):
+        if isinstance(name, str) and (len(name) < self.MAX_NAME_LENGTH):
             return True
         return False
 
@@ -140,8 +142,10 @@ class BaseChannelLayer:
     channel_name_regex = re.compile(r"^[a-zA-Z\d\-_.]+(\![\d\w\-_.]*)?$")
     group_name_regex = re.compile(r"^[a-zA-Z\d\-_.]+$")
     invalid_name_error = (
-        "{} name must be a valid unicode string containing only ASCII "
-        + "alphanumerics, hyphens, underscores, or periods."
+        "{} name must be a valid unicode string "
+        + "with length < {} ".format(MAX_NAME_LENGTH)
+        + "containing only ASCII alphanumerics, hyphens, underscores, or periods, "
+        + "not {}"
     )
 
     def valid_channel_name(self, name, receive=False):
@@ -153,13 +157,13 @@ class BaseChannelLayer:
                         "Specific channel names in receive() must end at the !"
                     )
                 return True
-        raise TypeError(self.invalid_name_error("Channel"))
+        raise TypeError(self.invalid_name_error.format("Channel", name))
 
     def valid_group_name(self, name):
         if self.match_type_and_length(name):
             if bool(self.group_name_regex.match(name)):
                 return True
-        raise TypeError(self.invalid_name_error("Group"))
+        raise TypeError(self.invalid_name_error.format("Group", name))
 
     def valid_channel_names(self, names, receive=False):
         _non_empty_list = True if names else False
