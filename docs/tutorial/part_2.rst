@@ -257,7 +257,6 @@ The next step is to point the main ASGI configuration at the
 
     # mysite/asgi.py
     import os
-    import os
 
     from channels.auth import AuthMiddlewareStack
     from channels.routing import ProtocolTypeRouter, URLRouter
