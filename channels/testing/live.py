@@ -1,4 +1,4 @@
-import multiprocessing
+from functools import partial
 
 from daphne.testing import DaphneProcess
 from django.contrib.staticfiles.handlers import ASGIStaticFilesHandler
@@ -9,8 +9,13 @@ from django.test.utils import modify_settings
 
 from channels.routing import get_default_application
 
-# Enforce multiprocessing start method for macOS.
-multiprocessing.set_start_method("fork")
+
+def make_application(*, static_wrapper):
+    # Module-level function for pickle-ability
+    application = get_default_application()
+    if static_wrapper is not None:
+        application = static_wrapper(application)
+    return application
 
 
 class ChannelsLiveServerTestCase(TransactionTestCase):
@@ -48,12 +53,11 @@ class ChannelsLiveServerTestCase(TransactionTestCase):
         )
         self._live_server_modified_settings.enable()
 
-        if self.serve_static:
-            application = self.static_wrapper(get_default_application())
-        else:
-            application = get_default_application()
-
-        self._server_process = self.ProtocolServerProcess(self.host, application)
+        get_application = partial(
+            make_application,
+            static_wrapper=self.static_wrapper if self.serve_static else None,
+        )
+        self._server_process = self.ProtocolServerProcess(self.host, get_application)
         self._server_process.start()
         self._server_process.ready.wait()
         self._port = self._server_process.port.value
