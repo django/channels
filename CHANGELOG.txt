@@ -47,10 +47,12 @@ Serving of Django HTTPS applications (whether using sync or async views) under A
 
         pip install 'channels[daphne]'
 
-  … to install.
+  … to install. Note use of ``ChannelsLiveServerTestCase`` still requires Daphne.
 
 * Removed the ``consumer_started`` and consumer_finished`` signals, unused since the 2.0 rewrite.
 
+* Fixed ``ChannelsLiveServerTestCase`` when running on systems using the ``spawn`` multiprocessing start method, such as
+  macOS and Windows.
 
 3.0.5 (2022-06-24)
 ------------------
