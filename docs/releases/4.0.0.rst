@@ -1,3 +1,136 @@
 4.0.0 Release Notes
 ===================
 
+Channels 4 is the next major version of the Channels package. Together with the
+matching Daphne v4 and channels-redis v4 releases, it updates dependencies,
+fixes issues, and removes outdated code. It so provides the foundation for
+Channels development going forward.
+
+In most cases, you can update now by updating ``channels``, ``daphne``, and
+``channels-redis`` as appropriate, with ``pip``, and by adding ``daphne`` at
+the top of your ``INSTALLED_APPS`` setting.
+
+First ``pip``::
+
+    pip install -U 'channels[dapne]' channels-redis
+
+Then in your Django settings file::
+
+    INSTALLED_APPS = [
+        "daphne",
+        ...
+    ]
+
+Read on for the details.
+
+Updated Python and Django support
+---------------------------------
+
+In general Channels will try to follow Python and Django supported versions.
+
+As of release, that means Python 3.7, 3.8, 3.9, and 3.10, as well as Django
+3.2, 4.0, and 4.1 are currently supported.
+
+As a note, we reserve the right to drop older Python versions, or the older
+Django LTS, once the newer one is released, before their official end-of-life
+if this is necessary to ease development.
+
+Dropping older Python and Django versions will be done in minor version
+releases, and will not be considered to require a major version change.
+
+The async support in both Python and Django continues to evolve rapidly. We
+advise you to always upgrade to the latest versions in order to avoid issues in
+older versions if you're building an async application.
+
+* Dropped support for Python 3.6.
+
+* Minimum Django version is now Django 3.2.
+
+* Added compatibility with Django 4.1.
+
+Decoupling of the Daphne application server
+-------------------------------------------
+
+In order to allow users of other ASGI servers to use Channels without the
+overhead of Daphne and Twisted, the Daphne application server is now an
+optional dependency, installable either directly or with the ``daphne`` extra,
+as per the ``pip`` example above.
+
+* Where Daphne is used ``daphne>=4.0.0`` is required. The ``channels[daphne]`` extra assures this.
+
+* The ``runserver`` command is moved to the ``daphne`` package.
+
+  In order to use the ``runserver`` command, add ``daphne`` to your
+  ``INSTALLED_APPS``, before ``django.contrib.staticfiles``::
+
+      INSTALLED_APPS = [
+          "daphne",
+          ...
+      ]
+
+  There is a new system check to ensure this ordering.
+
+  Note, the ``runworker`` command remains a part of the ``channels`` app.
+
+* Use of ``ChannelsLiveServerTestCase`` still requires Daphne.
+
+Removal of the Django application wrappers
+------------------------------------------
+
+In order to add initial ASGI support to Django, Channels originally provided
+tools for wrapping your Django application and serving it under ASGI. This
+included an ASGI handler class, an ASGI HTTP request object, and an ASGI
+compatible version of the staticfiles handler for use with ``runserver``
+
+Improved equivalents to all of these are what has been added to Django since
+Django version 3.0. As such serving of Django HTTP applications (whether using
+sync or async views) under ASGI is now Django's responsibility, and the
+matching Channels classes have been removed.
+
+Use of these classes was deprecated in Channels v3 and, if you've already moved
+to the Django equivalents there is nothing further to do.
+
+* Removed deprecated static files handling in favor of
+  ``django.contrib.staticfiles``.
+
+* Removed the deprecated AsgiHandler, which wrapped Django views, in favour of
+  Django's own ASGI support. You should use Django's ``get_asgi_application``
+  to provide the ``http`` handler for ProtocolTypeRouter, or an appropriate
+  path for URLRouter, in order to route your Django application.
+
+* The supporting ``AsgiRequest`` is also removed, as it was only used for
+  ``AsgiHandler``.
+
+* Removed deprecated automatic routing of ``http`` protocol handler in
+  ``ProtocolTypeRouter``. You must explicitly register the ``http`` handler in
+  your application if using ``ProtocolTypeRouter``.
+
+The minimal ``asgi.py`` file routing the Django ASGI application under a
+``ProtocolTypeRouter`` will now look something like this::
+
+      import os
+
+      from channels.routing import ProtocolTypeRouter
+      from django.core.asgi import get_asgi_application
+
+      os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mysite.settings')
+
+      application = ProtocolTypeRouter({
+          "http": get_asgi_application(),
+      })
+
+i.e. We use Django's ``get_asgi_application()``, and explicitly route an
+``http`` handler for ``ProtocolTypeRouter``. This is merely for illustration of
+the changes. Please see the docs for more complete examples.
+
+Other changes
+-------------
+
+* The use of the ``guarantee_single_callable()`` compatibility shim is removed.
+  All applications must be ASGI v3 single-callables.
+
+* Removed the ``consumer_started`` and ``consumer_finished`` signals, unused
+  since the 2.0 rewrite.
+
+* Fixed ``ChannelsLiveServerTestCase`` when running on systems using the
+  ``spawn`` multiprocessing start method, such as macOS and Windows.
