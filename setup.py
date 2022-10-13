@@ -26,7 +26,7 @@ setup(
             "coverage~=4.5",
         ],
         "daphne": [
-            "daphne>=4.0.0b1",
+            "daphne>=4.0.0",
         ]
     },
     classifiers=[
