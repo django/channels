@@ -43,13 +43,13 @@ async def await_many_dispatch(consumer_callables, dispatch):
     ]
 
     dispatch_tasks = []
-    fut = asyncio.Future()  # For tasks to report an exception
+    fut = asyncio.Future()  # For child task to report an exception
     tasks.append(fut)
 
     def on_dispatch_task_complete(task):
         dispatch_tasks.remove(task)
         exc = task.exception()
-        if exc:
+        if exc and not isinstance(exc, asyncio.CancelledError) and not fut.done():
             fut.set_exception(exc)
 
     try:
@@ -60,7 +60,7 @@ async def await_many_dispatch(consumer_callables, dispatch):
             for i, task in enumerate(tasks):
                 if task.done():
                     if task == fut:
-                        exc = fut.exception()
+                        exc = fut.exception()  # Child task has reported an exception
                         if exc:
                             raise exc
                     else:
@@ -85,7 +85,7 @@ async def await_many_dispatch(consumer_callables, dispatch):
             done, pending = await asyncio.wait(dispatch_tasks)
             for task in done:
                 exc = task.exception()
-                if exc:
+                if exc and not isinstance(exc, asyncio.CancelledError):
                     raise exc
         if not fut.done():
             fut.set_result(None)
