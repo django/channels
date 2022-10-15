@@ -1,7 +1,7 @@
 Full release notes, with more details and upgrade information, are available at:
 https://channels.readthedocs.io/en/latest/releases
 
-4.0.0 (2022-10-14)
+4.0.0 (2022-10-15)
 ------------------
 
 Channels 4 is the next major version of the Channels package. Together with the
