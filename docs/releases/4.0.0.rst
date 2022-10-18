@@ -12,7 +12,7 @@ the top of your ``INSTALLED_APPS`` setting.
 
 First ``pip``::
 
-    pip install -U 'channels[dapne]' channels-redis
+    pip install -U 'channels[daphne]' channels-redis
 
 Then in your Django settings file::
 
