@@ -13,13 +13,6 @@ These projects from the community are developed on top of Channels:
 * channels-demultiplexer_, a (de)multiplexer for ``AsyncJsonWebsocketConsumer`` consumers.
 * channels_postgres_, a Django Channels channel layer that uses PostgreSQL as its backing store.
 
-Community Tutorials
-===================
-
-Here are some Channels tutorials from around the community:
-
-* kafka-integration_, a writeup on integrating Kafka with Channels.
-
 If you'd like to add your project, please submit a PR with a link and brief description.
 
 .. _Beatserver: https://github.com/rajasimon/beatserver
