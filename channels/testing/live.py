@@ -1,6 +1,10 @@
 from functools import partial
 
-from daphne.testing import DaphneProcess
+try:
+    from daphne.testing import DaphneProcess
+except ImportError:
+    DaphneProcess = None
+
 from django.contrib.staticfiles.handlers import ASGIStaticFilesHandler
 from django.core.exceptions import ImproperlyConfigured
 from django.db import connections
@@ -40,6 +44,9 @@ class ChannelsLiveServerTestCase(TransactionTestCase):
         return "ws://%s:%s" % (self.host, self._port)
 
     def _pre_setup(self):
+        if self.ProtocolServerProcess is None:
+            raise ImproperlyConfigured("Daphne is not installed")
+
         for connection in connections.all():
             if self._is_in_memory_db(connection):
                 raise ImproperlyConfigured(
