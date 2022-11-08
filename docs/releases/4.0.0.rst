@@ -3,7 +3,7 @@
 
 Channels 4 is the next major version of the Channels package. Together with the
 matching Daphne v4 and channels-redis v4 releases, it updates dependencies,
-fixes issues, and removes outdated code. It so provides the foundation for
+fixes issues, and removes outdated code. It also provides the foundation for
 Channels development going forward.
 
 In most cases, you can update now by updating ``channels``, ``daphne``, and
