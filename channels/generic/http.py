@@ -81,7 +81,7 @@ class AsyncHttpConsumer(AsyncConsumer):
                 await self.handle(b"".join(self.body))
             finally:
                 await self.disconnect()
-                raise StopConsumer()
+            raise StopConsumer()
 
     async def http_disconnect(self, message):
         """

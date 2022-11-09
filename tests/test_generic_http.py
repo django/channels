@@ -39,6 +39,19 @@ async def test_async_http_consumer():
 
 
 @pytest.mark.asyncio
+async def test_error():
+    class TestConsumer(AsyncHttpConsumer):
+        async def handle(self, body):
+            raise AssertionError("Error correctly raised")
+
+    communicator = HttpCommunicator(TestConsumer(), "GET", "/")
+    with pytest.raises(AssertionError) as excinfo:
+        await communicator.get_response(timeout=0.05)
+
+    assert str(excinfo.value) == "Error correctly raised"
+
+
+@pytest.mark.asyncio
 async def test_per_scope_consumers():
     """
     Tests that a distinct consumer is used per scope, with AsyncHttpConsumer as
