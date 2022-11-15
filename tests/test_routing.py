@@ -107,6 +107,23 @@ async def test_url_router():
         "args": tuple(),
         "kwargs": {"default": 42},
     }
+    # Valid root_path in scope
+    assert (
+        await router(
+            {"type": "http", "path": "/root/", "root_path": "/root"}, None, None
+        )
+        == 1
+    )
+    assert (
+        await router(
+            {"type": "http", "path": "/root/foo/", "root_path": "/root"}, None, None
+        )
+        == 2
+    )
+
+    # Unmatched root_path in scope
+    with pytest.raises(ValueError):
+        await router({"type": "http", "path": "/", "root_path": "/root"}, None, None)
 
     # Invalid matches
     with pytest.raises(ValueError):
@@ -260,6 +277,29 @@ async def test_path_remaining():
         await outermost_router({"type": "http", "path": "/prefix/stuff/"}, None, None)
         == 2
     )
+
+    assert (
+        await outermost_router(
+            {"type": "http", "path": "/root/prefix/stuff/", "root_path": "/root"},
+            None,
+            None,
+        )
+        == 2
+    )
+
+    with pytest.raises(ValueError):
+        await outermost_router(
+            {"type": "http", "path": "/root/root/prefix/stuff/", "root_path": "/root"},
+            None,
+            None,
+        )
+
+    with pytest.raises(ValueError):
+        await outermost_router(
+            {"type": "http", "path": "/root/prefix/root/stuff/", "root_path": "/root"},
+            None,
+            None,
+        )
 
 
 def test_invalid_routes():
