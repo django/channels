@@ -50,10 +50,12 @@ class AsyncConsumer:
         # Handler to call when dispatch task is cancelled
         cancel_callback = None
         try:
-          if callable(self.channel_layer.clean_channel):
-            cancel_callback = functools.partial(self.channel_layer.clean_channel, self.channel_name)
+            if callable(self.channel_layer.clean_channel):
+                cancel_callback = functools.partial(
+                    self.channel_layer.clean_channel, self.channel_name
+                )
         except AttributeError:
-          pass
+            pass
         # Store send function
         if self._sync:
             self.base_send = async_to_sync(send)
@@ -63,7 +65,9 @@ class AsyncConsumer:
         try:
             if self.channel_layer is not None:
                 await await_many_dispatch(
-                    [receive, self.channel_receive], self.dispatch, cancel_callback=cancel_callback
+                    [receive, self.channel_receive],
+                    self.dispatch,
+                    cancel_callback=cancel_callback,
                 )
             else:
                 await await_many_dispatch([receive], self.dispatch)
