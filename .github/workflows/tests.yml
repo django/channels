@@ -31,10 +31,10 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip wheel setuptools
-          python -m pip install --upgrade tox tox-py
+          python -m pip install --upgrade tox==4.0.0rc1
 
       - name: Run tox targets for ${{ matrix.python-version }}
-        run: tox --py current
+        run: tox run -f py$(echo ${{ matrix.python-version }} | tr -d .)
 
   lint:
     name: Lint
