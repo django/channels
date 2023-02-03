@@ -6,7 +6,6 @@ from channels.routing import ChannelNameRouter, ProtocolTypeRouter, URLRouter
 
 
 class MockApplication:
-
     call_args = None
 
     def __init__(self, return_value):

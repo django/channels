@@ -11,7 +11,6 @@ logger = logging.getLogger("django.channels.worker")
 
 
 class Command(BaseCommand):
-
     leave_locale_alone = True
     worker_class = Worker
 
