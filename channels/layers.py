@@ -50,7 +50,9 @@ class ChannelLayerManager:
         try:
             config = self.configs[name]["TEST_CONFIG"]
         except KeyError:
-            raise InvalidChannelLayerError("No TEST_CONFIG specified for %s" % name)
+            raise InvalidChannelLayerError(
+                "No TEST_CONFIG specified for %s" % name
+            )
         return self._make_backend(name, config)
 
     def _make_backend(self, name, config):
@@ -64,7 +66,9 @@ class ChannelLayerManager:
         try:
             backend_class = import_string(self.configs[name]["BACKEND"])
         except KeyError:
-            raise InvalidChannelLayerError("No BACKEND specified for %s" % name)
+            raise InvalidChannelLayerError(
+                "No BACKEND specified for %s" % name
+            )
         except ImportError:
             raise InvalidChannelLayerError(
                 "Cannot import BACKEND %r specified for %s"
@@ -168,10 +172,13 @@ class BaseChannelLayer:
     def valid_channel_names(self, names, receive=False):
         _non_empty_list = True if names else False
         _names_type = isinstance(names, list)
-        assert _non_empty_list and _names_type, "names must be a non-empty list"
+        assert (
+            _non_empty_list and _names_type
+        ), "names must be a non-empty list"
 
         assert all(
-            self.valid_channel_name(channel, receive=receive) for channel in names
+            self.valid_channel_name(channel, receive=receive)
+            for channel in names
         )
         return True
 
@@ -332,8 +339,9 @@ class InMemoryChannelLayer(BaseChannelLayer):
         # Remove from group set
         group_channels = self.groups.get(group, None)
         if group_channels:
+            # remove channel if in group
             group_channels.pop(channel, None)
-            # group is now empty
+            # is group now empty? If yes remove it
             if not group_channels:
                 self.groups.pop(group, None)
 
