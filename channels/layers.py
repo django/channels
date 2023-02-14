@@ -350,7 +350,11 @@ class InMemoryChannelLayer(BaseChannelLayer):
         if group in self.groups:
             for channel in self.groups[group].keys():
                 ops.append(asyncio.ensure_future(self.send(channel, message)))
-        await asyncio.wait(ops)
+        for send_result in asyncio.as_completed(ops):
+            try:
+                await send_result
+            except ChannelFull:
+                pass
 
 
 def get_channel_layer(alias=DEFAULT_CHANNEL_LAYER):
