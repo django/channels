@@ -249,7 +249,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
 
         # Do a plain direct receive
         try:
-            _, message = await asyncio.wait_for(queue.get(), self.expiry)
+            _, message = await queue.get()
         finally:
             if queue.empty():
                 self.channels.pop(channel, None)
