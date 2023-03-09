@@ -4,7 +4,7 @@ import pytest
 
 from channels.consumer import AsyncConsumer
 from channels.db import database_sync_to_async
-from channels.sessions import SessionMiddlewareStack
+from channels.sessions import CookieMiddleware, SessionMiddlewareStack
 from channels.testing import HttpCommunicator
 
 
@@ -19,6 +19,15 @@ class SimpleHttpApp(AsyncConsumer):
         assert self.scope["method"] == "GET"
         await self.send({"type": "http.response.start", "status": 200, "headers": []})
         await self.send({"type": "http.response.body", "body": b"test response"})
+
+
+@pytest.mark.asyncio
+async def test_set_cookie():
+    message = {}
+    CookieMiddleware.set_cookie(message, "Testing-Key", "testing-value")
+    assert message == {
+        "headers": [(b"Set-Cookie", b"Testing-Key=testing-value; Path=/; SameSite=lax")]
+    }
 
 
 @pytest.mark.django_db(transaction=True)
