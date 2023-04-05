@@ -265,7 +265,7 @@ point-to-point and broadcast messaging.
 
 .. code-block:: python
 
-    #In a consumer
+    # In a consumer
     self.channel_layer.send(
         'event', 
         {
