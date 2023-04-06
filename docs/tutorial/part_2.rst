@@ -367,11 +367,12 @@ That will allow ChatConsumers to transmit messages to all other ChatConsumers in
 the same room.
 
 We will use a channel layer that uses Redis as its backing store. To start a
-Redis server on port 6379, run the following command:
+Redis server on port 6379, run the following command (press Control-C to stop
+it):
 
 .. code-block:: sh
 
-    $ docker run -p 6379:6379 -d redis:5
+    $ docker run --rm -p 6379:6379 redis:5
 
 We need to install channels_redis so that Channels knows how to interface with
 Redis. Run the following command:
