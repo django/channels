@@ -455,7 +455,7 @@ following code in ``chat/consumers.py``, replacing the old code:
 
             # Send message to room group
             async_to_sync(self.channel_layer.group_send)(
-                self.room_group_name, {"type": "chat_message", "message": message}
+                self.room_group_name, {"type": "chat.message", "message": message}
             )
 
         # Receive message from room group
@@ -514,7 +514,9 @@ Several parts of the new ``ChatConsumer`` code deserve further explanation:
 * ``async_to_sync(self.channel_layer.group_send)``
     * Sends an event to a group.
     * An event has a special ``'type'`` key corresponding to the name of the method
-      that should be invoked on consumers that receive the event.
+      that should be invoked on consumers that receive the event. This translation
+      is done by replacing ``.`` with ``_``, thus in this example, ``chat.message``
+      calls the ``chat_message`` method.
 
 Let's verify that the new consumer for the ``/ws/chat/ROOM_NAME/`` path works.
 To start the Channels development server, run the following command:
