@@ -372,7 +372,7 @@ it):
 
 .. code-block:: sh
 
-    $ docker run --rm -p 6379:6379 redis:5
+    $ docker run --rm -p 6379:6379 redis:7
 
 We need to install channels_redis so that Channels knows how to interface with
 Redis. Run the following command:
