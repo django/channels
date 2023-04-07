@@ -79,14 +79,17 @@ class WebsocketConsumer(SyncConsumer):
         if close:
             self.close(close)
 
-    def close(self, code=None):
+    def close(self, code=None, reason=None):
         """
         Closes the WebSocket from the server end
         """
+        message = {"type": "websocket.close"}
         if code is not None and code is not True:
-            super().send({"type": "websocket.close", "code": code})
-        else:
-            super().send({"type": "websocket.close"})
+            message["code"] = code
+        if self.scope.get("spec_version", "2.0") >= "2.3":
+            if reason:
+                message["reason"] = reason
+        super().send(message)
 
     def websocket_disconnect(self, message):
         """
@@ -179,11 +182,15 @@ class AsyncWebsocketConsumer(AsyncConsumer):
     async def connect(self):
         await self.accept()
 
-    async def accept(self, subprotocol=None):
+    async def accept(self, subprotocol=None, headers=None):
         """
         Accepts an incoming socket
         """
-        await super().send({"type": "websocket.accept", "subprotocol": subprotocol})
+        message = {"type": "websocket.accept", "subprotocol": subprotocol}
+        if self.scope.get("spec_version", "2.0") >= "2.1":
+            if headers:
+                message["headers"] = headers
+        await super().send(message)
 
     async def websocket_receive(self, message):
         """
