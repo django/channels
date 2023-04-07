@@ -58,7 +58,7 @@ Put the following code in ``chat/consumers.py``:
 
             # Send message to room group
             await self.channel_layer.group_send(
-                self.room_group_name, {"type": "chat_message", "message": message}
+                self.room_group_name, {"type": "chat.message", "message": message}
             )
 
         # Receive message from room group
