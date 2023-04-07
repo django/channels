@@ -226,14 +226,17 @@ class AsyncWebsocketConsumer(AsyncConsumer):
         if close:
             await self.close(close)
 
-    async def close(self, code=None):
+    async def close(self, code=None, reason=None):
         """
         Closes the WebSocket from the server end
         """
+        message = {"type": "websocket.close"}
         if code is not None and code is not True:
-            await super().send({"type": "websocket.close", "code": code})
-        else:
-            await super().send({"type": "websocket.close"})
+            message["code"] = code
+        if self.scope.get("spec_version", "2.0") >= "2.3":
+            if reason:
+                message["reason"] = reason
+        await super().send(message)
 
     async def websocket_disconnect(self, message):
         """
