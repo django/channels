@@ -424,3 +424,31 @@ async def test_block_leading_dot_type_function_call():
             ValueError, match=r"Malformed type in message \(leading underscore\)"
         ):
             await communicator.receive_from()
+
+@pytest.mark.parametrize("spec_version", ["", "2.1"])
+@pytest.mark.parametrize("async_consumer", [False, True])
+@pytest.mark.asyncio
+async def test_accept_headers(spec_version, async_consumer):
+    """
+    Tests that JsonWebsocketConsumer is implemented correctly.
+    """
+    results = {}
+
+    class TestConsumer(WebsocketConsumer):
+        def connect(self):
+            self.accept(headers=[[b"foo", b"bar"]])
+
+    class AsyncTestConsumer(AsyncWebsocketConsumer):
+        async def connect(self):
+            await self.accept(headers=[[b"foo", b"bar"]])   
+        
+    app = AsyncTestConsumer() if async_consumer else TestConsumer()
+
+    # Open a connection
+    communicator = WebsocketCommunicator(app, "/testws/", spec_version=spec_version)
+    connected, _ = await communicator.connect()
+    assert connected
+    if spec_version:
+        assert communicator.response_headers == [[b"foo", b"bar"]]
+    else:
+        assert communicator.response_headers == []

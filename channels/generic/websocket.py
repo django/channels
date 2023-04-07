@@ -44,11 +44,16 @@ class WebsocketConsumer(SyncConsumer):
     def connect(self):
         self.accept()
 
-    def accept(self, subprotocol=None):
+    def accept(self, subprotocol=None, headers=None):
         """
         Accepts an incoming socket
         """
-        super().send({"type": "websocket.accept", "subprotocol": subprotocol})
+        message = {"type": "websocket.accept", "subprotocol": subprotocol}
+        if self.scope.get("spec_version", "2.0") >= "2.1":
+            if headers:
+                message["headers"] = list(headers)
+        
+        super().send(message)
 
     def websocket_receive(self, message):
         """
@@ -189,7 +194,7 @@ class AsyncWebsocketConsumer(AsyncConsumer):
         message = {"type": "websocket.accept", "subprotocol": subprotocol}
         if self.scope.get("spec_version", "2.0") >= "2.1":
             if headers:
-                message["headers"] = headers
+                message["headers"] = list(headers)
         await super().send(message)
 
     async def websocket_receive(self, message):
