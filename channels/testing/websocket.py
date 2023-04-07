@@ -12,7 +12,9 @@ class WebsocketCommunicator(ApplicationCommunicator):
     (uninstantiated) along with the initial connection parameters.
     """
 
-    def __init__(self, application, path, headers=None, subprotocols=None, spec_version=None):
+    def __init__(
+        self, application, path, headers=None, subprotocols=None, spec_version=None
+    ):
         if not isinstance(path, str):
             raise TypeError("Expected str, got {}".format(type(path)))
         parsed = urlparse(path)

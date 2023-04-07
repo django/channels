@@ -52,7 +52,7 @@ class WebsocketConsumer(SyncConsumer):
         if self.scope.get("spec_version", "2.0") >= "2.1":
             if headers:
                 message["headers"] = list(headers)
-        
+
         super().send(message)
 
     def websocket_receive(self, message):

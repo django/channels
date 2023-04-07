@@ -425,6 +425,7 @@ async def test_block_leading_dot_type_function_call():
         ):
             await communicator.receive_from()
 
+
 @pytest.mark.parametrize("spec_version", ["2.0", "2.1"])
 @pytest.mark.parametrize("async_consumer", [False, True])
 @pytest.mark.asyncio
@@ -440,8 +441,8 @@ async def test_accept_headers(spec_version, async_consumer):
 
     class AsyncTestConsumer(AsyncWebsocketConsumer):
         async def connect(self):
-            await self.accept(headers=[[b"foo", b"bar"]])   
-        
+            await self.accept(headers=[[b"foo", b"bar"]])
+
     app = AsyncTestConsumer() if async_consumer else TestConsumer()
 
     # Open a connection
@@ -452,6 +453,7 @@ async def test_accept_headers(spec_version, async_consumer):
         assert communicator.response_headers == [[b"foo", b"bar"]]
     else:
         assert communicator.response_headers == []
+
 
 @pytest.mark.parametrize("spec_version", ["2.0", "2.3"])
 @pytest.mark.parametrize("async_consumer", [False, True])
@@ -469,9 +471,9 @@ async def test_close_reason(spec_version, async_consumer):
 
     class AsyncTestConsumer(AsyncWebsocketConsumer):
         async def connect(self):
-            await self.accept()   
+            await self.accept()
             await self.close(code=4007, reason="test reason")
-        
+
     app = AsyncTestConsumer() if async_consumer else TestConsumer()
 
     # Open a connection
