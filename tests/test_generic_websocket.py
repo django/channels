@@ -428,6 +428,7 @@ async def test_block_leading_dot_type_function_call():
 
 @pytest.mark.parametrize("spec_version", ["2.0", "2.1"])
 @pytest.mark.parametrize("async_consumer", [False, True])
+@pytest.mark.django_db
 @pytest.mark.asyncio
 async def test_accept_headers(spec_version, async_consumer):
     """
@@ -457,6 +458,7 @@ async def test_accept_headers(spec_version, async_consumer):
 
 @pytest.mark.parametrize("spec_version", ["2.0", "2.3"])
 @pytest.mark.parametrize("async_consumer", [False, True])
+@pytest.mark.django_db
 @pytest.mark.asyncio
 async def test_close_reason(spec_version, async_consumer):
     """
