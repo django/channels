@@ -434,7 +434,6 @@ async def test_accept_headers(spec_version, async_consumer):
     """
     Tests that JsonWebsocketConsumer is implemented correctly.
     """
-    results = {}
 
     class TestConsumer(WebsocketConsumer):
         def connect(self):
@@ -464,7 +463,6 @@ async def test_close_reason(spec_version, async_consumer):
     """
     Tests that JsonWebsocketConsumer is implemented correctly.
     """
-    results = {}
 
     class TestConsumer(WebsocketConsumer):
         def connect(self):
