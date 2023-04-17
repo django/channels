@@ -11,7 +11,8 @@ event loop and ask it questions.
 `You can test asynchronous code
 <https://docs.djangoproject.com/en/stable/topics/testing/tools/#testing-
 asynchronous-code>`_ using Django's ``TestCase``. Alternately, you can use
-``pytest`` with its ``asyncio`` plugin.
+``pytest`` with its
+`pytest-asyncio <https://github.com/pytest-dev/pytest-asyncio>`_ plugin.
 
 
 Setting Up Async Tests
