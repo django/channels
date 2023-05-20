@@ -63,7 +63,7 @@ Create the view template for the room view in ``chat/templates/chat/room.html``:
 
             document.querySelector('#chat-message-input').focus();
             document.querySelector('#chat-message-input').onkeyup = function(e) {
-                if (e.keyCode === 13) {  // enter, return
+                if (e.key === 'Enter') {  // enter, return
                     document.querySelector('#chat-message-submit').click();
                 }
             };

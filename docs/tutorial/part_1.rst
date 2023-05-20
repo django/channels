@@ -175,7 +175,7 @@ Put the following code in ``chat/templates/chat/index.html``:
         <script>
             document.querySelector('#room-name-input').focus();
             document.querySelector('#room-name-input').onkeyup = function(e) {
-                if (e.keyCode === 13) {  // enter, return
+                if (e.key === 'Enter') {  // enter, return
                     document.querySelector('#room-name-submit').click();
                 }
             };
