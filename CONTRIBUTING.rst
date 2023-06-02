@@ -42,3 +42,6 @@ Make sure your code conforms to the coding style:
     isort --check-only --diff --recursive ./channels ./tests
 
 Push to your fork and `submit a pull request <https://github.com/django/channels/compare/>`_.
+
+Note:
+For those using zsh, you might encounter the error ``zsh: no matches found: .[tests]``. In this case, try wrapping quotations around the ``[tests]]`` section like so ``'.[tests]'``
