@@ -49,9 +49,8 @@ class WebsocketConsumer(SyncConsumer):
         Accepts an incoming socket
         """
         message = {"type": "websocket.accept", "subprotocol": subprotocol}
-        if self.scope.get("spec_version", "2.0") >= "2.1":
-            if headers:
-                message["headers"] = list(headers)
+        if headers:
+            message["headers"] = list(headers)
 
         super().send(message)
 
@@ -91,9 +90,8 @@ class WebsocketConsumer(SyncConsumer):
         message = {"type": "websocket.close"}
         if code is not None and code is not True:
             message["code"] = code
-        if self.scope.get("spec_version", "2.0") >= "2.3":
-            if reason:
-                message["reason"] = reason
+        if reason:
+            message["reason"] = reason
         super().send(message)
 
     def websocket_disconnect(self, message):
@@ -192,9 +190,8 @@ class AsyncWebsocketConsumer(AsyncConsumer):
         Accepts an incoming socket
         """
         message = {"type": "websocket.accept", "subprotocol": subprotocol}
-        if self.scope.get("spec_version", "2.0") >= "2.1":
-            if headers:
-                message["headers"] = list(headers)
+        if headers:
+            message["headers"] = list(headers)
         await super().send(message)
 
     async def websocket_receive(self, message):
@@ -233,9 +230,8 @@ class AsyncWebsocketConsumer(AsyncConsumer):
         message = {"type": "websocket.close"}
         if code is not None and code is not True:
             message["code"] = code
-        if self.scope.get("spec_version", "2.0") >= "2.3":
-            if reason:
-                message["reason"] = reason
+        if reason:
+            message["reason"] = reason
         await super().send(message)
 
     async def websocket_disconnect(self, message):
