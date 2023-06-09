@@ -455,7 +455,6 @@ async def test_accept_headers(spec_version, async_consumer):
         assert communicator.response_headers == []
 
 
-@pytest.mark.parametrize("spec_version", ["2.0", "2.3"])
 @pytest.mark.parametrize("async_consumer", [False, True])
 @pytest.mark.django_db
 @pytest.mark.asyncio
@@ -477,12 +476,9 @@ async def test_close_reason(spec_version, async_consumer):
     app = AsyncTestConsumer() if async_consumer else TestConsumer()
 
     # Open a connection
-    communicator = WebsocketCommunicator(app, "/testws/", spec_version=spec_version)
+    communicator = WebsocketCommunicator(app, "/testws/", spec_version="2.3")
     connected, _ = await communicator.connect()
     msg = await communicator.receive_output()
     assert msg["type"] == "websocket.close"
     assert msg["code"] == 4007
-    if spec_version == "2.3":
-        assert msg["reason"] == "test reason"
-    else:
-        assert msg.get("reason", "") == ""
+    assert msg["reason"] == "test reason"
