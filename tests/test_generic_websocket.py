@@ -426,11 +426,10 @@ async def test_block_leading_dot_type_function_call():
             await communicator.receive_from()
 
 
-@pytest.mark.parametrize("spec_version", ["2.0", "2.1"])
 @pytest.mark.parametrize("async_consumer", [False, True])
 @pytest.mark.django_db
 @pytest.mark.asyncio
-async def test_accept_headers(spec_version, async_consumer):
+async def test_accept_headers(async_consumer):
     """
     Tests that JsonWebsocketConsumer is implemented correctly.
     """
@@ -446,19 +445,16 @@ async def test_accept_headers(spec_version, async_consumer):
     app = AsyncTestConsumer() if async_consumer else TestConsumer()
 
     # Open a connection
-    communicator = WebsocketCommunicator(app, "/testws/", spec_version=spec_version)
+    communicator = WebsocketCommunicator(app, "/testws/", spec_version="2.3")
     connected, _ = await communicator.connect()
     assert connected
-    if spec_version == "2.1":
-        assert communicator.response_headers == [[b"foo", b"bar"]]
-    else:
-        assert communicator.response_headers == []
+    assert communicator.response_headers == [[b"foo", b"bar"]]
 
 
 @pytest.mark.parametrize("async_consumer", [False, True])
 @pytest.mark.django_db
 @pytest.mark.asyncio
-async def test_close_reason(spec_version, async_consumer):
+async def test_close_reason(async_consumer):
     """
     Tests that JsonWebsocketConsumer is implemented correctly.
     """
