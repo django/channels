@@ -25,7 +25,7 @@ Make sure the tests pass:
 
 .. code-block:: sh
 
-    python -m pip install -e .[tests]
+    python -m pip install -e .[tests,daphne]
     pytest
 
 Make your change. Add tests for your change. Make the tests pass:
