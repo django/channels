@@ -8,7 +8,6 @@ from django.test.testcases import TransactionTestCase
 from django.test.utils import modify_settings
 
 from channels.routing import get_default_application
-from django.core.management import call_command
 
 
 def make_application(*, static_wrapper):
