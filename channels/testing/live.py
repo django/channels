@@ -18,39 +18,9 @@ def make_application(*, static_wrapper):
         application = static_wrapper(application)
     return application
 
-# add fixtures in the child process
-def get_available_database_names(db, include_mirrors=True):
-    return [
-            alias for alias in connections
-            if alias in db and (
-                include_mirrors or not connections[alias].settings_dict['TEST']['MIRROR']
-            )
-        ]
-
-def setup_fixtures(databases, fixtures):
-    dbs = get_available_database_names(databases)
-    for db_name in dbs:
-        call_command('loaddata', fixtures, \
-                **{'verbosity': 0, 'database': db_name})
-
-
-def teardown_fixtures(databases, available_apps, serialized_rollback):
-    inhibit_post_migrate = (
-            available_apps is not None or
-            (   # Inhibit the post_migrate signal when using serialized
-                # rollback to avoid trying to recreate the serialized data.
-                serialized_rollback and
-                hasattr(connections[db_name], '_test_serialized_contents')
-            )
-        )
-    dbs = get_available_database_names(databases)
-
-    for db_name in dbs:
-        call_command('flush', verbosity=0, interactive=False,
-            database=db_name, reset_sequences=False,
-            allow_cascade=available_apps is not None,
-            inhibit_post_migrate=inhibit_post_migrate)
-
+def set_database_connection():
+    from django.conf import settings
+    settings.DATABASES['default']['NAME'] = settings.DATABASES['default']['TEST']['NAME']
 
 class ChannelsLiveServerTestCase(TransactionTestCase):
     """
@@ -92,26 +62,16 @@ class ChannelsLiveServerTestCase(TransactionTestCase):
             static_wrapper=self.static_wrapper if self.serve_static else None,
         )
 
-        setup = partial(
-            setup_fixtures, 
-            self.databases,
-            self.fixtures
-        )
-
-        teardown = partial(
-            teardown_fixtures, 
-            self.databases, 
-            self.available_apps,
-            self.serialized_rollback
-        )
+        setup = set_database_connection
 
         self._server_process = self.ProtocolServerProcess(self.host, get_application, \
-                                                          setup=setup, teardown=teardown)
+                                                          setup=setup)
         self._server_process.start()
         self._server_process.ready.wait()
         self._port = self._server_process.port.value
 
     def _post_teardown(self):
+        
         self._server_process.terminate()
         self._server_process.join()
         self._live_server_modified_settings.disable()
