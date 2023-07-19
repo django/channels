@@ -71,7 +71,6 @@ class ChannelsLiveServerTestCase(TransactionTestCase):
         self._port = self._server_process.port.value
 
     def _post_teardown(self):
-        
         self._server_process.terminate()
         self._server_process.join()
         self._live_server_modified_settings.disable()
