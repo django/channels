@@ -81,7 +81,21 @@ class URLRouter:
     _path_routing = True
 
     def __init__(self, routes):
-        self.routes = routes
+	new_routes = []
+        for route in routes:
+            if not route.callback and isinstance(route, URLResolver):
+                for url_pattern in route.url_patterns:
+                    url_pattern: URLPattern
+                    # concatenate parent's url and child's url
+                    regex = ''.join(x.pattern for x in [route.pattern.regex, url_pattern.pattern.regex])
+                    regex = re.sub(r'(/)\1+', r'\1', regex)
+                    name = f"{route.app_name}:{url_pattern.name}" if url_pattern.name else None
+                    pattern = RegexPattern(regex, name=name, is_endpoint=True)
+                    new_routes.append(URLPattern(pattern, url_pattern.callback, route.default_kwargs, name))
+            else:
+                new_routes.append(route)
+
+        self.routes = new_routes
 
         for route in self.routes:
             # The inner ASGI app wants to do additional routing, route
