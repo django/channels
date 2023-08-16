@@ -374,12 +374,12 @@ it):
 
     $ docker run --rm -p 6379:6379 redis:7
 
-We need to install channels_redis so that Channels knows how to interface with
+We need to install channels-redis so that Channels knows how to interface with
 Redis. Run the following command:
 
 .. code-block:: sh
 
-    $ python3 -m pip install channels_redis
+    $ python3 -m pip install channels-redis
 
 Before we can use a channel layer, we must configure it. Edit the
 ``mysite/settings.py`` file and add a ``CHANNEL_LAYERS`` setting to the bottom.
