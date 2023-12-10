@@ -25,8 +25,8 @@ Make sure the tests pass:
 
 .. code-block:: sh
 
-    python -m pip install -e .[tests]
-    tox
+    python -m pip install -e .[tests,daphne]
+    pytest
 
 .. note::
    If you're using ``zsh`` for your shell, the above command will fail with a
