@@ -62,7 +62,6 @@ async def test_multi_send_receive(channel_layer):
     """
     Tests overlapping sends and receives, and ordering.
     """
-    channel_layer = InMemoryChannelLayer()
     await channel_layer.send("test-channel-3", {"type": "message.1"})
     await channel_layer.send("test-channel-3", {"type": "message.2"})
     await channel_layer.send("test-channel-3", {"type": "message.3"})
@@ -76,7 +75,6 @@ async def test_groups_basic(channel_layer):
     """
     Tests basic group operation.
     """
-    channel_layer = InMemoryChannelLayer()
     await channel_layer.group_add("test-group", "test-gr-chan-1")
     await channel_layer.group_add("test-group", "test-gr-chan-2")
     await channel_layer.group_add("test-group", "test-gr-chan-3")
@@ -97,7 +95,6 @@ async def test_groups_channel_full(channel_layer):
     """
     Tests that group_send ignores ChannelFull
     """
-    channel_layer = InMemoryChannelLayer()
     await channel_layer.group_add("test-group", "test-gr-chan-1")
     await channel_layer.group_send("test-group", {"type": "message.1"})
     await channel_layer.group_send("test-group", {"type": "message.1"})
