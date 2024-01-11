@@ -424,3 +424,57 @@ async def test_block_leading_dot_type_function_call():
             ValueError, match=r"Malformed type in message \(leading underscore\)"
         ):
             await communicator.receive_from()
+
+
+@pytest.mark.parametrize("async_consumer", [False, True])
+@pytest.mark.django_db
+@pytest.mark.asyncio
+async def test_accept_headers(async_consumer):
+    """
+    Tests that JsonWebsocketConsumer is implemented correctly.
+    """
+
+    class TestConsumer(WebsocketConsumer):
+        def connect(self):
+            self.accept(headers=[[b"foo", b"bar"]])
+
+    class AsyncTestConsumer(AsyncWebsocketConsumer):
+        async def connect(self):
+            await self.accept(headers=[[b"foo", b"bar"]])
+
+    app = AsyncTestConsumer() if async_consumer else TestConsumer()
+
+    # Open a connection
+    communicator = WebsocketCommunicator(app, "/testws/", spec_version="2.3")
+    connected, _ = await communicator.connect()
+    assert connected
+    assert communicator.response_headers == [[b"foo", b"bar"]]
+
+
+@pytest.mark.parametrize("async_consumer", [False, True])
+@pytest.mark.django_db
+@pytest.mark.asyncio
+async def test_close_reason(async_consumer):
+    """
+    Tests that JsonWebsocketConsumer is implemented correctly.
+    """
+
+    class TestConsumer(WebsocketConsumer):
+        def connect(self):
+            self.accept()
+            self.close(code=4007, reason="test reason")
+
+    class AsyncTestConsumer(AsyncWebsocketConsumer):
+        async def connect(self):
+            await self.accept()
+            await self.close(code=4007, reason="test reason")
+
+    app = AsyncTestConsumer() if async_consumer else TestConsumer()
+
+    # Open a connection
+    communicator = WebsocketCommunicator(app, "/testws/", spec_version="2.3")
+    connected, _ = await communicator.connect()
+    msg = await communicator.receive_output()
+    assert msg["type"] == "websocket.close"
+    assert msg["code"] == 4007
+    assert msg["reason"] == "test reason"

@@ -12,7 +12,9 @@ class WebsocketCommunicator(ApplicationCommunicator):
     (uninstantiated) along with the initial connection parameters.
     """
 
-    def __init__(self, application, path, headers=None, subprotocols=None):
+    def __init__(
+        self, application, path, headers=None, subprotocols=None, spec_version=None
+    ):
         if not isinstance(path, str):
             raise TypeError("Expected str, got {}".format(type(path)))
         parsed = urlparse(path)
@@ -23,7 +25,10 @@ class WebsocketCommunicator(ApplicationCommunicator):
             "headers": headers or [],
             "subprotocols": subprotocols or [],
         }
+        if spec_version:
+            self.scope["spec_version"] = spec_version
         super().__init__(application, self.scope)
+        self.response_headers = None
 
     async def connect(self, timeout=1):
         """
@@ -37,6 +42,8 @@ class WebsocketCommunicator(ApplicationCommunicator):
         if response["type"] == "websocket.close":
             return (False, response.get("code", 1000))
         else:
+            assert response["type"] == "websocket.accept"
+            self.response_headers = response.get("headers", [])
             return (True, response.get("subprotocol", None))
 
     async def send_to(self, text_data=None, bytes_data=None):

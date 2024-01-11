@@ -44,11 +44,15 @@ class WebsocketConsumer(SyncConsumer):
     def connect(self):
         self.accept()
 
-    def accept(self, subprotocol=None):
+    def accept(self, subprotocol=None, headers=None):
         """
         Accepts an incoming socket
         """
-        super().send({"type": "websocket.accept", "subprotocol": subprotocol})
+        message = {"type": "websocket.accept", "subprotocol": subprotocol}
+        if headers:
+            message["headers"] = list(headers)
+
+        super().send(message)
 
     def websocket_receive(self, message):
         """
@@ -79,14 +83,16 @@ class WebsocketConsumer(SyncConsumer):
         if close:
             self.close(close)
 
-    def close(self, code=None):
+    def close(self, code=None, reason=None):
         """
         Closes the WebSocket from the server end
         """
+        message = {"type": "websocket.close"}
         if code is not None and code is not True:
-            super().send({"type": "websocket.close", "code": code})
-        else:
-            super().send({"type": "websocket.close"})
+            message["code"] = code
+        if reason:
+            message["reason"] = reason
+        super().send(message)
 
     def websocket_disconnect(self, message):
         """
@@ -179,11 +185,14 @@ class AsyncWebsocketConsumer(AsyncConsumer):
     async def connect(self):
         await self.accept()
 
-    async def accept(self, subprotocol=None):
+    async def accept(self, subprotocol=None, headers=None):
         """
         Accepts an incoming socket
         """
-        await super().send({"type": "websocket.accept", "subprotocol": subprotocol})
+        message = {"type": "websocket.accept", "subprotocol": subprotocol}
+        if headers:
+            message["headers"] = list(headers)
+        await super().send(message)
 
     async def websocket_receive(self, message):
         """
@@ -214,14 +223,16 @@ class AsyncWebsocketConsumer(AsyncConsumer):
         if close:
             await self.close(close)
 
-    async def close(self, code=None):
+    async def close(self, code=None, reason=None):
         """
         Closes the WebSocket from the server end
         """
+        message = {"type": "websocket.close"}
         if code is not None and code is not True:
-            await super().send({"type": "websocket.close", "code": code})
-        else:
-            await super().send({"type": "websocket.close"})
+            message["code"] = code
+        if reason:
+            message["reason"] = reason
+        await super().send(message)
 
     async def websocket_disconnect(self, message):
         """
