@@ -29,7 +29,7 @@ def name_that_thing(thing):
     return repr(thing)
 
 
-async def await_many_dispatch(consumer_callables, dispatch):
+async def await_many_dispatch(consumer_callables, dispatch, cancel_callback=None):
     """
     Given a set of consumer callables, awaits on them all and passes results
     from them to the dispatch awaitable as they come in.
@@ -56,4 +56,5 @@ async def await_many_dispatch(consumer_callables, dispatch):
             try:
                 await task
             except asyncio.CancelledError:
-                pass
+                if cancel_callback:
+                    await cancel_callback()
