@@ -147,10 +147,13 @@ class BaseChannelLayer(ABC):
 
     MAX_NAME_LENGTH = 100
     extensions: Iterable[str] = ()
+    expiry: int
+    capacity: int
+    channel_capacity: Dict[str, int]
 
     def __init__(
         self,
-        expiry=60,
+        expiry: int = 60,
         capacity: Optional[int] = 100,
         channel_capacity: Optional[int] = None,
     ):
@@ -263,7 +266,12 @@ class BaseChannelLayer(ABC):
         """
 
 
-class InMemoryChannelLayer(WithFlushExtension, WithGroupsExtension, BaseChannelLayer):
+# WARNING: Protocols must be last
+class InMemoryChannelLayer(
+    BaseChannelLayer,
+    WithFlushExtension,
+    WithGroupsExtension,
+):
     """
     In-memory channel layer implementation
     """
