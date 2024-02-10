@@ -15,8 +15,16 @@ from django.utils.functional import LazyObject
 from channels.db import database_sync_to_async
 from channels.middleware import BaseMiddleware
 from channels.sessions import CookieMiddleware, SessionMiddleware
-
-
+from channels.middleware import BaseMiddleware
+from channels.db import database_sync_to_async
+from django.contrib.auth.models import AnonymousUser
+import re
+from django.conf import settings
+import jwt
+from datetime import datetime
+from django.contrib.auth import get_user_model
+from rest_framework.authtoken.models import Token
+User = get_user_model()
 @database_sync_to_async
 def get_user(scope):
     """
@@ -188,3 +196,53 @@ class AuthMiddleware(BaseMiddleware):
 # Handy shortcut for applying all three layers at once
 def AuthMiddlewareStack(inner):
     return CookieMiddleware(SessionMiddleware(AuthMiddleware(inner)))
+
+
+class AuthTokenMiddleware(BaseMiddleware):
+
+    async def __call__(self, scope, receive, send):
+        # Extract access token from headers
+        headers = dict(scope['headers'])
+        if b'authorization' in headers.keys(): 
+            authorization_header = headers[b'authorization']
+            if not authorization_header:
+                # No access token found
+                scope['user'] = AnonymousUser()
+            else:
+                authorization_header = authorization_header.decode('utf-8')
+                bearer = re.findall(r'^\s*Bearer\s+',authorization_header)
+                token = re.findall(r'^\s*Token\s+',authorization_header)
+                if bearer:
+                    bearer = bearer[0]
+                    access_token = authorization_header.split(bearer)[1]
+                    scope['user'] = await self.get_user_from_jwt(access_token=access_token)
+                elif token:
+                    token = token[0]
+                    token_key = authorization_header.split(token)[1]
+                    scope['user'] = await self.get_user_from_token(key=token_key)
+        else: scope['user'] = AnonymousUser()
+
+
+        return await super().__call__(scope, receive, send)
+
+    @database_sync_to_async
+    def get_user_from_jwt(self, access_token):
+        try:
+            # Decode JWT token and get user
+            decoded_token = jwt.decode(access_token, settings.SECRET_KEY, algorithms=['HS256'])
+            if 'exp' not in decoded_token or datetime.utcfromtimestamp(decoded_token['exp']) < datetime.now():
+                return AnonymousUser()
+            user_id = decoded_token["user_id"]
+            user = User.objects.get(id = user_id)
+            return user
+        except :
+            return AnonymousUser()
+
+    @database_sync_to_async
+    def get_user_from_token(self, key):
+        try:
+            # Decode token and get user
+            token = Token.objects.get(key=key)
+            return token.user
+        except :
+            return AnonymousUser()
