@@ -1,4 +1,4 @@
-from channels.consumer import AsyncConsumer
+from channels.consumer import AsyncConsumer, msg_handler
 
 from ..exceptions import StopConsumer
 
@@ -69,6 +69,7 @@ class AsyncHttpConsumer(AsyncConsumer):
         """
         pass
 
+    @msg_handler("http.request")
     async def http_request(self, message):
         """
         Async entrypoint - concatenates body fragments and hands off control
@@ -83,6 +84,7 @@ class AsyncHttpConsumer(AsyncConsumer):
                 await self.disconnect()
             raise StopConsumer()
 
+    @msg_handler("http.disconnect")
     async def http_disconnect(self, message):
         """
         Let the user do their cleanup and close the consumer.

@@ -355,6 +355,7 @@ async def test_async_json_websocket_consumer():
         await communicator.wait()
 
 
+@override_settings(CHANNELS_AUTO_HANDLER_BY_NAME=True)  # test not relevant when setting is disabled
 @pytest.mark.asyncio
 async def test_block_underscored_type_function_call():
     """
@@ -390,6 +391,7 @@ async def test_block_underscored_type_function_call():
             await communicator.receive_from()
 
 
+@override_settings(CHANNELS_AUTO_HANDLER_BY_NAME=True)  # test not relevant when setting is disabled
 @pytest.mark.asyncio
 async def test_block_leading_dot_type_function_call():
     """

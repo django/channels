@@ -2,7 +2,7 @@ import json
 
 from asgiref.sync import async_to_sync
 
-from ..consumer import AsyncConsumer, SyncConsumer
+from ..consumer import AsyncConsumer, SyncConsumer, msg_handler
 from ..exceptions import (
     AcceptConnection,
     DenyConnection,
@@ -23,6 +23,7 @@ class WebsocketConsumer(SyncConsumer):
         if self.groups is None:
             self.groups = []
 
+    @msg_handler("websocket.connect")
     def websocket_connect(self, message):
         """
         Called when a WebSocket connection is opened.
@@ -50,6 +51,7 @@ class WebsocketConsumer(SyncConsumer):
         """
         super().send({"type": "websocket.accept", "subprotocol": subprotocol})
 
+    @msg_handler("websocket.receive")
     def websocket_receive(self, message):
         """
         Called when a WebSocket frame is received. Decodes it and passes it
@@ -88,6 +90,7 @@ class WebsocketConsumer(SyncConsumer):
         else:
             super().send({"type": "websocket.close"})
 
+    @msg_handler("websocket.disconnect")
     def websocket_disconnect(self, message):
         """
         Called when a WebSocket connection is closed. Base level so you don't
@@ -158,6 +161,7 @@ class AsyncWebsocketConsumer(AsyncConsumer):
         if self.groups is None:
             self.groups = []
 
+    @msg_handler("websocket.connect")
     async def websocket_connect(self, message):
         """
         Called when a WebSocket connection is opened.
@@ -185,6 +189,7 @@ class AsyncWebsocketConsumer(AsyncConsumer):
         """
         await super().send({"type": "websocket.accept", "subprotocol": subprotocol})
 
+    @msg_handler("websocket.receive")
     async def websocket_receive(self, message):
         """
         Called when a WebSocket frame is received. Decodes it and passes it
@@ -223,6 +228,7 @@ class AsyncWebsocketConsumer(AsyncConsumer):
         else:
             await super().send({"type": "websocket.close"})
 
+    @msg_handler("websocket.disconnect")
     async def websocket_disconnect(self, message):
         """
         Called when a WebSocket connection is closed. Base level so you don't

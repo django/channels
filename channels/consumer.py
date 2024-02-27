@@ -1,6 +1,8 @@
 import functools
+from typing import Type, Dict, Set
 
 from asgiref.sync import async_to_sync
+from django.conf import settings
 
 from . import DEFAULT_CHANNEL_LAYER
 from .db import database_sync_to_async
@@ -24,7 +26,32 @@ def get_handler_name(message):
     return handler_name
 
 
-class AsyncConsumer:
+def msg_handler(msg_type: str):
+    class MsgHandler:
+        def __init__(self, func):
+            self.func = func
+
+        def __set_name__(self, owner: Type["AsyncConsumer"], name):
+            # set the value to the function's name instead of the function itself
+            # to allow for the function to be overridden in subclasses without losing the handler functionality
+            if msg_type in owner._channels_message_handlers:
+                owner._channels_message_handlers[msg_type].add(name)
+            else:
+                owner._channels_message_handlers[msg_type] = {name}
+
+            setattr(owner, name, self.func)
+    return MsgHandler
+
+
+class ConsumerMeta(type):
+    def __new__(mcs, name, bases, attrs):
+        cls = super().__new__(mcs, name, bases, attrs)
+        if not hasattr(cls, "_channels_message_handlers"):
+            cls._channels_message_handlers = {}
+        return cls
+
+
+class AsyncConsumer(metaclass=ConsumerMeta):
     """
     Base consumer class. Implements the ASGI application spec, and adds on
     channel layer management and routing of events to named methods based
@@ -33,6 +60,7 @@ class AsyncConsumer:
 
     _sync = False
     channel_layer_alias = DEFAULT_CHANNEL_LAYER
+    _channels_message_handlers: Dict[str, Set[str]]  # set by metaclass so every class has a new list of handlers
 
     async def __call__(self, scope, receive, send):
         """
@@ -64,15 +92,30 @@ class AsyncConsumer:
             # Exit cleanly
             pass
 
+    def _get_message_handlers(self, message):
+        handlers = self._channels_message_handlers.get(message["type"], [])
+        handlers = [getattr(self, handler) for handler in handlers]
+        if getattr(settings, "CHANNELS_AUTO_HANDLER_BY_NAME", False):
+            # this is only for compatibility with old code / should be removed in the future
+            # as this feature SHOULD be deprecated
+            handler = getattr(self, get_handler_name(message), None)
+            if handler and handler not in handlers:
+                # we check for a duplicate in case the setting CHANNELS_AUTO_HANDLER_BY_NAME is enabled in addition to
+                # the decorator
+                handlers.append(handler)
+
+        if len(handlers) < 1:
+            raise ValueError("No handler for message type %s" % message["type"])
+
+        return handlers
+
     async def dispatch(self, message):
         """
         Works out what to do with a message.
         """
-        handler = getattr(self, get_handler_name(message), None)
-        if handler:
+        handlers = self._get_message_handlers(message)
+        for handler in handlers:
             await handler(message)
-        else:
-            raise ValueError("No handler for message type %s" % message["type"])
 
     async def send(self, message):
         """
@@ -119,12 +162,9 @@ class SyncConsumer(AsyncConsumer):
         """
         Dispatches incoming messages to type-based handlers asynchronously.
         """
-        # Get and execute the handler
-        handler = getattr(self, get_handler_name(message), None)
-        if handler:
+        handlers = self._get_message_handlers(message)
+        for handler in handlers:
             handler(message)
-        else:
-            raise ValueError("No handler for message type %s" % message["type"])
 
     def send(self, message):
         """
