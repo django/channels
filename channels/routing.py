@@ -3,7 +3,7 @@ import importlib
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.urls.exceptions import Resolver404
-from django.urls.resolvers import URLResolver
+from django.urls.resolvers import RegexPattern, RoutePattern, URLResolver
 
 """
 All Routing instances inside this file are also valid ASGI applications - with
@@ -87,7 +87,14 @@ class URLRouter:
             # The inner ASGI app wants to do additional routing, route
             # must not be an endpoint
             if getattr(route.callback, "_path_routing", False) is True:
-                route.pattern._is_endpoint = False
+                pattern = route.pattern
+                if isinstance(pattern, RegexPattern):
+                    arg = pattern._regex
+                elif isinstance(pattern, RoutePattern):
+                    arg = pattern._route
+                else:
+                    raise ValueError(f"Unsupported pattern type: {type(pattern)}")
+                route.pattern = pattern.__class__(arg, pattern.name, is_endpoint=False)
 
             if not route.callback and isinstance(route, URLResolver):
                 raise ImproperlyConfigured(
