@@ -206,7 +206,7 @@ owner settings of the run directory.
     $ sudo chown <user>.<group> /run/daphne/
 
 The /run/ folder is cleared on a server reboot. To make the /run/daphne folder
-persistant create a file ``/usr/lib/tmpfiles.d/daphne.conf`` with the contents
+persistent create a file ``/usr/lib/tmpfiles.d/daphne.conf`` with the contents
 below.
 
 .. code-block:: text
