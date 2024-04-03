@@ -107,6 +107,15 @@ class URLRouter:
         path = scope.get("path_remaining", scope.get("path", None))
         if path is None:
             raise ValueError("No 'path' key in connection scope, cannot route URLs")
+
+        if "path_remaining" not in scope:
+            # We are the outermost URLRouter, so handle root_path if present.
+            root_path = scope.get("root_path", "")
+            if root_path and not path.startswith(root_path):
+                # If root_path is present, path must start with it.
+                raise ValueError("No route found for path %r." % path)
+            path = path[len(root_path) :]
+
         # Remove leading / to match Django's handling
         path = path.lstrip("/")
         # Run through the routes we have until one matches
