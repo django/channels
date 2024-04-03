@@ -123,10 +123,10 @@ class OriginValidator:
             # Return origin.port
             return origin.port
         # if origin.port doesn`t exists
-        if origin.scheme == "http" or origin.scheme == "ws":
+        if origin.scheme in {"http", "ws"}:
             # Default port return for http, ws
             return 80
-        elif origin.scheme == "https" or origin.scheme == "wss":
+        elif origin.scheme in {"https", "wss"}:
             # Default port return for https, wss
             return 443
         else:

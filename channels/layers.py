@@ -166,7 +166,7 @@ class BaseChannelLayer:
         raise TypeError(self.invalid_name_error.format("Group", name))
 
     def valid_channel_names(self, names, receive=False):
-        _non_empty_list = True if names else False
+        _non_empty_list = bool(names)
         _names_type = isinstance(names, list)
         assert _non_empty_list and _names_type, "names must be a non-empty list"
 

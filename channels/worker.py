@@ -21,9 +21,9 @@ class Worker(StatelessServer):
         Listens on all the provided channels and handles the messages.
         """
         # For each channel, launch its own listening coroutine
-        listeners = []
-        for channel in self.channels:
-            listeners.append(asyncio.ensure_future(self.listener(channel)))
+        listeners = [
+            asyncio.ensure_future(self.listener(channel)) for channel in self.channels
+        ]
         # Wait for them all to exit
         await asyncio.wait(listeners)
         # See if any of the listeners had an error (e.g. channel layer error)
