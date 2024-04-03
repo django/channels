@@ -1,6 +1,19 @@
 Full release notes, with more details and upgrade information, are available at:
 https://channels.readthedocs.io/en/latest/releases
 
+4.1.0 (2024-04-03)
+------------------
+
+Channels 4.1 is maintenance release in the 4.x series.
+
+The main change is an update in the required Python and Django version.
+Python 3.8, and Django 4.2 are now the minimum required versions.
+
+There are a number of other small bugfixes. Please ensure to review the
+`Version 4.1.0 release notes
+<https://channels.readthedocs.io/en/latest/releases/4.1.0.html>`_ for full
+details.
+
 4.0.0 (2022-10-15)
 ------------------
 

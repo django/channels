@@ -1,0 +1,34 @@
+4.1.0 Release Notes
+===================
+
+Channels 4.1 is maintenance release in the 4.x series.
+
+
+Python and Django support
+-------------------------
+
+* A Python version of 3.8 or higher is required.
+
+* Django 4.2 is now the minimum supported version.
+
+
+Bugfixes & Small Changes
+------------------------
+
+* Exceptions in ``HttpConsumer`` are now correctly propagated.
+
+  Thanks to Adam Johnson.
+
+* URLRouter is updated for compatibility with in-development changes in Django.
+
+  Thanks to Adam Johnson.
+
+* URLRouter is updated to correctly handle ``root_path``.
+
+  Thanks to Alejandro R. Sedeño.
+
+* Websocket consumers are updated for newer ASGI spec versions, adding the
+  ``headers`` parameter for the ``accept`` event, and ``reason`` for the
+  ``close`` event.
+
+  Thanks to Kristján Valur Jónsson.
