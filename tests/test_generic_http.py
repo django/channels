@@ -8,6 +8,7 @@ from channels.generic.http import AsyncHttpConsumer
 from channels.testing import HttpCommunicator
 
 
+@pytest.mark.django_db(transaction=True)
 @pytest.mark.asyncio
 async def test_async_http_consumer():
     """
@@ -38,6 +39,7 @@ async def test_async_http_consumer():
     assert response["headers"] == [(b"Content-Type", b"application/json")]
 
 
+@pytest.mark.django_db(transaction=True)
 @pytest.mark.asyncio
 async def test_error():
     class TestConsumer(AsyncHttpConsumer):
@@ -51,6 +53,7 @@ async def test_error():
     assert str(excinfo.value) == "Error correctly raised"
 
 
+@pytest.mark.django_db(transaction=True)
 @pytest.mark.asyncio
 async def test_per_scope_consumers():
     """
@@ -87,6 +90,7 @@ async def test_per_scope_consumers():
     assert response["body"] != second_response["body"]
 
 
+@pytest.mark.django_db(transaction=True)
 @pytest.mark.asyncio
 async def test_async_http_consumer_future():
     """
