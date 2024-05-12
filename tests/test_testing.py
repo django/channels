@@ -104,9 +104,10 @@ async def test_websocket_communicator():
 @pytest.mark.asyncio
 async def test_websocket_incorrect_read_json():
     """
-    When using an invalid communicator method, as assertion error will be raised with informative message.
-    In this test, server accepts and then immediately closes the connection so the server is not in valid state
-    to handle "receive_from".
+    When using an invalid communicator method, an assertion error will be raised with
+    informative message.
+    In this test, the server accepts and then immediately closes the connection so
+    the server is not in a valid state to handle "receive_from".
     """
     communicator = WebsocketCommunicator(AcceptCloseWebsocketApp(), "/testws/")
     await communicator.connect()
