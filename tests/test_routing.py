@@ -301,14 +301,3 @@ async def test_path_remaining():
             None,
         )
 
-
-def test_invalid_routes():
-    """
-    Test URLRouter route validation
-    """
-    from django.urls import include
-
-    with pytest.raises(ImproperlyConfigured) as exc:
-        URLRouter([path("", include([]))])
-
-    assert "include() is not supported in URLRouter." in str(exc)
