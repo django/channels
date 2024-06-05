@@ -12,7 +12,9 @@ class WebsocketCommunicator(ApplicationCommunicator):
     (uninstantiated) along with the initial connection parameters.
     """
 
-    def __init__(self, application, path, headers=None, subprotocols=None):
+    def __init__(
+        self, application, path, headers=None, subprotocols=None, spec_version=None
+    ):
         if not isinstance(path, str):
             raise TypeError("Expected str, got {}".format(type(path)))
         parsed = urlparse(path)
@@ -23,7 +25,10 @@ class WebsocketCommunicator(ApplicationCommunicator):
             "headers": headers or [],
             "subprotocols": subprotocols or [],
         }
+        if spec_version:
+            self.scope["spec_version"] = spec_version
         super().__init__(application, self.scope)
+        self.response_headers = None
 
     async def connect(self, timeout=1):
         """
@@ -37,6 +42,8 @@ class WebsocketCommunicator(ApplicationCommunicator):
         if response["type"] == "websocket.close":
             return (False, response.get("code", 1000))
         else:
+            assert response["type"] == "websocket.accept"
+            self.response_headers = response.get("headers", [])
             return (True, response.get("subprotocol", None))
 
     async def send_to(self, text_data=None, bytes_data=None):
@@ -71,19 +78,23 @@ class WebsocketCommunicator(ApplicationCommunicator):
         """
         response = await self.receive_output(timeout)
         # Make sure this is a send message
-        assert response["type"] == "websocket.send"
+        assert (
+            response["type"] == "websocket.send"
+        ), f"Expected type 'websocket.send', but was '{response['type']}'"
         # Make sure there's exactly one key in the response
         assert ("text" in response) != (
             "bytes" in response
         ), "The response needs exactly one of 'text' or 'bytes'"
         # Pull out the right key and typecheck it for our users
         if "text" in response:
-            assert isinstance(response["text"], str), "Text frame payload is not str"
+            assert isinstance(
+                response["text"], str
+            ), f"Text frame payload is not str, it is {type(response['text'])}"
             return response["text"]
         else:
             assert isinstance(
                 response["bytes"], bytes
-            ), "Binary frame payload is not bytes"
+            ), f"Binary frame payload is not bytes, it is {type(response['bytes'])}"
             return response["bytes"]
 
     async def receive_json_from(self, timeout=1):
@@ -91,7 +102,9 @@ class WebsocketCommunicator(ApplicationCommunicator):
         Receives a JSON text frame payload and decodes it
         """
         payload = await self.receive_from(timeout)
-        assert isinstance(payload, str), "JSON data is not a text frame"
+        assert isinstance(
+            payload, str
+        ), f"JSON data is not a text frame, it is {type(payload)}"
         return json.loads(payload)
 
     async def disconnect(self, code=1000, timeout=1):

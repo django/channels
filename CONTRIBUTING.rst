@@ -25,14 +25,21 @@ Make sure the tests pass:
 
 .. code-block:: sh
 
-    python -m pip install -e .[tests]
+    python -m pip install -e .[tests,daphne]
     pytest
+
+.. note::
+   If you're using ``zsh`` for your shell, the above command will fail with a
+   ``zsh: no matches found: .[tests]`` error.
+   To fix this use ``noglob``::
+
+       noglob python -m pip install -e .[tests]
 
 Make your change. Add tests for your change. Make the tests pass:
 
 .. code-block:: sh
 
-    pytest
+    tox
 
 Make sure your code conforms to the coding style:
 

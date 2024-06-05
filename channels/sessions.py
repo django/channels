@@ -10,13 +10,9 @@ from django.http.cookie import SimpleCookie
 from django.utils import timezone
 from django.utils.encoding import force_str
 from django.utils.functional import LazyObject
+from django.utils.http import http_date
 
 from channels.db import database_sync_to_async
-
-try:
-    from django.utils.http import http_date
-except ImportError:
-    from django.utils.http import cookie_date as http_date
 
 
 class CookieMiddleware:
