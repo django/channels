@@ -1,9 +1,10 @@
 import importlib
+import re
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.urls.exceptions import Resolver404
-from django.urls.resolvers import RegexPattern, RoutePattern, URLResolver
+from django.urls.resolvers import RegexPattern, RoutePattern, URLResolver, URLPattern
 
 """
 All Routing instances inside this file are also valid ASGI applications - with
@@ -81,7 +82,7 @@ class URLRouter:
     _path_routing = True
 
     def __init__(self, routes):
-	new_routes = []
+        new_routes = []
         for route in routes:
             if not route.callback and isinstance(route, URLResolver):
                 for url_pattern in route.url_patterns:
