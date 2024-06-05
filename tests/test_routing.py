@@ -301,3 +301,70 @@ async def test_path_remaining():
             None,
         )
 
+
+@pytest.mark.asyncio
+async def test_url_router_nesting_by_include():
+    """
+    Tests that nested URLRouters is constructed by include function.
+    """
+    import sys
+    from django.urls import include
+    from django.urls.resolvers import URLResolver
+    
+    test_app = MockApplication(return_value=1)
+    
+    # mocking the universe module following the directory structure;
+    # ├── universe
+    # │   └── routings.py
+    # └── routings.py (parent)
+    #
+    #
+    # in routings.py
+    # ======================
+    # ...
+    # urlpatterns = [
+    #     re_path(r"book/(?P<book>[\w\-]+)/page/(?P<page>\d+)/$", test_app),
+    #     re_path(r"test/(\d+)/$", test_app),
+    # ]
+    # ======================
+    module_routings = type(sys)('routings')
+    module_routings.urlpatterns = [
+        re_path(r"book/(?P<book>[\w\-]+)/page/(?P<page>\d+)/$", test_app),
+        re_path(r"test/(\d+)/$", test_app),
+    ]
+    module = type(sys)('universe')
+    module.routings = module_routings
+    sys.modules['universe'] = module
+    sys.modules['universe.routings'] = module.routings
+    
+    # parent routings.py
+    outer_router = URLRouter(
+        [
+            path(
+                "universe/", include('universe.routings'), name='universe'
+            ),
+        ]
+    )
+    assert (
+        await outer_router(
+            {
+                "type": "http",
+                "path": "/universe/book/channels-guide/page/10/",
+            },
+            None,
+            None,
+        )
+        == 1
+    )
+    
+    assert (
+        await outer_router(
+            {
+                "type": "http",
+                "path": "/universe/test/10/",
+            },
+            None,
+            None,
+        )
+        == 1
+    )
