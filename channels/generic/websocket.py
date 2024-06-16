@@ -3,6 +3,7 @@ import json
 from asgiref.sync import async_to_sync
 
 from ..consumer import AsyncConsumer, SyncConsumer
+from ..db import aclose_old_connections
 from ..exceptions import (
     AcceptConnection,
     DenyConnection,
@@ -247,6 +248,7 @@ class AsyncWebsocketConsumer(AsyncConsumer):
                 "BACKEND is unconfigured or doesn't support groups"
             )
         await self.disconnect(message["code"])
+        await aclose_old_connections()
         raise StopConsumer()
 
     async def disconnect(self, code):

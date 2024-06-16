@@ -112,7 +112,8 @@ callable into an asynchronous coroutine.
 
     If you want to call the Django ORM from an ``AsyncConsumer`` (or any other
     asynchronous code), you should use the ``database_sync_to_async`` adapter
-    instead. See :doc:`/topics/databases` for more.
+    or use the async versions of the methods (prefixed with ``a``, like ``aget``).
+    See :doc:`/topics/databases` for more.
 
 
 Closing Consumers

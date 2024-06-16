@@ -23,6 +23,7 @@ class SimpleHttpApp(AsyncConsumer):
         await self.send({"type": "http.response.body", "body": b"test response"})
 
 
+@pytest.mark.django_db(transaction=True)
 @pytest.mark.asyncio
 async def test_http_communicator():
     """

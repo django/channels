@@ -154,6 +154,7 @@ async def test_websocket_consumer_groups():
         assert channel_layer.groups == {}
 
 
+@pytest.mark.django_db(transaction=True)
 @pytest.mark.asyncio
 async def test_async_websocket_consumer():
     """
@@ -195,6 +196,7 @@ async def test_async_websocket_consumer():
     assert "disconnected" in results
 
 
+@pytest.mark.django_db(transaction=True)
 @pytest.mark.asyncio
 async def test_async_websocket_consumer_subprotocol():
     """
@@ -217,6 +219,7 @@ async def test_async_websocket_consumer_subprotocol():
     assert subprotocol == "subprotocol2"
 
 
+@pytest.mark.django_db(transaction=True)
 @pytest.mark.asyncio
 async def test_async_websocket_consumer_groups():
     """
@@ -253,6 +256,7 @@ async def test_async_websocket_consumer_groups():
         assert channel_layer.groups == {}
 
 
+@pytest.mark.django_db(transaction=True)
 @pytest.mark.asyncio
 async def test_async_websocket_consumer_specific_channel_layer():
     """
@@ -323,6 +327,7 @@ async def test_json_websocket_consumer():
         await communicator.wait()
 
 
+@pytest.mark.django_db(transaction=True)
 @pytest.mark.asyncio
 async def test_async_json_websocket_consumer():
     """
@@ -355,6 +360,7 @@ async def test_async_json_websocket_consumer():
         await communicator.wait()
 
 
+@pytest.mark.django_db(transaction=True)
 @pytest.mark.asyncio
 async def test_block_underscored_type_function_call():
     """
@@ -390,6 +396,7 @@ async def test_block_underscored_type_function_call():
             await communicator.receive_from()
 
 
+@pytest.mark.django_db(transaction=True)
 @pytest.mark.asyncio
 async def test_block_leading_dot_type_function_call():
     """
