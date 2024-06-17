@@ -2,6 +2,7 @@ import datetime
 import time
 from importlib import import_module
 
+import django
 from django.conf import settings
 from django.contrib.sessions.backends.base import UpdateError
 from django.core.exceptions import SuspiciousOperation
@@ -163,9 +164,7 @@ class InstanceSessionWrapper:
 
     async def resolve_session(self):
         session_key = self.scope["cookies"].get(self.cookie_name)
-        self.scope["session"]._wrapped = await database_sync_to_async(
-            self.session_store
-        )(session_key)
+        self.scope["session"]._wrapped = self.session_store(session_key)
 
     async def send(self, message):
         """
@@ -183,7 +182,7 @@ class InstanceSessionWrapper:
                 and message.get("status", 200) != 500
                 and (modified or settings.SESSION_SAVE_EVERY_REQUEST)
             ):
-                await database_sync_to_async(self.save_session)()
+                await self.save_session()
                 # If this is a message type that can transport cookies back to the
                 # client, then do so.
                 if message["type"] in self.cookie_response_message_types:
@@ -221,12 +220,15 @@ class InstanceSessionWrapper:
         # Pass up the send
         return await self.real_send(message)
 
-    def save_session(self):
+    async def save_session(self):
         """
         Saves the current session.
         """
         try:
-            self.scope["session"].save()
+            if django.VERSION >= (5, 1):
+                await self.scope["session"].asave()
+            else:
+                await database_sync_to_async(self.scope["session"].save)()
         except UpdateError:
             raise SuspiciousOperation(
                 "The request's session was deleted before the "
