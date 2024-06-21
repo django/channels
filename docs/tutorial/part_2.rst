@@ -238,7 +238,7 @@ Put the following code in ``chat/routing.py``:
     from . import consumers
 
     websocket_urlpatterns = [
-        path(r"ws/chat/<str:room_name>/", consumers.ChatConsumer.as_asgi()),
+        path("ws/chat/<str:room_name>/", consumers.ChatConsumer.as_asgi()),
     ]
 
 We call the ``as_asgi()`` classmethod in order to get an ASGI application that
