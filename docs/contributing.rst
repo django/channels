@@ -80,6 +80,8 @@ Note the ``[tests]`` section there; that tells ``pip`` that you want to install
 the ``tests`` extra, which will bring in testing dependencies like
 ``pytest-django``.
 
+For those using zsh, you might encounter encounter the error ``zsh: no matches found: .[tests]``. In this case, try wrapping quotations around the ``[tests]`` section like so ``'.[tests]'``.
+
 Then, you can run the tests:
 
 .. code-block:: sh
