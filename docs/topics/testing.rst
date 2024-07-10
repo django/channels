@@ -73,8 +73,8 @@ you might need to fall back to it if you are testing things like HTTP chunked
 responses or long-polling, which aren't supported in ``HttpCommunicator`` yet.
 
 .. note::
-    ``ApplicationCommunicator`` is actually provided by the base ``asgiref``
-    package, but we let you import it from ``channels.testing`` for convenience.
+    ``ApplicationCommunicator`` extends the class provided by the base ``asgiref``
+    package. Channels adds support for running unit tests with async consumers.
 
 To construct it, pass it an application and a scope:
 

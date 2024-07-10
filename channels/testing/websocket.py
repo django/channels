@@ -1,7 +1,7 @@
 import json
 from urllib.parse import unquote, urlparse
 
-from asgiref.testing import ApplicationCommunicator
+from channels.testing.application import ApplicationCommunicator
 
 
 class WebsocketCommunicator(ApplicationCommunicator):
