@@ -1,5 +1,4 @@
 import pytest
-from django.core.exceptions import ImproperlyConfigured
 from django.urls import path, re_path
 
 from channels.routing import ChannelNameRouter, ProtocolTypeRouter, URLRouter
@@ -309,10 +308,9 @@ async def test_url_router_nesting_by_include():
     """
     import sys
     from django.urls import include
-    from django.urls.resolvers import URLResolver
-    
+
     test_app = MockApplication(return_value=1)
-    
+
     # mocking the universe module following the directory structure;
     # ├── universe
     # │   └── routings.py
@@ -327,22 +325,20 @@ async def test_url_router_nesting_by_include():
     #     re_path(r"test/(\d+)/$", test_app),
     # ]
     # ======================
-    module_routings = type(sys)('routings')
+    module_routings = type(sys)("routings")
     module_routings.urlpatterns = [
         re_path(r"book/(?P<book>[\w\-]+)/page/(?P<page>\d+)/$", test_app),
         re_path(r"test/(\d+)/$", test_app),
     ]
-    module = type(sys)('universe')
+    module = type(sys)("universe")
     module.routings = module_routings
-    sys.modules['universe'] = module
-    sys.modules['universe.routings'] = module.routings
-    
+    sys.modules["universe"] = module
+    sys.modules["universe.routings"] = module.routings
+
     # parent routings.py
     outer_router = URLRouter(
         [
-            path(
-                "universe/", include('universe.routings'), name='universe'
-            ),
+            path("universe/", include("universe.routings"), name="universe"),
         ]
     )
     assert (
@@ -356,7 +352,7 @@ async def test_url_router_nesting_by_include():
         )
         == 1
     )
-    
+
     assert (
         await outer_router(
             {
