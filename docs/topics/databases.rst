@@ -11,7 +11,8 @@ code is already run in a synchronous mode and Channels will do the cleanup
 for you as part of the ``SyncConsumer`` code.
 
 If you are writing asynchronous code, however, you will need to call
-database methods in a safe, synchronous context, using ``database_sync_to_async``.
+database methods in a safe, synchronous context, using ``database_sync_to_async``
+or by using the asynchronous methods prefixed with ``a`` like ``Model.objects.aget()``.
 
 
 Database Connections
@@ -25,6 +26,11 @@ By default, the number of threads is set to "the number of CPUs * 5" for
 Python 3.7 and below, and `min(32, os.cpu_count() + 4)` for Python 3.8+. 
 
 To avoid having too many threads idling in connections, you can instead rewrite your code to use async consumers and only dip into threads when you need to use Django's ORM (using ``database_sync_to_async``).
+
+When using async consumers Channels will automatically call Django's ``close_old_connections`` method when a new connection is started, when a connection is closed, and whenever anything is received from the client.
+This mirrors Django's logic for closing old connections at the start and end of a request, to the extent possible. Connections are *not* automatically closed when sending data from a consumer since Channels has no way
+to determine if this is a one-off send (and connections could be closed) or a series of sends (in which closing connections would kill performance). Instead, if you have a long-lived async consumer you should
+periodically call ``aclose_old_connections`` (see below).
 
 
 database_sync_to_async
@@ -58,3 +64,18 @@ You can also use it as a decorator:
     @database_sync_to_async
     def get_name(self):
         return User.objects.all()[0].name
+
+aclose_old_connections
+----------------------
+
+``django.db.aclose_old_connections`` is an async wrapper around Django's
+``close_old_connections``. When using a long-lived ``AsyncConsumer`` that
+calls the Django ORM it is important to call this function periodically.
+
+Preferrably, this function should be called before making the first query
+in a while. For example, it should be called if the Consumer is woken up
+by a channels layer event and needs to make a few ORM queries to determine
+what to send to the client. This function should be called *before* making
+those queries. Calling this function more than necessary is not necessarily
+a bad thing, but it does require a context switch to synchronous code and
+so incurs a small penalty.

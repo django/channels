@@ -15,16 +15,20 @@ asynchronous consumers can provide a higher level of performance since they
 don't need to create additional threads when handling requests.
 
 ``ChatConsumer`` only uses async-native libraries (Channels and the channel layer)
-and in particular it does not access synchronous Django models. Therefore it can
+and in particular it does not access synchronous code. Therefore it can
 be rewritten to be asynchronous without complications.
 
 .. note::
-    Even if ``ChatConsumer`` *did* access Django models or other synchronous code it
+    Even if ``ChatConsumer`` *did* access Django models or synchronous code it
     would still be possible to rewrite it as asynchronous. Utilities like
     :ref:`asgiref.sync.sync_to_async <sync_to_async>` and
     :doc:`channels.db.database_sync_to_async </topics/databases>` can be
     used to call synchronous code from an asynchronous consumer. The performance
-    gains however would be less than if it only used async-native libraries.
+    gains however would be less than if it only used async-native libraries. Django
+    models include methods prefixed with ``a`` that can be used safely from async
+    contexts, provided that
+    :doc:`channels.db.aclose_old_connections </topics/databases>` is called
+    occasionally.
 
 Let's rewrite ``ChatConsumer`` to be asynchronous.
 Put the following code in ``chat/consumers.py``:
