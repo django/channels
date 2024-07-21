@@ -1,0 +1,80 @@
+4.2.0 Release Notes
+===================
+
+Channels 4.2 introduces a couple of major but backwards-compatible
+changes, including most notably enhanced async suppport and fixing
+a long-standing bug where tests would try and close db connections
+and erroneously fail.
+
+Additionally, support has been added for Django 5.1.
+
+Enhanced Async Support
+----------------------
+
+Support for asynchronous consumers has been greatly improved.
+The documentation has been updated to reflect the async ORM
+features added in Django 4.2. A new `channels.db.aclose_old_connections`
+function has been added to easily close old database connections
+in async consumers.
+
+Warning: Channels now automatically closes connections in async
+consumers before a new connection, after recieving message (but
+before dispatching to consumer code), and after disconnecting.
+
+This change has been made to more closely align with Django's
+request/response cycle, and to help users avoid attempting
+to use stale/broken connections.
+
+Notably, Channels does NOT close connections before or after
+a consumer **sends** data. This is to avoid database churn and
+more closely align with user expectations. Instead, users are
+expected to call `aclose_old_connections` occasionally during
+long-lived async connections.
+
+Additionally, channels will automatically use the new async
+interface for sessions if Django 5.1 or greater is installed.
+This new interface can be slightly faster in certain cases
+as it does not always need to context-switch into synchronous
+execution. This does require a backwards-incompatible change to
+`channels.sessions.InstanceSessionWrapper`: the `save_session`
+function is now `async`. If `InstanceSessionWrapper` was being
+subclassed in some way (note that this class is an implementation
+detail and not documented) and `save_session` was being called
+or overridden, it will need to be updated to be called with `await`
+or defined as `async`, respectively.
+
+
+Bugfixes & Small Changes
+------------------------
+
+* InMemoryChannelLayer has been greatly improved: it now honors
+  expiry times and per-channel capacities, has parallel sending
+  and a safer internal implementation. Note: queue capacities
+  can no longer be changed after a channel has been created.
+
+  Thanks to @devkral (Alexander)
+
+* Database connections are no longer closed inside tests, which
+  prevents erroneous "Cannot operate on a closed database" errors
+  when running tets.
+
+  Thanks to Jon Janzen.
+
+* An old import override and an unused deprecation message were removed
+
+  Thanks to @sevdog (Devid) and Jon Janzen.
+
+* WebsocketCommunicator now has informative `assert` error messages
+
+  Thanks to Karel Hovorka.
+
+* WebsocketConsumer now checks that "text" is not None before attempting
+  to use it. This improves support for Hypercorn.
+
+  Thanks to Joaquín Ossandon.
+
+* BaseChannelLayer now has prototypes on all its methods to improve
+  the hit-rate for smart autocompleters when users need to author
+  their own channel layer and need to implement all required methods.
+
+  Thanks to Jophy Ye.
