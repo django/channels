@@ -26,7 +26,34 @@ async def test_send_receive(channel_layer):
     await channel_layer.send(
         "test-channel-1", {"type": "test.message", "text": "Ahoy-hoy!"}
     )
+    await channel_layer.send(
+        "test-channel-1", {"type": "test.message", "text": "Ahoy-hoy!"}
+    )
     message = await channel_layer.receive("test-channel-1")
+    assert message["type"] == "test.message"
+    assert message["text"] == "Ahoy-hoy!"
+    # not removed because not empty
+    assert "test-channel-1" in channel_layer.channels
+    message = await channel_layer.receive("test-channel-1")
+    assert message["type"] == "test.message"
+    assert message["text"] == "Ahoy-hoy!"
+    # removed because empty
+    assert "test-channel-1" not in channel_layer.channels
+
+
+@pytest.mark.asyncio
+async def test_race_empty(channel_layer):
+    """
+    Makes sure the race is handled gracefully.
+    """
+    receive_task = asyncio.ensure_future(channel_layer.receive("test-channel-1"))
+    await asyncio.sleep(0.1)
+    await channel_layer.send(
+        "test-channel-1", {"type": "test.message", "text": "Ahoy-hoy!"}
+    )
+    del channel_layer.channels["test-channel-1"]
+    await asyncio.sleep(0.1)
+    message = await receive_task
     assert message["type"] == "test.message"
     assert message["text"] == "Ahoy-hoy!"
 
