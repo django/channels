@@ -198,13 +198,13 @@ class InMemoryChannelLayer(BaseChannelLayer):
         group_expiry=86400,
         capacity=100,
         channel_capacity=None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
             expiry=expiry,
             capacity=capacity,
             channel_capacity=channel_capacity,
-            **kwargs
+            **kwargs,
         )
         self.channels = {}
         self.groups = {}
@@ -287,7 +287,6 @@ class InMemoryChannelLayer(BaseChannelLayer):
         # Group Expiration
         timeout = int(time.time()) - self.group_expiry
         for channels in self.groups.values():
-
             for name, timestamp in list(channels.items()):
                 # If join time is older than group_expiry
                 # end the group membership
@@ -349,7 +348,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
         ops = []
         if group in self.groups:
             for channel in self.groups[group].keys():
-                ops.append(asyncio.ensure_future(self.send(channel, message)))
+                ops.append(asyncio.create_task(self.send(channel, message)))
         for send_result in asyncio.as_completed(ops):
             try:
                 await send_result

@@ -46,7 +46,7 @@ async def test_race_empty(channel_layer):
     """
     Makes sure the race is handled gracefully.
     """
-    receive_task = asyncio.ensure_future(channel_layer.receive("test-channel-1"))
+    receive_task = asyncio.create_task(channel_layer.receive("test-channel-1"))
     await asyncio.sleep(0.1)
     await channel_layer.send(
         "test-channel-1", {"type": "test.message", "text": "Ahoy-hoy!"}
