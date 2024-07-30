@@ -13,6 +13,18 @@ from channels.layers import (
 )
 
 
+# when starting with Test it would be tried to collect by pytest
+class StubChannelLayer(BaseChannelLayer):
+    async def send(self, channel: str, message: dict):
+        raise NotImplementedError()
+
+    async def receive(self, channel: str) -> dict:
+        raise NotImplementedError()
+
+    async def new_channel(self, prefix: str = "specific.") -> str:
+        raise NotImplementedError()
+
+
 class TestChannelLayerManager(unittest.TestCase):
     @override_settings(
         CHANNEL_LAYERS={"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
@@ -72,7 +84,7 @@ async def test_send_receive():
 
 @pytest.mark.parametrize(
     "method",
-    [BaseChannelLayer().valid_channel_name, BaseChannelLayer().valid_group_name],
+    [StubChannelLayer().valid_channel_name, StubChannelLayer().valid_group_name],
 )
 @pytest.mark.parametrize(
     "channel_name,expected_valid",
