@@ -329,7 +329,7 @@ async def test_url_router_nesting_by_include(root_urlconf):
     module_routings.urlpatterns = [
         re_path(r"book/(?P<book>[\w\-]+)/page/(?P<page>\d+)/$", test_app),
         re_path(r"test/(\d+)/$", test_app),
-        path('/home/', test_app)
+        path("/home/", test_app),
     ]
     module = type(sys)("universe")
     module.routings = module_routings
@@ -365,7 +365,7 @@ async def test_url_router_nesting_by_include(root_urlconf):
         )
         == 1
     )
-    
+
     assert (
         await outer_router(
             {

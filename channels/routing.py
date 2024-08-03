@@ -82,7 +82,7 @@ class URLRouter:
                     regex = re.sub(r"(?<!^)\^", "", regex)
                     # Remove the sequential '/'
                     regex = re.sub(r"(/)\1+", r"\1", regex)
-                    
+
                     name = (
                         f"{route.app_name}:{url_pattern.name}"
                         if url_pattern.name
@@ -91,7 +91,10 @@ class URLRouter:
                     pattern = RegexPattern(regex, name=name, is_endpoint=True)
                     new_routes.append(
                         URLPattern(
-                            pattern, url_pattern.callback, url_pattern.default_args, name
+                            pattern,
+                            url_pattern.callback,
+                            url_pattern.default_args,
+                            name,
                         )
                     )
                     print(new_routes[-1])
