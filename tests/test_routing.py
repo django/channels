@@ -301,6 +301,85 @@ async def test_path_remaining():
         )
 
 
+# @pytest.mark.asyncio
+# async def test_url_router_nesting_by_include(root_urlconf):
+#     """
+#     Tests that nested URLRouters is constructed by include function.
+#     """
+#     import sys
+#     from django.urls import include
+
+#     test_app = MockApplication(return_value=1)
+
+#     # mocking the universe module following the directory structure;
+#     # ├── universe
+#     # │   └── routings.py
+#     # └── routings.py (parent)
+#     #
+#     #
+#     # in routings.py
+#     # ======================
+#     # ...
+#     # urlpatterns = [
+#     #     re_path(r"book/(?P<book>[\w\-]+)/page/(?P<page>\d+)/$", test_app),
+#     #     re_path(r"test/(\d+)/$", test_app),
+#     # ]
+#     # ======================
+#     module_routings = type(sys)("routings")
+#     module_routings.urlpatterns = [
+#         re_path(r"book/(?P<book>[\w\-]+)/page/(?P<page>\d+)/$", test_app),
+#         re_path(r"test/(\d+)/$", test_app),
+#         path("home/", test_app, name='home'),
+#     ]
+#     module = type(sys)("universe")
+#     module.routings = module_routings
+#     sys.modules["src"] = type(sys)("routings")
+#     sys.modules["src.universe"] = module
+#     sys.modules["src.universe.routings"] = module.routings
+
+#     # parent routings.py
+#     outer_router = URLRouter(
+#         [
+#             path("universe/", include("src.universe.routings"), name="universe"),
+#         ]
+#     )
+#     assert (
+#         await outer_router(
+#             {
+#                 "type": "http",
+#                 "path": "/universe/book/channels-guide/page/10/",
+#             },
+#             None,
+#             None,
+#         )
+#         == 1
+#     )
+
+#     assert (
+#         await outer_router(
+#             {
+#                 "type": "http",
+#                 "path": "/universe/test/10/",
+#             },
+#             None,
+#             None,
+#         )
+#         == 1
+#     )
+
+#     assert (
+#         await outer_router(
+#             {
+#                 "type": "http",
+#                 "path": reverse('universe:home'),
+#             },
+#             None,
+#             None,
+#         )
+#         == 1
+#     )
+
+
 @pytest.mark.asyncio
 async def test_url_router_nesting_by_include(root_urlconf):
     """
@@ -341,8 +420,33 @@ async def test_url_router_nesting_by_include(root_urlconf):
     outer_router = URLRouter(
         [
             path("universe/", include("universe.routings"), name="universe"),
+            path("moon/", test_app, name="moon"),
+            re_path(r"mars/(\d+)/$", test_app, name="mars"),
         ]
     )
+    assert (
+        await outer_router(
+            {
+                "type": "http",
+                "path": "/moon/",
+            },
+            None,
+            None,
+        )
+        == 1
+    )
+    assert (
+        await outer_router(
+            {
+                "type": "http",
+                "path": "/mars/5/",
+            },
+            None,
+            None,
+        )
+        == 1
+    )
+
     assert (
         await outer_router(
             {
@@ -421,7 +525,31 @@ async def test_url_router_deep_nesting_by_include(root_urlconf):
     outer_router = URLRouter(
         [
             path("universe/", include("universe.routings"), name="universe"),
+            path("moon/", test_app, name="moon"),
+            re_path(r"mars/(\d+)/$", test_app, name="mars"),
         ]
+    )
+    assert (
+        await outer_router(
+            {
+                "type": "http",
+                "path": "/moon/",
+            },
+            None,
+            None,
+        )
+        == 1
+    )
+    assert (
+        await outer_router(
+            {
+                "type": "http",
+                "path": "/mars/5/",
+            },
+            None,
+            None,
+        )
+        == 1
     )
     assert (
         await outer_router(

@@ -94,7 +94,6 @@ def _parse_resolver(child_url_pattern, parent_resolver, parent_regex, routes):
                 child_url_pattern.pattern.regex,
             ]
         )
-        print([parent_resolver.pattern.regex, child_url_pattern.pattern.regex])
 
         # Remove the redundant caret ^ which is appended by `path` function
         regex = re.sub(r"(?<!^)\^", "", regex)
