@@ -72,7 +72,6 @@ class URLRouter:
         for route in routes:
             if not route.callback and isinstance(route, URLResolver):
                 for url_pattern in route.url_patterns:
-                    url_pattern: URLPattern
                     # concatenate parent's url and child's url
                     regex = "".join(
                         x.pattern
