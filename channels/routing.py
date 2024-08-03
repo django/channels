@@ -77,6 +77,7 @@ class URLRouter:
                         x.pattern
                         for x in [route.pattern.regex, url_pattern.pattern.regex]
                     )
+                    # Remove the sequential '/'
                     regex = re.sub(r"(/)\1+", r"\1", regex)
                     name = (
                         f"{route.app_name}:{url_pattern.name}"
