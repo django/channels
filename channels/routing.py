@@ -71,14 +71,18 @@ class URLRouter:
         new_routes = []
         for route in routes:
             if not route.callback and isinstance(route, URLResolver):
+                # parse the urls resolved by django's `include` function
                 for url_pattern in route.url_patterns:
-                    # concatenate parent's url and child's url
+                    # concatenate parent's url (route) and child's url (url_pattern)
                     regex = "".join(
                         x.pattern
                         for x in [route.pattern.regex, url_pattern.pattern.regex]
                     )
+                    # Remove the redundant caret ^ which is appended by `path` function
+                    regex = re.sub(r"(?<!^)\^", "", regex)
                     # Remove the sequential '/'
                     regex = re.sub(r"(/)\1+", r"\1", regex)
+                    
                     name = (
                         f"{route.app_name}:{url_pattern.name}"
                         if url_pattern.name
@@ -90,6 +94,7 @@ class URLRouter:
                             pattern, url_pattern.callback, url_pattern.default_args, name
                         )
                     )
+                    print(new_routes[-1])
             else:
                 new_routes.append(route)
 

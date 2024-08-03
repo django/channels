@@ -1,5 +1,5 @@
 import pytest
-from django.urls import path, re_path
+from django.urls import path, re_path, reverse
 
 from channels.routing import ChannelNameRouter, ProtocolTypeRouter, URLRouter
 
@@ -302,7 +302,7 @@ async def test_path_remaining():
 
 
 @pytest.mark.asyncio
-async def test_url_router_nesting_by_include():
+async def test_url_router_nesting_by_include(root_urlconf):
     """
     Tests that nested URLRouters is constructed by include function.
     """
@@ -329,6 +329,7 @@ async def test_url_router_nesting_by_include():
     module_routings.urlpatterns = [
         re_path(r"book/(?P<book>[\w\-]+)/page/(?P<page>\d+)/$", test_app),
         re_path(r"test/(\d+)/$", test_app),
+        path('/home/', test_app)
     ]
     module = type(sys)("universe")
     module.routings = module_routings
@@ -358,6 +359,18 @@ async def test_url_router_nesting_by_include():
             {
                 "type": "http",
                 "path": "/universe/test/10/",
+            },
+            None,
+            None,
+        )
+        == 1
+    )
+    
+    assert (
+        await outer_router(
+            {
+                "type": "http",
+                "path": "/universe/home/",
             },
             None,
             None,
