@@ -1,4 +1,4 @@
-from asgiref.sync import SyncToAsync
+from asgiref.sync import SyncToAsync, sync_to_async
 from django.db import close_old_connections
 
 
@@ -17,3 +17,7 @@ class DatabaseSyncToAsync(SyncToAsync):
 
 # The class is TitleCased, but we want to encourage use as a callable/decorator
 database_sync_to_async = DatabaseSyncToAsync
+
+
+async def aclose_old_connections():
+    return await sync_to_async(close_old_connections)()

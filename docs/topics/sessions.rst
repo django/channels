@@ -73,7 +73,8 @@ whenever the session is modified.
 
 If you are in a WebSocket consumer, however, the session is populated
 **but will never be saved automatically** - you must call
-``scope["session"].save()`` yourself whenever you want to persist a session
+``scope["session"].save()`` (or the asynchronous version,
+``scope["session"].asave()``) yourself whenever you want to persist a session
 to your session store. If you don't save, the session will still work correctly
 inside the consumer (as it's stored as an instance variable), but other
 connections or HTTP views won't be able to see the changes.

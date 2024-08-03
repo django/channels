@@ -1,5 +1,6 @@
 from channels.consumer import AsyncConsumer
 
+from ..db import aclose_old_connections
 from ..exceptions import StopConsumer
 
 
@@ -88,4 +89,5 @@ class AsyncHttpConsumer(AsyncConsumer):
         Let the user do their cleanup and close the consumer.
         """
         await self.disconnect()
+        await aclose_old_connections()
         raise StopConsumer()
