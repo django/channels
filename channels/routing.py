@@ -87,7 +87,7 @@ class URLRouter:
                     pattern = RegexPattern(regex, name=name, is_endpoint=True)
                     new_routes.append(
                         URLPattern(
-                            pattern, url_pattern.callback, route.default_kwargs, name
+                            pattern, url_pattern.callback, url_pattern.default_args, name
                         )
                     )
             else:
