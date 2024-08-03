@@ -323,18 +323,19 @@ async def test_url_router_nesting_by_include(root_urlconf):
     # urlpatterns = [
     #     re_path(r"book/(?P<book>[\w\-]+)/page/(?P<page>\d+)/$", test_app),
     #     re_path(r"test/(\d+)/$", test_app),
+    #     path("/home/", test_app),
     # ]
     # ======================
-    module_routings = type(sys)("routings")
-    module_routings.urlpatterns = [
-        re_path(r"book/(?P<book>[\w\-]+)/page/(?P<page>\d+)/$", test_app),
-        re_path(r"test/(\d+)/$", test_app),
-        path("/home/", test_app),
+    universe_routings = type(sys)("routings")
+    universe_routings.urlpatterns = [
+        re_path(r"book/(?P<book>[\w\-]+)/page/(?P<page>\d+)/$", test_app, name="book"),
+        re_path(r"test/(\d+)/$", test_app, name="test"),
+        path("/home/", test_app, name="home"),
     ]
-    module = type(sys)("universe")
-    module.routings = module_routings
-    sys.modules["universe"] = module
-    sys.modules["universe.routings"] = module.routings
+    universe = type(sys)("universe")
+    universe.routings = universe_routings
+    sys.modules["universe"] = universe
+    sys.modules["universe.routings"] = universe.routings
 
     # parent routings.py
     outer_router = URLRouter(
@@ -371,6 +372,86 @@ async def test_url_router_nesting_by_include(root_urlconf):
             {
                 "type": "http",
                 "path": "/universe/home/",
+            },
+            None,
+            None,
+        )
+        == 1
+    )
+
+
+@pytest.mark.asyncio
+async def test_url_router_deep_nesting_by_include(root_urlconf):
+    """
+    Tests that deep nested URLRouters is constructed by include function.
+    """
+    import sys
+    from django.urls import include
+
+    test_app = MockApplication(return_value=1)
+
+    # mocking the universe module following the directory structure;
+    # ├── universe
+    # │   ├── routings.py (use include)
+    # │   └── earth
+    # │       └── routings.py
+    # └── routings.py (parent; use include)
+
+    earth_routings = type(sys)("routings")
+    earth_routings.urlpatterns = [
+        re_path(r"book/(?P<book>[\w\-]+)/page/(?P<page>\d+)/$", test_app, name="book"),
+        re_path(r"test/(\d+)/$", test_app, name="test"),
+        path("/home/", test_app, name="home"),
+    ]
+    earth = type(sys)("earth")
+    earth.routings = earth_routings
+    sys.modules["earth"] = earth
+    sys.modules["earth.routings"] = earth.routings
+
+    universe_routings = type(sys)("routings")
+    universe_routings.urlpatterns = [
+        path("earth/", include("earth.routings"), name="earth"),
+    ]
+    universe = type(sys)("universe")
+    universe.routings = universe_routings
+    sys.modules["universe"] = universe
+    sys.modules["universe.routings"] = universe.routings
+
+    # parent routings.py
+    outer_router = URLRouter(
+        [
+            path("universe/", include("universe.routings"), name="universe"),
+        ]
+    )
+    assert (
+        await outer_router(
+            {
+                "type": "http",
+                "path": "/universe/earth/book/channels-guide/page/10/",
+            },
+            None,
+            None,
+        )
+        == 1
+    )
+
+    assert (
+        await outer_router(
+            {
+                "type": "http",
+                "path": "/universe/earth/test/10/",
+            },
+            None,
+            None,
+        )
+        == 1
+    )
+
+    assert (
+        await outer_router(
+            {
+                "type": "http",
+                "path": "/universe/earth/home/",
             },
             None,
             None,

@@ -53,6 +53,72 @@ class ProtocolTypeRouter:
             )
 
 
+def _parse_resolver(child_url_pattern, parent_resolver, parent_regex, routes):
+    """Parse resolver (returned by `include`) recurrsively
+
+    Parameters
+    ----------
+    child_url_pattern : URLResolver |
+        The child url pattern
+    parent_resolver : URLResolver
+        The parent resolver
+    parent_regex : Pattern
+        The parent regex pattern
+    routes : list[URLPattern]
+        The URLPattern's list that stores the routes
+
+    Returns
+    -------
+    list[URLPattern]
+        The URLPattern's list that stores the routes
+    """
+    if not child_url_pattern.callback and isinstance(child_url_pattern, URLResolver):
+        # parse the urls resolved by django's `include` function
+        for url_pattern in child_url_pattern.url_patterns:
+            # call _parse_resolver recurrsively to parse nested URLResolver
+            routes.extend(
+                _parse_resolver(
+                    url_pattern,
+                    child_url_pattern,
+                    parent_resolver.pattern.regex,
+                    routes,
+                )
+            )
+    else:
+        # concatenate parent's url (route) and child's url (url_pattern)
+        regex = "".join(
+            x.pattern
+            for x in [
+                parent_regex,
+                parent_resolver.pattern.regex,
+                child_url_pattern.pattern.regex,
+            ]
+        )
+        print([parent_resolver.pattern.regex, child_url_pattern.pattern.regex])
+
+        # Remove the redundant caret ^ which is appended by `path` function
+        regex = re.sub(r"(?<!^)\^", "", regex)
+        # Remove the sequential '/'
+        regex = re.sub(r"(/)\1+", r"\1", regex)
+        name = (
+            f"{parent_resolver.app_name}:{child_url_pattern.name}"
+            if child_url_pattern.name
+            else None
+        )
+        pattern = RegexPattern(regex, name=name, is_endpoint=True)
+
+        routes.append(
+            URLPattern(
+                pattern,
+                child_url_pattern.callback,
+                child_url_pattern.default_args,
+                name,
+            )
+        )
+
+    return routes
+
+
 class URLRouter:
     """
     Routes to different applications/consumers based on the URL path.
@@ -73,34 +139,11 @@ class URLRouter:
             if not route.callback and isinstance(route, URLResolver):
                 # parse the urls resolved by django's `include` function
                 for url_pattern in route.url_patterns:
-                    # concatenate parent's url (route) and child's url (url_pattern)
-                    regex = "".join(
-                        x.pattern
-                        for x in [route.pattern.regex, url_pattern.pattern.regex]
+                    new_routes.extend(
+                        _parse_resolver(url_pattern, route, re.compile(r""), [])
                     )
-                    # Remove the redundant caret ^ which is appended by `path` function
-                    regex = re.sub(r"(?<!^)\^", "", regex)
-                    # Remove the sequential '/'
-                    regex = re.sub(r"(/)\1+", r"\1", regex)
-
-                    name = (
-                        f"{route.app_name}:{url_pattern.name}"
-                        if url_pattern.name
-                        else None
-                    )
-                    pattern = RegexPattern(regex, name=name, is_endpoint=True)
-                    new_routes.append(
-                        URLPattern(
-                            pattern,
-                            url_pattern.callback,
-                            url_pattern.default_args,
-                            name,
-                        )
-                    )
-                    print(new_routes[-1])
             else:
                 new_routes.append(route)
-
         self.routes = new_routes
 
         for route in self.routes:
