@@ -5,6 +5,7 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.urls.exceptions import Resolver404
 from django.urls.resolvers import RegexPattern, RoutePattern, URLResolver, URLPattern
+from django.urls import reverse as django_reverse
 
 """
 All Routing instances inside this file are also valid ASGI applications - with
@@ -234,3 +235,24 @@ class ChannelNameRouter:
             raise ValueError(
                 "No application configured for channel name %r" % scope["channel"]
             )
+
+
+def reverse(*args, urlconf=None, **kwargs):
+    """reverse wrapper for django's reverse function
+
+    Parameters
+    ----------
+    urlconf : str, optional
+        The root path of the routings, by default None
+
+    See the django's [reverse](https://docs.djangoproject.com/en/5.0/ref/urlresolvers/#reverse)
+    for more details of the other arguments
+
+    Returns
+    -------
+    str
+        The reversed url
+    """
+    if urlconf is None:
+        urlconf = settings.ROOT_WEBSOCKET_URLCONF
+    return django_reverse(*args, urlconf=urlconf, **kwargs)

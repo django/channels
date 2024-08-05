@@ -1,4 +1,5 @@
 import pytest
+import sys
 from django.conf import settings
 
 
@@ -38,3 +39,20 @@ def samesite(request, settings):
 def samesite_invalid(settings):
     """Set samesite flag to strict."""
     settings.SESSION_COOKIE_SAMESITE = "Hello"
+
+
+@pytest.fixture
+def root_urlconf(settings):
+    """Set ROOT_WEBSOCKET_URLCONF."""
+    settings.ROOT_WEBSOCKET_URLCONF = "__src.routings"
+    return settings.ROOT_WEBSOCKET_URLCONF
+
+
+@pytest.fixture(autouse=True)
+def mock_modules():
+    """Save original modules for each test and clear a cache"""
+    original_modules = sys.modules.copy()
+    yield
+    sys.modules = original_modules
+    from django.urls.base import _get_cached_resolver
+    _get_cached_resolver.cache_clear()
