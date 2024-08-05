@@ -93,18 +93,18 @@ async def test_url_router():
     # Valid keyword argument matches
     assert await router({"type": "http", "path": "/kwarg/hello/"}, None, None) == 5
     assert kwarg_app.call_args[0][0]["url_route"] == {
-        "args": tuple(),
+        "args": (),
         "kwargs": {"name": "hello"},
     }
     assert await router({"type": "http", "path": "/kwarg/hellothere/"}, None, None) == 5
     assert kwarg_app.call_args[0][0]["url_route"] == {
-        "args": tuple(),
+        "args": (),
         "kwargs": {"name": "hellothere"},
     }
     # Valid default keyword arguments
     assert await router({"type": "http", "path": "/defaultkwargs/"}, None, None) == 6
     assert defaultkwarg_app.call_args[0][0]["url_route"] == {
-        "args": tuple(),
+        "args": (),
         "kwargs": {"default": 42},
     }
     # Valid root_path in scope
@@ -246,13 +246,13 @@ async def test_url_router_path():
         await router({"type": "http", "path": "/author/andrewgodwin/"}, None, None) == 3
     )
     assert kwarg_app.call_args[0][0]["url_route"] == {
-        "args": tuple(),
+        "args": (),
         "kwargs": {"name": "andrewgodwin"},
     }
     # Named with typecasting
     assert await router({"type": "http", "path": "/year/2012/"}, None, None) == 3
     assert kwarg_app.call_args[0][0]["url_route"] == {
-        "args": tuple(),
+        "args": (),
         "kwargs": {"year": 2012},
     }
     # Invalid matches

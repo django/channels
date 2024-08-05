@@ -74,3 +74,4 @@ class ChannelsLiveServerTestCase(TransactionTestCase):
         """
         if connection.vendor == "sqlite":
             return connection.is_in_memory_db()
+        return None
