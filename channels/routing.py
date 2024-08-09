@@ -73,7 +73,7 @@ def _parse_resolver(child_url_pattern, parent_resolver, parent_regex, routes):
     list[URLPattern]
         The URLPattern's list that stores the routes
     """
-    if not child_url_pattern.callback and isinstance(child_url_pattern, URLResolver):
+    if isinstance(child_url_pattern, URLResolver):
         # parse the urls resolved by django's `include` function
         for url_pattern in child_url_pattern.url_patterns:
             # call _parse_resolver recurrsively to parse nested URLResolver
