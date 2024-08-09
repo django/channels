@@ -98,8 +98,7 @@ def _parse_resolver(child_url_pattern, parent_resolver, parent_regex, routes):
 
         # Remove the redundant caret ^ which is appended by `path` function
         regex = re.sub(r"(?<!^)\^", "", regex)
-        # Remove the sequential '/'
-        regex = re.sub(r"(/)\1+", r"\1", regex)
+
         name = (
             f"{parent_resolver.app_name}:{child_url_pattern.name}"
             if child_url_pattern.name
@@ -245,7 +244,7 @@ def reverse(*args, urlconf=None, **kwargs):
     urlconf : str, optional
         The root path of the routings, by default None
 
-    See the django's 
+    See the django's
     [reverse](https://docs.djangoproject.com/en/5.0/ref/urlresolvers/#reverse)
     for more details of the other arguments
 
