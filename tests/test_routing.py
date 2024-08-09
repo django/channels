@@ -457,7 +457,7 @@ async def test_url_router_deep_nesting_by_include(root_urlconf):
     import sys
     from django.urls import include
     from django.urls import reverse as django_reverse
-    
+
     test_app = MockApplication(return_value=1)
 
     # mocking the universe module following the directory structure;

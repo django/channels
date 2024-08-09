@@ -245,7 +245,8 @@ def reverse(*args, urlconf=None, **kwargs):
     urlconf : str, optional
         The root path of the routings, by default None
 
-    See the django's [reverse](https://docs.djangoproject.com/en/5.0/ref/urlresolvers/#reverse)
+    See the django's 
+    [reverse](https://docs.djangoproject.com/en/5.0/ref/urlresolvers/#reverse)
     for more details of the other arguments
 
     Returns
