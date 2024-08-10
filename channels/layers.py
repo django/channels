@@ -191,15 +191,15 @@ class BaseChannelLayer:
 
     async def receive(self, channel):
         raise NotImplementedError("receive() should be implemented in channels")
-    
+
     async def new_channel(self):
         raise NotImplementedError("new_channel() should be implemented in channels")
-    
+
     # flush extension
 
     async def flush(self):
         raise NotImplementedError("flush() called but not implemented (flush extension)")
-    
+
     # groups extension
 
     async def group_add(self, group, channel):
