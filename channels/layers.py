@@ -198,7 +198,7 @@ class BaseChannelLayer:
     # flush extension
 
     async def flush(self):
-        raise NotImplementedError("flush() called but not implemented (flush extension)")
+        raise NotImplementedError("flush() not implemented (flush extension)")
 
     # groups extension
 
