@@ -1,7 +1,7 @@
 import pytest
 from django.urls import path, re_path
 
-from channels.routing import ChannelNameRouter, ProtocolTypeRouter, URLRouter, reverse
+from channels.routing import ChannelNameRouter, ProtocolTypeRouter, URLRouter
 
 
 class MockApplication:
@@ -377,7 +377,6 @@ async def test_url_router_nesting_by_include(root_urlconf):
         == 1
     )
     assert django_reverse("moon", urlconf=root_urlconf) == "/moon/"
-    assert reverse("moon") == "/moon/"
 
     assert (
         await outer_router(
@@ -391,7 +390,6 @@ async def test_url_router_nesting_by_include(root_urlconf):
         == 1
     )
     assert django_reverse("mars", urlconf=root_urlconf, args=(5,)) == "/mars/5/"
-    assert reverse("mars", args=(5,)) == "/mars/5/"
 
     assert (
         await outer_router(
@@ -412,10 +410,6 @@ async def test_url_router_nesting_by_include(root_urlconf):
         )
         == "/universe/book/channels-guide/page/10/"
     )
-    assert (
-        reverse("universe:book", kwargs=dict(book="channels-guide", page=10))
-        == "/universe/book/channels-guide/page/10/"
-    )
 
     assert (
         await outer_router(
@@ -432,7 +426,6 @@ async def test_url_router_nesting_by_include(root_urlconf):
         django_reverse("universe:test", urlconf=root_urlconf, args=(10,))
         == "/universe/test/10/"
     )
-    assert reverse("universe:test", args=(10,)) == "/universe/test/10/"
 
     assert (
         await outer_router(
@@ -446,7 +439,6 @@ async def test_url_router_nesting_by_include(root_urlconf):
         == 1
     )
     assert django_reverse("universe:home", urlconf=root_urlconf) == "/universe/home/"
-    assert reverse("universe:home") == "/universe/home/"
 
 
 @pytest.mark.asyncio
@@ -543,7 +535,6 @@ async def test_url_router_deep_nesting_by_include(root_urlconf):
         == 1
     )
     assert django_reverse("moon", urlconf=root_urlconf) == "/moon/"
-    assert reverse("moon") == "/moon/"
 
     assert (
         await outer_router(
@@ -557,7 +548,6 @@ async def test_url_router_deep_nesting_by_include(root_urlconf):
         == 1
     )
     assert django_reverse("mars", urlconf=root_urlconf, args=(5,)) == "/mars/5/"
-    assert reverse("mars", args=(5,)) == "/mars/5/"
 
     assert (
         await outer_router(
@@ -578,10 +568,6 @@ async def test_url_router_deep_nesting_by_include(root_urlconf):
         )
         == "/universe/earth/book/channels-guide/page/10/"
     )
-    assert (
-        reverse("universe:earth:book", kwargs=dict(book="channels-guide", page=10))
-        == "/universe/earth/book/channels-guide/page/10/"
-    )
 
     assert (
         await outer_router(
@@ -598,7 +584,6 @@ async def test_url_router_deep_nesting_by_include(root_urlconf):
         django_reverse("universe:earth:test", urlconf=root_urlconf, args=(10,))
         == "/universe/earth/test/10/"
     )
-    assert reverse("universe:earth:test", args=(10,)) == "/universe/earth/test/10/"
 
     assert (
         await outer_router(
@@ -615,4 +600,3 @@ async def test_url_router_deep_nesting_by_include(root_urlconf):
         django_reverse("universe:earth:home", urlconf=root_urlconf)
         == "/universe/earth/home/"
     )
-    assert reverse("universe:earth:home") == "/universe/earth/home/"
