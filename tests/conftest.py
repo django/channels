@@ -55,4 +55,5 @@ def mock_modules():
     yield
     sys.modules = original_modules
     from django.urls.base import _get_cached_resolver
+
     _get_cached_resolver.cache_clear()
