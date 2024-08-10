@@ -41,13 +41,6 @@ def samesite_invalid(settings):
     settings.SESSION_COOKIE_SAMESITE = "Hello"
 
 
-@pytest.fixture
-def root_urlconf(settings):
-    """Set ROOT_WEBSOCKET_URLCONF."""
-    settings.ROOT_WEBSOCKET_URLCONF = "__src.routings"
-    return settings.ROOT_WEBSOCKET_URLCONF
-
-
 @pytest.fixture(autouse=True)
 def mock_modules():
     """Save original modules for each test and clear a cache"""

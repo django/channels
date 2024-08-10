@@ -302,13 +302,15 @@ async def test_path_remaining():
 
 
 @pytest.mark.asyncio
-async def test_url_router_nesting_by_include(root_urlconf):
+async def test_url_router_nesting_by_include():
     """
     Tests that nested URLRouters is constructed by include function.
     """
     import sys
     from django.urls import include
     from django.urls import reverse as django_reverse
+
+    root_urlconf = "__src.routings"
 
     test_app = MockApplication(return_value=1)
 
@@ -442,13 +444,15 @@ async def test_url_router_nesting_by_include(root_urlconf):
 
 
 @pytest.mark.asyncio
-async def test_url_router_deep_nesting_by_include(root_urlconf):
+async def test_url_router_deep_nesting_by_include():
     """
     Tests that deep nested URLRouters is constructed by include function.
     """
     import sys
     from django.urls import include
     from django.urls import reverse as django_reverse
+
+    root_urlconf = "__src.routings"
 
     test_app = MockApplication(return_value=1)
 
