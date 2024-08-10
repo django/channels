@@ -187,20 +187,18 @@ class BaseChannelLayer:
             return name
 
     async def send(self, channel, message):
-        raise NotImplementedError("send() should be implemented in channels")
+        raise NotImplementedError("send() should be implemented in a channel layer")
 
     async def receive(self, channel):
-        raise NotImplementedError("receive() should be implemented in channels")
+        raise NotImplementedError("receive() should be implemented in a channel layer")
 
     async def new_channel(self):
-        raise NotImplementedError("new_channel() should be implemented in channels")
-
-    # flush extension
+        raise NotImplementedError(
+            "new_channel() should be implemented in a channel layer"
+        )
 
     async def flush(self):
         raise NotImplementedError("flush() not implemented (flush extension)")
-
-    # groups extension
 
     async def group_add(self, group, channel):
         raise NotImplementedError("group_add() not implemented (groups extension)")
