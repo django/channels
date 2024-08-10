@@ -4,7 +4,7 @@ import re
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.urls.exceptions import Resolver404
-from django.urls.resolvers import RegexPattern, RoutePattern, URLResolver, URLPattern
+from django.urls.resolvers import RegexPattern, RoutePattern, URLPattern, URLResolver
 
 """
 All Routing instances inside this file are also valid ASGI applications - with

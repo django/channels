@@ -307,6 +307,7 @@ async def test_url_router_nesting_by_include():
     Tests that nested URLRouters is constructed by include function.
     """
     import sys
+
     from django.urls import include
     from django.urls import reverse as django_reverse
 
@@ -449,6 +450,7 @@ async def test_url_router_deep_nesting_by_include():
     Tests that deep nested URLRouters is constructed by include function.
     """
     import sys
+
     from django.urls import include
     from django.urls import reverse as django_reverse
 
