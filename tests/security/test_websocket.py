@@ -5,6 +5,7 @@ from channels.security.websocket import OriginValidator
 from channels.testing import WebsocketCommunicator
 
 
+@pytest.mark.django_db(transaction=True)
 @pytest.mark.asyncio
 async def test_origin_validator():
     """

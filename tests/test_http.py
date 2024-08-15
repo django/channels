@@ -1,6 +1,9 @@
 import re
+from importlib import import_module
 
+import django
 import pytest
+from django.conf import settings
 
 from channels.consumer import AsyncConsumer
 from channels.db import database_sync_to_async
@@ -93,14 +96,11 @@ async def test_session_samesite_invalid(samesite_invalid):
 
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.asyncio
-async def test_muliple_sessions():
+async def test_multiple_sessions():
     """
     Create two application instances and test then out of order to verify that
     separate scopes are used.
     """
-
-    async def inner(scope, receive, send):
-        send(scope["path"])
 
     class SimpleHttpApp(AsyncConsumer):
         async def http_request(self, event):
@@ -123,3 +123,84 @@ async def test_muliple_sessions():
 
     first_response = await first_communicator.get_response()
     assert first_response["body"] == b"/first/"
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.asyncio
+async def test_session_saves():
+    """
+    Saves information to a session and validates that it actually saves to the backend
+    """
+
+    class SimpleHttpApp(AsyncConsumer):
+        @database_sync_to_async
+        def set_fav_color(self):
+            self.scope["session"]["fav_color"] = "blue"
+
+        async def http_request(self, event):
+            if django.VERSION >= (5, 1):
+                await self.scope["session"].aset("fav_color", "blue")
+            else:
+                await self.set_fav_color()
+            await self.send(
+                {"type": "http.response.start", "status": 200, "headers": []}
+            )
+            await self.send(
+                {
+                    "type": "http.response.body",
+                    "body": self.scope["session"].session_key.encode(),
+                }
+            )
+
+    app = SessionMiddlewareStack(SimpleHttpApp.as_asgi())
+
+    communicator = HttpCommunicator(app, "GET", "/first/")
+
+    response = await communicator.get_response()
+    session_key = response["body"].decode()
+
+    SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
+    session = SessionStore(session_key=session_key)
+    if django.VERSION >= (5, 1):
+        session_fav_color = await session.aget("fav_color")
+    else:
+        session_fav_color = await database_sync_to_async(session.get)("fav_color")
+
+    assert session_fav_color == "blue"
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.asyncio
+async def test_session_save_update_error():
+    """
+    Intentionally deletes the session to ensure that SuspiciousOperation is raised
+    """
+
+    async def inner(scope, receive, send):
+        send(scope["path"])
+
+    class SimpleHttpApp(AsyncConsumer):
+        @database_sync_to_async
+        def set_fav_color(self):
+            self.scope["session"]["fav_color"] = "blue"
+
+        async def http_request(self, event):
+            # Create a session as normal:
+            await database_sync_to_async(self.scope["session"].save)()
+
+            # Then simulate it's deletion from somewhere else:
+            # (e.g. logging out from another request)
+            SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
+            session = SessionStore(session_key=self.scope["session"].session_key)
+            await database_sync_to_async(session.flush)()
+
+            await self.send(
+                {"type": "http.response.start", "status": 200, "headers": []}
+            )
+
+    app = SessionMiddlewareStack(SimpleHttpApp.as_asgi())
+
+    communicator = HttpCommunicator(app, "GET", "/first/")
+
+    with pytest.raises(django.core.exceptions.SuspiciousOperation):
+        await communicator.get_response()

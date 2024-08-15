@@ -23,6 +23,7 @@ class SimpleHttpApp(AsyncConsumer):
         await self.send({"type": "http.response.body", "body": b"test response"})
 
 
+@pytest.mark.django_db(transaction=True)
 @pytest.mark.asyncio
 async def test_http_communicator():
     """
@@ -45,6 +46,13 @@ class SimpleWebsocketApp(WebsocketConsumer):
 
     def receive(self, text_data=None, bytes_data=None):
         self.send(text_data=text_data, bytes_data=bytes_data)
+
+
+class AcceptCloseWebsocketApp(WebsocketConsumer):
+    def connect(self):
+        assert self.scope["path"] == "/testws/"
+        self.accept()
+        self.close()
 
 
 class ErrorWebsocketApp(WebsocketConsumer):
@@ -91,6 +99,25 @@ async def test_websocket_communicator():
     assert response == {"hello": "world"}
     # Close out
     await communicator.disconnect()
+
+
+@pytest.mark.django_db
+@pytest.mark.asyncio
+async def test_websocket_incorrect_read_json():
+    """
+    When using an invalid communicator method, an assertion error will be raised with
+    informative message.
+    In this test, the server accepts and then immediately closes the connection so
+    the server is not in a valid state to handle "receive_from".
+    """
+    communicator = WebsocketCommunicator(AcceptCloseWebsocketApp(), "/testws/")
+    await communicator.connect()
+    with pytest.raises(AssertionError) as exception_info:
+        await communicator.receive_from()
+    assert (
+        str(exception_info.value)
+        == "Expected type 'websocket.send', but was 'websocket.close'"
+    )
 
 
 @pytest.mark.django_db
