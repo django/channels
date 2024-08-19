@@ -47,7 +47,7 @@ call it with ``database_sync_to_async`` like so:
     from channels.db import database_sync_to_async
 
     async def connect(self):
-        self.username = await database_sync_to_async(self.get_name)()
+        self.username = await database_sync_to_async(get_name)()
 
     def get_name(self):
         return User.objects.all()[0].name
@@ -59,7 +59,7 @@ You can also use it as a decorator:
     from channels.db import database_sync_to_async
 
     async def connect(self):
-        self.username = await self.get_name()
+        self.username = await get_name()
 
     @database_sync_to_async
     def get_name(self):
