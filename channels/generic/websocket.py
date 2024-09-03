@@ -53,6 +53,9 @@ class WebsocketConsumer(SyncConsumer):
         if headers:
             message["headers"] = list(headers)
 
+        if isinstance(headers, dict) and isinstance(subprotocol, str):
+            message["subprotocol"] = (subprotocol, headers)
+
         super().send(message)
 
     def websocket_receive(self, message):
