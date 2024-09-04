@@ -485,3 +485,54 @@ async def test_close_reason(async_consumer):
     assert msg["type"] == "websocket.close"
     assert msg["code"] == 4007
     assert msg["reason"] == "test reason"
+
+
+@pytest.mark.django_db
+@pytest.mark.asyncio
+async def test_websocket_receive_with_none_text():
+    """
+    Tests that the receive method handles messages with None text data correctly.
+    """
+
+    class TestConsumer(WebsocketConsumer):
+        def receive(self, text_data=None, bytes_data=None):
+            if text_data:
+                self.send(text_data="Received text: " + text_data)
+            elif bytes_data:
+                self.send(text_data=f"Received bytes of length: {len(bytes_data)}")
+
+    app = TestConsumer()
+
+    # Open a connection
+    communicator = WebsocketCommunicator(app, "/testws/")
+    connected, _ = await communicator.connect()
+    assert connected
+
+    # Simulate Hypercorn behavior
+    # (both 'text' and 'bytes' keys present, but 'text' is None)
+    await communicator.send_input(
+        {
+            "type": "websocket.receive",
+            "text": None,
+            "bytes": b"test data",
+        }
+    )
+    response = await communicator.receive_output()
+    assert response["type"] == "websocket.send"
+    assert response["text"] == "Received bytes of length: 9"
+
+    # Test with only 'bytes' key (simulating uvicorn/daphne behavior)
+    await communicator.send_input({"type": "websocket.receive", "bytes": b"more data"})
+    response = await communicator.receive_output()
+    assert response["type"] == "websocket.send"
+    assert response["text"] == "Received bytes of length: 9"
+
+    # Test with valid text data
+    await communicator.send_input(
+        {"type": "websocket.receive", "text": "Hello, world!"}
+    )
+    response = await communicator.receive_output()
+    assert response["type"] == "websocket.send"
+    assert response["text"] == "Received text: Hello, world!"
+
+    await communicator.disconnect()
