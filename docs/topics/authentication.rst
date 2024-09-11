@@ -56,8 +56,9 @@ To access the user, just use ``self.scope["user"]`` in your consumer code:
 
     class ChatConsumer(WebsocketConsumer):
 
-        def connect(self, event):
+        def connect(self):
             self.user = self.scope["user"]
+            self.accept()
 
 
 Custom Authentication
