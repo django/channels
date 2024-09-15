@@ -1,6 +1,19 @@
 Full release notes, with more details and upgrade information, are available at:
 https://channels.readthedocs.io/en/latest/releases
 
+4.2.0 (expected by EOY 2024)
+------------------
+
+Channels 4.2 introduces a couple of major but backwards-compatible
+changes, including most notably enhanced async suppport and fixing
+a long-standing bug where tests would try and close db connections
+and erroneously fail.
+
+There are a number of other small bugfixes. Please ensure to review the
+`Version 4.2.0 release notes
+<https://channels.readthedocs.io/en/latest/releases/4.2.0.html>`_ for full
+details.
+
 4.1.0 (2024-04-03)
 ------------------
 
