@@ -54,11 +54,12 @@ class ProtocolTypeRouter:
 
 
 def _parse_resolver(child_url_pattern, parent_resolver, parent_regex, routes):
-    """Parse resolver (returned by `include`) recurrsively
+    """
+    Parse resolver (returned by `include`) recurrsively
 
     Parameters
     ----------
-    child_url_pattern : URLResolver |
+    child_url_pattern : URLResolver | Any
         The child url pattern
     parent_resolver : URLResolver
         The parent resolver
