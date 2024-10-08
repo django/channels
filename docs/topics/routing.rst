@@ -112,7 +112,7 @@ Here's an example for nested routings. When you configure the routings in parent
 .. code-block:: python
 
     urlpatterns = [
-        path("app1/", include("src.app1.routings"), name="app1"),
+        path("app1/", include("app1.routings"), name="app1"),
     ]
 
 and in child ``app1/routings.py``;
@@ -125,7 +125,7 @@ and in child ``app1/routings.py``;
         re_path(r"chats/(\d+)/$", test_app, name="chats"),
     ]
 
-you can establish the connection via the path such like ``/app1/chats/5/``.
+This would resolve to a path such as ``/app1/chats/5/``.
 
 ChannelNameRouter
 -----------------
