@@ -103,10 +103,29 @@ would do this:
 
     stream = self.scope["url_route"]["kwargs"]["stream"]
 
-Please note that ``URLRouter`` nesting will not work properly with
-``path()`` routes if inner routers are wrapped by additional middleware.
-See `Issue #1428 <https://github.com/django/channels/issues/1428>`__.
 
+You can use [include](https://docs.djangoproject.com/en/5.1/ref/urls/#include) 
+function for nested routings. This is similar as Django's URL routing system. 
+
+Here's an example for nested routings. When you configure the routings in parent ``routings.py``;
+
+.. code-block:: python
+
+    urlpatterns = [
+        path("app1/", include("app1.routings"), name="app1"),
+    ]
+
+and in child ``app1/routings.py``;
+
+.. code-block:: python
+
+    app_name = 'app1'
+
+    urlpatterns = [
+        re_path(r"chats/(\d+)/$", test_app, name="chats"),
+    ]
+
+This would resolve to a path such as ``/app1/chats/5/``.
 
 ChannelNameRouter
 -----------------
