@@ -5,7 +5,8 @@ import re
 import string
 import time
 from copy import deepcopy
-
+import logging
+logger = logging.getLogger(__name__)
 from django.conf import settings
 from django.core.signals import setting_changed
 from django.utils.module_loading import import_string
@@ -160,7 +161,10 @@ class BaseChannelLayer:
         raise TypeError(self.invalid_name_error.format("Channel", name))
 
     def valid_group_name(self, name):
-        if self.match_type_and_length(name):
+        logger.debug(f"Validating group name: {name}, Length: {len(name)}")  # Log group name length
+        if isinstance(name, str):
+            if len(name) >= self.MAX_NAME_LENGTH:
+                raise False
             if bool(self.group_name_regex.match(name)):
                 return True
         raise TypeError(self.invalid_name_error.format("Group", name))
@@ -201,6 +205,7 @@ class BaseChannelLayer:
         raise NotImplementedError("flush() not implemented (flush extension)")
 
     async def group_add(self, group, channel):
+        print("Hello")
         raise NotImplementedError("group_add() not implemented (groups extension)")
 
     async def group_discard(self, group, channel):
@@ -336,19 +341,28 @@ class InMemoryChannelLayer(BaseChannelLayer):
 
     # Groups extension
 
+
     async def group_add(self, group, channel):
         """
         Adds the channel name to a group.
         """
         # Check the inputs
-        assert self.valid_group_name(group), "Group name not valid"
+        print(f"Validating group name: {group}")
+        assert self.valid_group_name(group), f"Group name must be less than {self.MAX_NAME_LENGTH} characters."
         assert self.valid_channel_name(channel), "Channel name not valid"
-        # Add to group dict
+
+        # Check the length of the group name
+        if len(group) >= self.MAX_NAME_LENGTH:
+            raise TypeError(f"Group name must be less than {self.MAX_NAME_LENGTH} characters, but got {len(group)}.")
+
+    # Add to group dict
         self.groups.setdefault(group, {})
         self.groups[group][channel] = time.time()
 
+
     async def group_discard(self, group, channel):
         # Both should be text and valid
+        print(f"Discarding channel {channel} from group {group}")  # Log group name
         assert self.valid_channel_name(channel), "Invalid channel name"
         assert self.valid_group_name(group), "Invalid group name"
         # Remove from group set
