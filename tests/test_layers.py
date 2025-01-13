@@ -22,7 +22,6 @@ class TestChannelLayerManager(unittest.TestCase):
         If channel layer doesn't specify TEST_CONFIG, `make_test_backend`
         should result into error.
         """
-
         with self.assertRaises(InvalidChannelLayerError):
             channel_layers.make_test_backend(DEFAULT_CHANNEL_LAYER)
 
@@ -39,7 +38,6 @@ class TestChannelLayerManager(unittest.TestCase):
         If channel layer provides TEST_CONFIG, `make_test_backend` should
         return channel layer instance appropriate for testing.
         """
-
         layer = channel_layers.make_test_backend(DEFAULT_CHANNEL_LAYER)
         self.assertEqual(layer.expiry, 100500)
 
@@ -64,20 +62,29 @@ class TestChannelLayerManager(unittest.TestCase):
 
 @pytest.mark.asyncio
 async def test_send_receive():
+    """
+    Test that a message sent to a channel can be received correctly.
+    """
     layer = InMemoryChannelLayer()
     message = {"type": "test.message"}
     await layer.send("test.channel", message)
     assert message == await layer.receive("test.channel")
 
+
 @pytest.mark.parametrize(
     "name, expected_error_message",
     [
-        ("a" * 101, f"Group name must be less than {BaseChannelLayer.MAX_NAME_LENGTH} characters."),  # Group name too long
+        (
+            "a" * 101,
+            f"Group name must be less than {BaseChannelLayer.MAX_NAME_LENGTH} "
+            "characters.",
+        ),  # Group name too long
     ],
 )
 def test_group_name_length_error_message(name, expected_error_message):
     """
-    Ensure the correct error message is raised when group names exceed the character limit.
+    Ensure the correct error message is raised when group names
+    exceed the character limit.
     """
     layer = BaseChannelLayer()
 
