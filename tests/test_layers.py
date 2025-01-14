@@ -22,6 +22,7 @@ class TestChannelLayerManager(unittest.TestCase):
         If channel layer doesn't specify TEST_CONFIG, `make_test_backend`
         should result into error.
         """
+
         with self.assertRaises(InvalidChannelLayerError):
             channel_layers.make_test_backend(DEFAULT_CHANNEL_LAYER)
 
@@ -38,6 +39,7 @@ class TestChannelLayerManager(unittest.TestCase):
         If channel layer provides TEST_CONFIG, `make_test_backend` should
         return channel layer instance appropriate for testing.
         """
+
         layer = channel_layers.make_test_backend(DEFAULT_CHANNEL_LAYER)
         self.assertEqual(layer.expiry, 100500)
 
@@ -62,13 +64,26 @@ class TestChannelLayerManager(unittest.TestCase):
 
 @pytest.mark.asyncio
 async def test_send_receive():
-    """
-    Test that a message sent to a channel can be received correctly.
-    """
     layer = InMemoryChannelLayer()
     message = {"type": "test.message"}
     await layer.send("test.channel", message)
     assert message == await layer.receive("test.channel")
+
+
+@pytest.mark.parametrize(
+    "method",
+    [BaseChannelLayer().valid_channel_name, BaseChannelLayer().valid_group_name],
+)
+@pytest.mark.parametrize(
+    "channel_name,expected_valid",
+    [("¯\\_(ツ)_/¯", False), ("chat", True), ("chat" * 100, False)],
+)
+def test_channel_and_group_name_validation(method, channel_name, expected_valid):
+    if expected_valid:
+        method(channel_name)
+    else:
+        with pytest.raises(TypeError):
+            method(channel_name)
 
 
 @pytest.mark.parametrize(
