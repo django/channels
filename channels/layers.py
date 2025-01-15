@@ -346,9 +346,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
         Adds the channel name to a group.
         """
         # Check the inputs
-        assert self.valid_group_name(group), (
-            f"Group name must be" f"less than {self.MAX_NAME_LENGTH} characters."
-        )
+        assert self.valid_group_name(group)
         assert self.valid_channel_name(channel), "Channel name not valid"
         # Add to group dict
         self.groups.setdefault(group, {})
@@ -357,9 +355,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
     async def group_discard(self, group, channel):
         # Both should be text and valid
         assert self.valid_channel_name(channel), "Invalid channel name"
-        assert self.valid_group_name(group), (
-            f"Group name must be" f"less than {self.MAX_NAME_LENGTH} characters."
-        )
+        assert self.valid_group_name(group)
         # Remove from group set
         group_channels = self.groups.get(group, None)
         if group_channels:
