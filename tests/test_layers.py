@@ -72,7 +72,10 @@ async def test_send_receive():
 
 @pytest.mark.parametrize(
     "method",
-    [BaseChannelLayer().valid_channel_name, BaseChannelLayer().valid_group_name],
+    [
+        BaseChannelLayer().valid_channel_name,
+        BaseChannelLayer().require_valid_group_name,
+    ],
 )
 @pytest.mark.parametrize(
     "channel_name,expected_valid",
@@ -104,4 +107,4 @@ def test_group_name_length_error_message(name, expected_error_message):
     layer = BaseChannelLayer()
 
     with pytest.raises(TypeError, match=expected_error_message):
-        layer.valid_group_name(name)
+        layer.require_valid_group_name(name)
