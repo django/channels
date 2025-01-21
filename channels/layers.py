@@ -160,11 +160,10 @@ class BaseChannelLayer:
         raise TypeError(self.invalid_name_error.format("Channel", name))
 
     def valid_group_name(self, name):
-        error_message = (
-            f"Group name must be less than {self.MAX_NAME_LENGTH} characters."
-        )
         if len(name) >= self.MAX_NAME_LENGTH:
-            raise TypeError(error_message)
+            raise TypeError(
+                f"Group name must be less than {self.MAX_NAME_LENGTH} characters."
+            )
         if self.match_type_and_length(name):
             if bool(self.group_name_regex.match(name)):
                 return True
