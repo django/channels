@@ -73,7 +73,7 @@ async def test_send_receive():
 @pytest.mark.parametrize(
     "method",
     [
-        BaseChannelLayer().valid_channel_name,
+        BaseChannelLayer().require_valid_channel_name,
         BaseChannelLayer().require_valid_group_name,
     ],
 )
@@ -90,21 +90,36 @@ def test_channel_and_group_name_validation(method, channel_name, expected_valid)
 
 
 @pytest.mark.parametrize(
-    "name, expected_error_message",
+    "name",
     [
-        (
-            "a" * 101,
-            f"Group name must be less than {BaseChannelLayer.MAX_NAME_LENGTH} "
-            "characters.",
-        ),  # Group name too long
+        "a" * 101,  # Group name too long
     ],
 )
-def test_group_name_length_error_message(name, expected_error_message):
+def test_group_name_length_error_message(name):
     """
     Ensure the correct error message is raised when group names
-    exceed the character limit.
+    exceed the character limit or contain invalid characters.
     """
     layer = BaseChannelLayer()
+    expected_error_message = layer.invalid_name_error.format("Group")
 
     with pytest.raises(TypeError, match=expected_error_message):
         layer.require_valid_group_name(name)
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "a" * 101,  # Channel name too long
+    ],
+)
+def test_channel_name_length_error_message(name):
+    """
+    Ensure the correct error message is raised when group names
+    exceed the character limit or contain invalid characters.
+    """
+    layer = BaseChannelLayer()
+    expected_error_message = layer.invalid_name_error.format("Channel")
+
+    with pytest.raises(TypeError, match=expected_error_message):
+        layer.require_valid_channel_name(name)
