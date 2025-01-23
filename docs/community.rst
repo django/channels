@@ -13,6 +13,7 @@ These projects from the community are developed on top of Channels:
 * channels-demultiplexer_, a (de)multiplexer for ``AsyncJsonWebsocketConsumer`` consumers.
 * channels_postgres_, a Django Channels channel layer that uses PostgreSQL as its backing store.
 * channels-auth-token-middlewares_, Django REST framework token authentication middleware and
+* channels-valkey_, a Django Channels channel layer that uses valkey as it's backing store.
   SimpleJWT_ middleware, such as QueryStringSimpleJWTAuthTokenMiddleware_ for WebSocket
   authentication.
 
@@ -29,5 +30,6 @@ If you'd like to add your project, please submit a PR with a link and brief desc
 .. _kafka-integration: https://gist.github.com/aryan340/da071d027050cfe0a03df3b500f2f44b
 .. _channels_postgres: https://github.com/danidee10/channels_postgres
 .. _channels-auth-token-middlewares: https://github.com/YegorDB/django-channels-auth-token-middlewares
+.. _channels-valkey: https://github.com/amirreza8002/channels_valkey   
 .. _SimpleJWT: https://github.com/jazzband/djangorestframework-simplejwt
 .. _QueryStringSimpleJWTAuthTokenMiddleware: https://github.com/YegorDB/django-channels-auth-token-middlewares/tree/master/tutorial/drf#querystringsimplejwtauthtokenmiddleware
