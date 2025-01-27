@@ -169,7 +169,8 @@ class BaseChannelLayer:
         assert _non_empty_list and _names_type, "names must be a non-empty list"
         for channel in names:
             self.require_valid_channel_name(channel, receive=receive)
-        return True
+        return
+
     def non_local_name(self, name):
         """
         Given a channel name, returns the "non-local" part. If the channel name
