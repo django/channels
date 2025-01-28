@@ -144,35 +144,31 @@ class BaseChannelLayer:
     invalid_name_error = (
         "{} name must be a valid unicode string "
         + "with length < {} ".format(MAX_NAME_LENGTH)
-        + "containing only ASCII alphanumerics, hyphens, underscores, or periods, "
-        + "not {}"
+        + "containing only ASCII alphanumerics, hyphens, underscores, or periods."
     )
 
-    def valid_channel_name(self, name, receive=False):
-        if self.match_type_and_length(name):
-            if bool(self.channel_name_regex.match(name)):
-                # Check cases for special channels
-                if "!" in name and not name.endswith("!") and receive:
-                    raise TypeError(
-                        "Specific channel names in receive() must end at the !"
-                    )
-                return True
-        raise TypeError(self.invalid_name_error.format("Channel", name))
+    def require_valid_channel_name(self, name, receive=False):
+        if not self.match_type_and_length(name):
+            raise TypeError(self.invalid_name_error.format("Channel"))
+        if not bool(self.channel_name_regex.match(name)):
+            raise TypeError(self.invalid_name_error.format("Channel"))
+        if "!" in name and not name.endswith("!") and receive:
+            raise TypeError("Specific channel names in receive() must end at the !")
+        return True
 
-    def valid_group_name(self, name):
-        if self.match_type_and_length(name):
-            if bool(self.group_name_regex.match(name)):
-                return True
-        raise TypeError(self.invalid_name_error.format("Group", name))
+    def require_valid_group_name(self, name):
+        if not self.match_type_and_length(name):
+            raise TypeError(self.invalid_name_error.format("Group"))
+        if not bool(self.group_name_regex.match(name)):
+            raise TypeError(self.invalid_name_error.format("Group"))
+        return True
 
     def valid_channel_names(self, names, receive=False):
         _non_empty_list = True if names else False
         _names_type = isinstance(names, list)
         assert _non_empty_list and _names_type, "names must be a non-empty list"
-
-        assert all(
-            self.valid_channel_name(channel, receive=receive) for channel in names
-        )
+        for channel in names:
+            self.require_valid_channel_name(channel, receive=receive)
         return True
 
     def non_local_name(self, name):
@@ -243,7 +239,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
         """
         # Typecheck
         assert isinstance(message, dict), "message is not a dict"
-        assert self.valid_channel_name(channel), "Channel name not valid"
+        self.require_valid_channel_name(channel)
         # If it's a process-local channel, strip off local part and stick full
         # name in message
         assert "__asgi_channel__" not in message
@@ -263,7 +259,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
         If more than one coroutine waits on the same channel, a random one
         of the waiting coroutines will get the result.
         """
-        assert self.valid_channel_name(channel)
+        self.require_valid_channel_name(channel)
         self._clean_expired()
 
         queue = self.channels.setdefault(
@@ -341,16 +337,16 @@ class InMemoryChannelLayer(BaseChannelLayer):
         Adds the channel name to a group.
         """
         # Check the inputs
-        assert self.valid_group_name(group), "Group name not valid"
-        assert self.valid_channel_name(channel), "Channel name not valid"
+        self.require_valid_group_name(group)
+        self.require_valid_channel_name(channel)
         # Add to group dict
         self.groups.setdefault(group, {})
         self.groups[group][channel] = time.time()
 
     async def group_discard(self, group, channel):
         # Both should be text and valid
-        assert self.valid_channel_name(channel), "Invalid channel name"
-        assert self.valid_group_name(group), "Invalid group name"
+        self.require_valid_channel_name(channel)
+        self.require_valid_group_name(group)
         # Remove from group set
         group_channels = self.groups.get(group, None)
         if group_channels:
@@ -363,7 +359,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
     async def group_send(self, group, message):
         # Check types
         assert isinstance(message, dict), "Message is not a dict"
-        assert self.valid_group_name(group), "Invalid group name"
+        self.require_valid_group_name(group)
         # Run clean
         self._clean_expired()
 
