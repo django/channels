@@ -1,6 +1,7 @@
 import asyncio
 import json
 import time
+from unittest.mock import patch
 
 import pytest
 
@@ -57,8 +58,7 @@ async def test_error():
 @pytest.mark.asyncio
 async def test_per_scope_consumers():
     """
-    Tests that a distinct consumer is used per scope, with AsyncHttpConsumer as
-    the example consumer class.
+    Tests that a distinct consumer is used per scope.
     """
 
     class TestConsumer(AsyncHttpConsumer):
@@ -68,7 +68,6 @@ async def test_per_scope_consumers():
 
         async def handle(self, body):
             body = f"{self.__class__.__name__} {id(self)} {self.time}"
-
             await self.send_response(
                 200,
                 body.encode("utf-8"),
@@ -77,16 +76,13 @@ async def test_per_scope_consumers():
 
     app = TestConsumer.as_asgi()
 
-    # Open a connection
     communicator = HttpCommunicator(app, method="GET", path="/test/")
     response = await communicator.get_response()
     assert response["status"] == 200
 
-    # And another one.
     communicator = HttpCommunicator(app, method="GET", path="/test2/")
     second_response = await communicator.get_response()
     assert second_response["status"] == 200
-
     assert response["body"] != second_response["body"]
 
 
@@ -94,10 +90,7 @@ async def test_per_scope_consumers():
 @pytest.mark.asyncio
 async def test_async_http_consumer_future():
     """
-    Regression test for channels accepting only coroutines. The ASGI specification
-    states that the `receive` and `send` arguments to an ASGI application should be
-    "awaitable callable" objects. That includes non-coroutine functions that return
-    Futures.
+    Regression test for channels accepting only coroutines.
     """
 
     class TestConsumer(AsyncHttpConsumer):
@@ -110,7 +103,6 @@ async def test_async_http_consumer_future():
 
     app = TestConsumer()
 
-    # Ensure the passed functions are specifically coroutines.
     async def coroutine_app(scope, receive, send):
         async def receive_coroutine():
             return await asyncio.ensure_future(receive())
@@ -126,7 +118,6 @@ async def test_async_http_consumer_future():
     assert response["status"] == 200
     assert response["headers"] == [(b"Content-Type", b"text/plain")]
 
-    # Ensure the passed functions are "Awaitable Callables" and NOT coroutines.
     async def awaitable_callable_app(scope, receive, send):
         def receive_awaitable_callable():
             return asyncio.ensure_future(receive())
@@ -136,9 +127,46 @@ async def test_async_http_consumer_future():
 
         await app(scope, receive_awaitable_callable, send_awaitable_callable)
 
-    # Open a connection
     communicator = HttpCommunicator(awaitable_callable_app, method="GET", path="/")
     response = await communicator.get_response()
     assert response["body"] == b"42"
     assert response["status"] == 200
     assert response["headers"] == [(b"Content-Type", b"text/plain")]
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.asyncio
+async def test_error_logging():
+    """Regression test for error logging."""
+
+    class TestConsumer(AsyncHttpConsumer):
+        async def handle(self, body):
+            raise AssertionError("Error correctly raised")
+
+    communicator = HttpCommunicator(TestConsumer(), "GET", "/")
+    with patch("channels.generic.http.logger.error") as mock_logger_error:
+        try:
+            await communicator.get_response(timeout=0.05)
+        except AssertionError:
+            pass
+        args, _ = mock_logger_error.call_args
+        assert "Error in handle()" in args[0]
+        assert "AssertionError: Error correctly raised" in args[0]
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.asyncio
+async def test_error_handling_and_send_response():
+    """Regression test to check error handling."""
+
+    class TestConsumer(AsyncHttpConsumer):
+        async def handle(self, body):
+            raise AssertionError("Error correctly raised")
+
+    communicator = HttpCommunicator(TestConsumer(), "GET", "/")
+    with patch.object(AsyncHttpConsumer, "send_response") as mock_send_response:
+        try:
+            await communicator.get_response(timeout=0.05)
+        except AssertionError:
+            pass
+        mock_send_response.assert_called_once_with(500, b"Internal Server Error")
