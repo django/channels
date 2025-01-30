@@ -7,20 +7,17 @@ from ..db import aclose_old_connections
 from ..exceptions import StopConsumer
 
 logger = logging.getLogger("channels.consumer")
-if not logger.hasHandlers():
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-    logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.DEBUG)
 
 
 class AsyncHttpConsumer(AsyncConsumer):
     """
     Async HTTP consumer. Provides basic primitives for building asynchronous
     HTTP endpoints.
+
+    Note that the ASGI spec requires that the protocol server only starts
+    sending the response to the client after ``self.send_body`` has been
+    called the first time.
     """
 
     def __init__(self, *args, **kwargs):
@@ -43,6 +40,10 @@ class AsyncHttpConsumer(AsyncConsumer):
     async def send_body(self, body, *, more_body=False):
         """
         Sends a response body to the client. The method expects a bytestring.
+
+        Set ``more_body=True`` if you want to send more body content later.
+        The default behavior closes the response, and further messages on
+        the channel will be ignored.
         """
         assert isinstance(body, bytes), "Body is not bytes"
         await self.send(
@@ -51,14 +52,18 @@ class AsyncHttpConsumer(AsyncConsumer):
 
     async def send_response(self, status, body, **kwargs):
         """
-        Sends a response to the client.
+        Sends a response to the client. This is a thin wrapper over
+        ``self.send_headers`` and ``self.send_body``, and everything said
+        above applies here as well. This method may only be called once.
         """
         await self.send_headers(status=status, **kwargs)
         await self.send_body(body)
 
     async def handle(self, body):
         """
-        Receives the request body as a bytestring.
+        Receives the request body as a bytestring. Response may be composed
+        using the ``self.send*`` methods; the return value of this method is
+        thrown away.
         """
         raise NotImplementedError(
             "Subclasses of AsyncHttpConsumer must provide a handle() method."
@@ -94,10 +99,6 @@ class AsyncHttpConsumer(AsyncConsumer):
         """
         Let the user do their cleanup and close the consumer.
         """
-        try:
-            await self.disconnect()
-            await aclose_old_connections()
-        except Exception as e:
-            logger.error(f"Error during disconnect: {str(e)}")
-        finally:
-            raise StopConsumer()
+        await self.disconnect()
+        await aclose_old_connections()
+        raise StopConsumer()
