@@ -14,10 +14,6 @@ class AsyncHttpConsumer(AsyncConsumer):
     """
     Async HTTP consumer. Provides basic primitives for building asynchronous
     HTTP endpoints.
-
-    Note that the ASGI spec requires that the protocol server only starts
-    sending the response to the client after ``self.send_body`` has been
-    called the first time.
     """
 
     def __init__(self, *args, **kwargs):
@@ -27,6 +23,10 @@ class AsyncHttpConsumer(AsyncConsumer):
         """
         Sets the HTTP response status and headers. Headers may be provided as
         a list of tuples or as a dictionary.
+
+        Note that the ASGI spec requires that the protocol server only starts
+        sending the response to the client after ``self.send_body`` has been
+        called the first time.
         """
         if headers is None:
             headers = []
