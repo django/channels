@@ -88,7 +88,7 @@ class AsyncHttpConsumer(AsyncConsumer):
             try:
                 await self.handle(b"".join(self.body))
             except Exception:
-                logger.error(f"Error in handle(): {traceback.format_exc()}")
+                logger.exception(f"Error in handle(): {traceback.format_exc()}")
                 await self.send_response(500, b"Internal Server Error")
                 raise
             finally:
