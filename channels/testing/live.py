@@ -30,14 +30,15 @@ class ChannelsLiveServerTestCase(TransactionTestCase):
     ProtocolServerProcess = DaphneProcess
     static_wrapper = ASGIStaticFilesHandler
     serve_static = True
+    port = 0
 
     @property
     def live_server_url(self):
-        return "http://%s:%s" % (self.host, self._port)
+        return "http://%s:%s" % (self.host, self.port)
 
     @property
     def live_server_ws_url(self):
-        return "ws://%s:%s" % (self.host, self._port)
+        return "ws://%s:%s" % (self.host, self.port)
 
     def _pre_setup(self):
         for connection in connections.all():
@@ -57,10 +58,10 @@ class ChannelsLiveServerTestCase(TransactionTestCase):
             make_application,
             static_wrapper=self.static_wrapper if self.serve_static else None,
         )
-        self._server_process = self.ProtocolServerProcess(self.host, get_application)
+        self._server_process = self.ProtocolServerProcess(self.host, get_application, port=self.port)
         self._server_process.start()
         self._server_process.ready.wait()
-        self._port = self._server_process.port.value
+        self.port = self._server_process.port.value
 
     def _post_teardown(self):
         self._server_process.terminate()
