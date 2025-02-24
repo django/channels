@@ -59,8 +59,8 @@ class ChannelsLiveServerTestCase(TransactionTestCase):
             static_wrapper=self.static_wrapper if self.serve_static else None,
         )
         self._server_process = self.ProtocolServerProcess(
-            self.host, 
-            get_application, 
+            self.host,
+            get_application,
             port=self.port
         )
         self._server_process.start()
