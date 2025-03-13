@@ -192,7 +192,7 @@ into one bigger app that represents your project using routing:
 
     application = URLRouter([
         path("chat/admin/", AdminChatConsumer.as_asgi()),
-        path("chat/", PublicChatConsumer.as_asgi(),
+        path("chat/", PublicChatConsumer.as_asgi()),
     ])
 
 Channels is not just built around the world of HTTP and WebSockets - it also
