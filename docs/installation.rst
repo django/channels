@@ -72,8 +72,8 @@ take control of the ``runserver`` command. See :doc:`introduction` for more.
 Installing the latest development version
 -----------------------------------------
 
-To install the latest version of Channels, clone the repo, change to the repo,
-change to the repo directory, and pip install it into your current virtual
+To install the latest version of Channels, clone the repo, change to the repo directory,
+and pip install it into your current virtual
 environment:
 
 .. code-block:: sh
