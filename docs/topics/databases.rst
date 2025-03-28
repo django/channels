@@ -68,7 +68,7 @@ You can also use it as a decorator:
 aclose_old_connections
 ----------------------
 
-``django.db.aclose_old_connections`` is an async wrapper around Django's
+``channels.db.aclose_old_connections`` is an async wrapper around Django's
 ``close_old_connections``. When using a long-lived ``AsyncConsumer`` that
 calls the Django ORM it is important to call this function periodically.
 
