@@ -362,6 +362,12 @@ standard Django ``LiveServerTestCase``:
             },
         }
 
+port
+~~~~
+
+Subclass ``ChannelsLiveServerTestCase`` with ``port = {port_number}`` to bind
+both the HTTP and WebSocket servers to a specific port. 
+
 serve_static
 ~~~~~~~~~~~~
 
