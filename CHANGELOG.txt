@@ -1,6 +1,22 @@
 Full release notes, with more details and upgrade information, are available at:
 https://channels.readthedocs.io/en/latest/releases
 
+
+4.2.1 (2025-03-29)
+------------------
+
+Channels 4.2.1 primarily updates the metadata for supported Python and Django
+versions.
+
+* Added official support for Django 5.2 LTS.
+
+* Added official support for Python 3.13.
+
+* Added a warning for the length of the channel layer group names.
+
+See also the `Version 4.2.1 release notes
+<https://channels.readthedocs.io/en/latest/releases/4.2.1.html>`_ in the docs.
+
 4.2.0 (2024-11-15)
 ------------------
 

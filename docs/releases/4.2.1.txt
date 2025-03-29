@@ -1,0 +1,13 @@
+4.2.1 Release Notes
+===================
+
+Channels 4.2.1 is a bugfix release in the 4.1 series.
+
+Bugfixes & Small Changes
+------------------------
+
+* Added official support for Django 5.2 LTS.
+
+* Added official support for Python 3.13.
+
+* Added a warning for the length of the channel layer group names.
