@@ -4,6 +4,7 @@ import random
 import re
 import string
 import time
+import warnings
 from copy import deepcopy
 
 from django.conf import settings
@@ -204,6 +205,29 @@ class BaseChannelLayer:
 
     async def group_send(self, group, message):
         raise NotImplementedError("group_send() not implemented (groups extension)")
+
+    # Deprecated methods.
+    def valid_channel_name(self, channel_name, receive=False):
+        """
+        Deprecated: Use require_valid_channel_name instead.
+        """
+        warnings.warn(
+            "valid_channel_name is deprecated, use require_valid_channel_name instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.require_valid_channel_name(channel_name)
+
+    def valid_group_name(self, group_name):
+        """
+        Deprecated: Use require_valid_group_name instead..
+        """
+        warnings.warn(
+            "valid_group_name is deprecated, use require_valid_group_name instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.require_valid_group_name(group_name)
 
 
 class InMemoryChannelLayer(BaseChannelLayer):

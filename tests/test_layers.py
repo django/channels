@@ -123,3 +123,37 @@ def test_channel_name_length_error_message(name):
 
     with pytest.raises(TypeError, match=expected_error_message):
         layer.require_valid_channel_name(name)
+
+
+def test_deprecated_valid_channel_name():
+    """
+    Test that the deprecated valid_channel_name method works
+    but raises a deprecation warning.
+    """
+    layer = BaseChannelLayer()
+
+    # Should work with valid name but raise warning
+    with pytest.warns(DeprecationWarning, match="valid_channel_name is deprecated"):
+        assert layer.valid_channel_name("valid-channel")
+
+    # Should raise TypeError for invalid names
+    with pytest.warns(DeprecationWarning):
+        with pytest.raises(TypeError):
+            layer.valid_channel_name("¯\\_(ツ)_/¯")
+
+
+def test_deprecated_valid_group_name():
+    """
+    Test that the deprecated valid_group_name method works
+    but raises a deprecation warning.
+    """
+    layer = BaseChannelLayer()
+
+    # Should work with valid name but raise warning
+    with pytest.warns(DeprecationWarning, match="valid_group_name is deprecated"):
+        assert layer.valid_group_name("valid-group")
+
+    # Should raise TypeError for invalid names
+    with pytest.warns(DeprecationWarning):
+        with pytest.raises(TypeError):
+            layer.valid_group_name("¯\\_(ツ)_/¯")
