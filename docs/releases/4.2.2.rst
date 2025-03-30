@@ -1,0 +1,13 @@
+4.2.2 Release Notes
+===================
+
+Channels 4.2.2 is a bugfix release in the 4.2 series.
+
+Bugfixes & Small Changes
+------------------------
+
+* Added fallbacks for old valid channel/group name checks.
+
+  These (internal) methods were renamed in v4.2.1 without deprecation. This
+  release adds (deprecated) fallback aliases to allow time for channel layers
+  to update.

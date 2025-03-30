@@ -1,7 +1,7 @@
 4.2.1 Release Notes
 ===================
 
-Channels 4.2.1 is a bugfix release in the 4.1 series.
+Channels 4.2.1 is a bugfix release in the 4.2 series.
 
 Bugfixes & Small Changes
 ------------------------
