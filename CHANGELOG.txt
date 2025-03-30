@@ -1,8 +1,8 @@
 Full release notes, with more details and upgrade information, are available at:
 https://channels.readthedocs.io/en/latest/releases
 
-UNRELEASED
-----------
+4.2.2 (2025-03-30)
+------------------
 
 * Added fallbacks for old valid channel/group name checks.
 
