@@ -58,6 +58,30 @@ class TestChannelLayerManager(unittest.TestCase):
             self.assertNotEqual(channel_layers.backends, {})
         self.assertEqual(channel_layers.backends, {})
 
+    @override_settings(
+        CHANNEL_LAYERS={
+            "default": {
+                "BACKEND": "tests.test_layers.BrokenBackend",
+            }
+        }
+    )
+    def test_backend_import_error_not_hidden(self):
+        """
+        Test that KeyError exceptions within the backend import are not hidden.
+        This test ensures that the PR #2146 fix works correctly.
+        """
+        # This should raise a KeyError from the backend, not an InvalidChannelLayerError
+        with self.assertRaises(KeyError):
+            channel_layers.make_backend(DEFAULT_CHANNEL_LAYER)
+
+
+# Mock backend that raises KeyError during import
+class BrokenBackend:
+    def __init__(self, **kwargs):
+        # This will be called during backend initialization
+        # and should raise a KeyError that should not be caught
+        raise KeyError("This is a deliberate KeyError from the backend")
+
 
 # In-memory layer tests
 

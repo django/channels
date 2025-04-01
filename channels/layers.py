@@ -74,7 +74,7 @@ class ChannelLayerManager:
                     "Cannot import BACKEND %r specified for %s"
                     % (self.configs[name]["BACKEND"], name)
                 )
-                
+
         # Initialise and pass config
         return backend_class(**config)
 
