@@ -1,9 +1,10 @@
 import importlib
+import re
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.urls.exceptions import Resolver404
-from django.urls.resolvers import RegexPattern, RoutePattern, URLResolver
+from django.urls.resolvers import RegexPattern, RoutePattern, URLPattern, URLResolver
 
 """
 All Routing instances inside this file are also valid ASGI applications - with
@@ -52,6 +53,71 @@ class ProtocolTypeRouter:
             )
 
 
+def _parse_resolver(child_url_pattern, parent_resolver, parent_regex, routes):
+    """
+    Parse resolver (returned by `include`) recurrsively
+
+    Parameters
+    ----------
+    child_url_pattern : URLResolver | Any
+        The child url pattern
+    parent_resolver : URLResolver
+        The parent resolver
+    parent_regex : Pattern
+        The parent regex pattern
+    routes : list[URLPattern]
+        The URLPattern's list that stores the routes
+
+    Returns
+    -------
+    list[URLPattern]
+        The URLPattern's list that stores the routes
+    """
+    if isinstance(child_url_pattern, URLResolver):
+        # parse the urls resolved by django's `include` function
+        for url_pattern in child_url_pattern.url_patterns:
+            # call _parse_resolver recurrsively to parse nested URLResolver
+            routes.extend(
+                _parse_resolver(
+                    url_pattern,
+                    child_url_pattern,
+                    parent_resolver.pattern.regex,
+                    routes,
+                )
+            )
+    else:
+        # concatenate parent's url (route) and child's url (url_pattern)
+        regex = "".join(
+            x.pattern
+            for x in [
+                parent_regex,
+                parent_resolver.pattern.regex,
+                child_url_pattern.pattern.regex,
+            ]
+        )
+
+        # Remove the redundant caret ^ which is appended by `path` function
+        regex = re.sub(r"(?<!^)\^", "", regex)
+
+        name = (
+            f"{parent_resolver.app_name}:{child_url_pattern.name}"
+            if child_url_pattern.name
+            else None
+        )
+        pattern = RegexPattern(regex, name=name, is_endpoint=True)
+
+        routes.append(
+            URLPattern(
+                pattern,
+                child_url_pattern.callback,
+                child_url_pattern.default_args,
+                name,
+            )
+        )
+
+    return routes
+
+
 class URLRouter:
     """
     Routes to different applications/consumers based on the URL path.
@@ -67,7 +133,17 @@ class URLRouter:
     _path_routing = True
 
     def __init__(self, routes):
-        self.routes = routes
+        new_routes = []
+        for route in routes:
+            if not route.callback and isinstance(route, URLResolver):
+                # parse the urls resolved by django's `include` function
+                for url_pattern in route.url_patterns:
+                    new_routes.extend(
+                        _parse_resolver(url_pattern, route, re.compile(r""), [])
+                    )
+            else:
+                new_routes.append(route)
+        self.routes = new_routes
 
         for route in self.routes:
             # The inner ASGI app wants to do additional routing, route
