@@ -63,14 +63,18 @@ class ChannelLayerManager:
             )
         # Load the backend class
         try:
-            backend_class = import_string(self.configs[name]["BACKEND"])
+            backend_module = self.configs[name]["BACKEND"]
         except KeyError:
             raise InvalidChannelLayerError("No BACKEND specified for %s" % name)
-        except ImportError:
-            raise InvalidChannelLayerError(
-                "Cannot import BACKEND %r specified for %s"
-                % (self.configs[name]["BACKEND"], name)
-            )
+        else:
+            try:
+                backend_class = import_string(backend_module)
+            except ImportError:
+                raise InvalidChannelLayerError(
+                    "Cannot import BACKEND %r specified for %s"
+                    % (self.configs[name]["BACKEND"], name)
+                )
+
         # Initialise and pass config
         return backend_class(**config)
 
