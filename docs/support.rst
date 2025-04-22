@@ -62,7 +62,7 @@ General support request
 
 .. code-block:: text
 
-    Sorry, but we can't help out with general support requests here - the issue tracker is for reproduceable bugs and
+    Sorry, but we can't help out with general support requests here - the issue tracker is for reproducible bugs and
     concrete feature requests only! Please see our support documentation (https://channels.readthedocs.io/en/latest/support.html)
     for more information about where you can get general help.
 
