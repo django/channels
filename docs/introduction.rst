@@ -26,7 +26,8 @@ Django project if you like.
 Turtles All The Way Down
 ------------------------
 
-Channels operates on the principle of "turtles all the way down" - we have
+Channels operates on the principle of "`turtles all the way down
+<https://en.wikipedia.org/wiki/Turtles_all_the_way_down>`_ " - we have
 a single idea of what a channels "application" is, and even the simplest of
 *consumers* (the equivalent of Django views) are an entirely valid
 :doc:`/asgi` application you can run by themselves.
