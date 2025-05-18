@@ -85,7 +85,7 @@ class OriginValidator:
         Any domain beginning with a period corresponds to the domain and all
         its subdomains (for example, ``.example.com`` ``example.com``
         and any subdomain). Also with scheme (for example, ``http://.example.com``
-        ``http://exapmple.com``). After the domain there must be a port,
+        ``http://example.com``). After the domain there must be a port,
         but it can be omitted.
 
         Note. This function assumes that the given origin is either None, a
