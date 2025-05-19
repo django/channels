@@ -1,5 +1,4 @@
 import pytest
-from django.core.exceptions import ImproperlyConfigured
 from django.urls import path, re_path
 
 from channels.routing import ChannelNameRouter, ProtocolTypeRouter, URLRouter
@@ -302,13 +301,308 @@ async def test_path_remaining():
         )
 
 
-def test_invalid_routes():
+@pytest.mark.asyncio
+async def test_url_router_nesting_by_include():
     """
-    Test URLRouter route validation
+    Tests that nested URLRouters is constructed by include function.
     """
+    import sys
+
     from django.urls import include
+    from django.urls import reverse as django_reverse
 
-    with pytest.raises(ImproperlyConfigured) as exc:
-        URLRouter([path("", include([]))])
+    root_urlconf = "__src.routings"
 
-    assert "include() is not supported in URLRouter." in str(exc)
+    test_app = MockApplication(return_value=1)
+
+    # mocking the universe module following the directory structure;
+    # __src
+    # ├── universe
+    # │   └── routings.py
+    # └── routings.py (root)
+
+    # in __src/universe/routings.py
+    # ======================
+    # ...
+    # urlpatterns = [
+    #     re_path(r"book/(?P<book>[\w\-]+)/page/(?P<page>\d+)/$", test_app),
+    #     re_path(r"test/(\d+)/$", test_app),
+    #     path("/home/", test_app),
+    # ]
+    # ======================
+
+    universe_routings = type(sys)("routings")
+    universe_routings.app_name = "universe"
+    universe_routings.urlpatterns = [
+        re_path(r"book/(?P<book>[\w\-]+)/page/(?P<page>\d+)/$", test_app, name="book"),
+        re_path(r"test/(\d+)/$", test_app, name="test"),
+        path("home/", test_app, name="home"),
+    ]
+    universe = type(sys)("universe")
+    universe.routings = universe_routings
+    sys.modules["__src.universe"] = universe
+    sys.modules["__src.universe.routings"] = universe.routings
+
+    # in __src/routings.py (root)
+    # ======================
+    # ...
+    # urlpatterns = [
+    #     path("universe/", include("__src.universe.routings"), name="universe"),
+    #     path("moon/", test_app, name="moon"),
+    #     re_path(r"mars/(\d+)/$", test_app, name="mars"),
+    # ]
+    #
+    # outer_router = URLRouter(urlpatterns)
+    # ======================
+    urlpatterns = [
+        path("universe/", include("__src.universe.routings"), name="universe"),
+        path("moon/", test_app, name="moon"),
+        re_path(r"mars/(\d+)/$", test_app, name="mars"),
+    ]
+    outer_router = URLRouter(urlpatterns)
+
+    src = type(sys)("__src")
+    src.routings = type(sys)("routings")
+    src.routings.urlpatterns = urlpatterns
+    src.routings.outer_router = outer_router
+    sys.modules["__src"] = src
+    sys.modules["__src.routings"] = src.routings
+
+    assert (
+        await outer_router(
+            {
+                "type": "http",
+                "path": "/moon/",
+            },
+            None,
+            None,
+        )
+        == 1
+    )
+    assert django_reverse("moon", urlconf=root_urlconf) == "/moon/"
+
+    assert (
+        await outer_router(
+            {
+                "type": "http",
+                "path": "/mars/5/",
+            },
+            None,
+            None,
+        )
+        == 1
+    )
+    assert django_reverse("mars", urlconf=root_urlconf, args=(5,)) == "/mars/5/"
+
+    assert (
+        await outer_router(
+            {
+                "type": "http",
+                "path": "/universe/book/channels-guide/page/10/",
+            },
+            None,
+            None,
+        )
+        == 1
+    )
+    assert (
+        django_reverse(
+            "universe:book",
+            urlconf=root_urlconf,
+            kwargs=dict(book="channels-guide", page=10),
+        )
+        == "/universe/book/channels-guide/page/10/"
+    )
+
+    assert (
+        await outer_router(
+            {
+                "type": "http",
+                "path": "/universe/test/10/",
+            },
+            None,
+            None,
+        )
+        == 1
+    )
+    assert (
+        django_reverse("universe:test", urlconf=root_urlconf, args=(10,))
+        == "/universe/test/10/"
+    )
+
+    assert (
+        await outer_router(
+            {
+                "type": "http",
+                "path": "/universe/home/",
+            },
+            None,
+            None,
+        )
+        == 1
+    )
+    assert django_reverse("universe:home", urlconf=root_urlconf) == "/universe/home/"
+
+
+@pytest.mark.asyncio
+async def test_url_router_deep_nesting_by_include():
+    """
+    Tests that deep nested URLRouters is constructed by include function.
+    """
+    import sys
+
+    from django.urls import include
+    from django.urls import reverse as django_reverse
+
+    root_urlconf = "__src.routings"
+
+    test_app = MockApplication(return_value=1)
+
+    # mocking the universe module following the directory structure;
+    # __src
+    # ├── universe
+    # │   ├── routings.py (use include)
+    # │   └── earth
+    # │       └── routings.py
+    # └── routings.py (root; use include)
+
+    # in __src/universe/earth/routings.py
+    # ======================
+    # ...
+    # app_name = "earth"
+    # urlpatterns = [
+    #     re_path(r"book/(?P<book>[\w\-]+)/page/(?P<page>\d+)/$", test_app),
+    #     re_path(r"test/(\d+)/$", test_app),
+    #     path("/home/", test_app),
+    # ]
+    # ======================
+    earth_routings = type(sys)("routings")
+    earth_routings.app_name = "earth"
+    earth_routings.urlpatterns = [
+        re_path(r"book/(?P<book>[\w\-]+)/page/(?P<page>\d+)/$", test_app, name="book"),
+        re_path(r"test/(\d+)/$", test_app, name="test"),
+        path("home/", test_app, name="home"),
+    ]
+    earth = type(sys)("earth")
+    earth.routings = earth_routings
+    sys.modules["__src.universe.earth"] = earth
+    sys.modules["__src.universe.earth.routings"] = earth.routings
+
+    # in __src/universe/routings.py
+    # ======================
+    # ...
+    # app_name = "earth"
+    # urlpatterns = [
+    #     path("earth/", include("__src.universe.earth.routings"), name="earth"),
+    # ]
+    # ======================
+    universe_routings = type(sys)("routings")
+    universe_routings.app_name = "universe"
+    universe_routings.urlpatterns = [
+        path("earth/", include("__src.universe.earth.routings"), name="earth"),
+    ]
+    universe = type(sys)("universe")
+    universe.routings = universe_routings
+    sys.modules["__src.universe"] = universe
+    sys.modules["__src.universe.routings"] = universe.routings
+
+    # in __src/routings.py (root)
+    # ======================
+    # ...
+    # urlpatterns = [
+    #     path("universe/", include("__src.universe.routings"), name="universe"),
+    #     path("moon/", test_app, name="moon"),
+    #     re_path(r"mars/(\d+)/$", test_app, name="mars"),
+    # ]
+    # outer_router = URLRouter(urlpatterns)
+    # ======================
+    urlpatterns = [
+        path("universe/", include("__src.universe.routings"), name="universe"),
+        path("moon/", test_app, name="moon"),
+        re_path(r"mars/(\d+)/$", test_app, name="mars"),
+    ]
+    outer_router = URLRouter(urlpatterns)
+    src = type(sys)("__src")
+    src.routings = type(sys)("routings")
+    src.routings.urlpatterns = urlpatterns
+    src.routings.outer_router = outer_router
+    sys.modules["__src"] = src
+    sys.modules["__src.routings"] = src.routings
+
+    assert (
+        await outer_router(
+            {
+                "type": "http",
+                "path": "/moon/",
+            },
+            None,
+            None,
+        )
+        == 1
+    )
+    assert django_reverse("moon", urlconf=root_urlconf) == "/moon/"
+
+    assert (
+        await outer_router(
+            {
+                "type": "http",
+                "path": "/mars/5/",
+            },
+            None,
+            None,
+        )
+        == 1
+    )
+    assert django_reverse("mars", urlconf=root_urlconf, args=(5,)) == "/mars/5/"
+
+    assert (
+        await outer_router(
+            {
+                "type": "http",
+                "path": "/universe/earth/book/channels-guide/page/10/",
+            },
+            None,
+            None,
+        )
+        == 1
+    )
+    assert (
+        django_reverse(
+            "universe:earth:book",
+            urlconf=root_urlconf,
+            kwargs=dict(book="channels-guide", page=10),
+        )
+        == "/universe/earth/book/channels-guide/page/10/"
+    )
+
+    assert (
+        await outer_router(
+            {
+                "type": "http",
+                "path": "/universe/earth/test/10/",
+            },
+            None,
+            None,
+        )
+        == 1
+    )
+    assert (
+        django_reverse("universe:earth:test", urlconf=root_urlconf, args=(10,))
+        == "/universe/earth/test/10/"
+    )
+
+    assert (
+        await outer_router(
+            {
+                "type": "http",
+                "path": "/universe/earth/home/",
+            },
+            None,
+            None,
+        )
+        == 1
+    )
+    assert (
+        django_reverse("universe:earth:home", urlconf=root_urlconf)
+        == "/universe/earth/home/"
+    )
