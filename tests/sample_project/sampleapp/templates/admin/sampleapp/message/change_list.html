@@ -1,0 +1,33 @@
+{% extends "admin/change_list.html" %}
+{% load static %}
+
+{% block extrahead %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'sampleapp/css/styles.css' %}">
+{% endblock %}
+
+{% block content %}
+  {{ block.super }}
+
+  <div class="container">
+    <h2 id="heading">Live Messages</h2>
+    <div class="inputGroup">
+      <label for="msgTitle">Title:</label>
+      <input id="msgTitle" type="text" placeholder="Title…">
+      <label for="msgTextArea">Message:</label>
+      <textarea id="msgTextArea" placeholder="Message…" rows="2"></textarea>
+    </div>
+    <button id="sendBtn">Add Message</button>
+
+    <div class="stats">
+      <strong>Total messages:</strong> <span id="messageCount">0</span>
+    </div>
+
+    <div id="cardsContainer"></div>
+  </div>
+{% endblock %}
+
+{% block footer %}
+  <script src="{% static 'sampleapp/js/scripts.js' %}"></script>
+  {{ block.super }}
+{% endblock %}
