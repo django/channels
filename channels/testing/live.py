@@ -1,6 +1,7 @@
 from functools import partial
 
 from daphne.testing import DaphneProcess
+from django import VERSION
 from django.contrib.staticfiles.handlers import ASGIStaticFilesHandler
 from django.core.exceptions import ImproperlyConfigured
 from django.db import connections
@@ -39,29 +40,60 @@ class ChannelsLiveServerTestCase(TransactionTestCase):
     def live_server_ws_url(self):
         return "ws://%s:%s" % (self.host, self._port)
 
-    @classmethod
-    def _pre_setup(cls):
-        for connection in connections.all():
-            if cls._is_in_memory_db(connection):
-                raise ImproperlyConfigured(
-                    "ChannelLiveServerTestCase can not be used with in memory databases"
-                )
+    if VERSION >= (5, 2):
 
-        super(ChannelsLiveServerTestCase, cls)._pre_setup()
+        @classmethod
+        def _pre_setup(cls):
+            for connection in connections.all():
+                if cls._is_in_memory_db(connection):
+                    raise ImproperlyConfigured(
+                        "ChannelLiveServerTestCase can not be used with in memory "
+                        "databases"
+                    )
 
-        cls._live_server_modified_settings = modify_settings(
-            ALLOWED_HOSTS={"append": cls.host}
-        )
-        cls._live_server_modified_settings.enable()
+            super(ChannelsLiveServerTestCase, cls)._pre_setup()
 
-        get_application = partial(
-            make_application,
-            static_wrapper=cls.static_wrapper if cls.serve_static else None,
-        )
-        cls._server_process = cls.ProtocolServerProcess(cls.host, get_application)
-        cls._server_process.start()
-        cls._server_process.ready.wait()
-        cls._port = cls._server_process.port.value
+            cls._live_server_modified_settings = modify_settings(
+                ALLOWED_HOSTS={"append": cls.host}
+            )
+            cls._live_server_modified_settings.enable()
+
+            get_application = partial(
+                make_application,
+                static_wrapper=cls.static_wrapper if cls.serve_static else None,
+            )
+            cls._server_process = cls.ProtocolServerProcess(cls.host, get_application)
+            cls._server_process.start()
+            cls._server_process.ready.wait()
+            cls._port = cls._server_process.port.value
+
+    else:
+
+        def _pre_setup(self):
+            for connection in connections.all():
+                if self._is_in_memory_db(connection):
+                    raise ImproperlyConfigured(
+                        "ChannelLiveServerTestCase can not be used with in memory "
+                        "databases"
+                    )
+
+            super(ChannelsLiveServerTestCase, self)._pre_setup()
+
+            self._live_server_modified_settings = modify_settings(
+                ALLOWED_HOSTS={"append": self.host}
+            )
+            self._live_server_modified_settings.enable()
+
+            get_application = partial(
+                make_application,
+                static_wrapper=self.static_wrapper if self.serve_static else None,
+            )
+            self._server_process = self.ProtocolServerProcess(
+                self.host, get_application
+            )
+            self._server_process.start()
+            self._server_process.ready.wait()
+            self._port = self._server_process.port.value
 
     def _post_teardown(self):
         self._server_process.terminate()
