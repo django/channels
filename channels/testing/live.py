@@ -1,6 +1,7 @@
 from functools import partial
 
 from daphne.testing import DaphneProcess
+from django import VERSION
 from django.contrib.staticfiles.handlers import ASGIStaticFilesHandler
 from django.core.exceptions import ImproperlyConfigured
 from django.db import connections
@@ -68,9 +69,18 @@ class ChannelsLiveServerTestCase(TransactionTestCase):
         self._live_server_modified_settings.disable()
         super(ChannelsLiveServerTestCase, self)._post_teardown()
 
-    def _is_in_memory_db(self, connection):
+    @staticmethod
+    def _is_in_memory_db(connection):
         """
         Check if DatabaseWrapper holds in memory database.
         """
         if connection.vendor == "sqlite":
             return connection.is_in_memory_db()
+
+
+# Workaround for Django 5.2: _pre_setup became a classmethod.
+# TODO: Remove this workaround once support for Django <5.2 is dropped.
+if VERSION >= (5, 2):
+    ChannelsLiveServerTestCase._pre_setup = classmethod(
+        ChannelsLiveServerTestCase._pre_setup
+    )
