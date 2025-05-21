@@ -40,60 +40,28 @@ class ChannelsLiveServerTestCase(TransactionTestCase):
     def live_server_ws_url(self):
         return "ws://%s:%s" % (self.host, self._port)
 
-    if VERSION >= (5, 2):
+    def _pre_setup(self):
+        for connection in connections.all():
+            if self._is_in_memory_db(connection):
+                raise ImproperlyConfigured(
+                    "ChannelLiveServerTestCase can not be used with in memory databases"
+                )
 
-        @classmethod
-        def _pre_setup(cls):
-            for connection in connections.all():
-                if cls._is_in_memory_db(connection):
-                    raise ImproperlyConfigured(
-                        "ChannelLiveServerTestCase can not be used with in memory "
-                        "databases"
-                    )
+        super(ChannelsLiveServerTestCase, self)._pre_setup()
 
-            super(ChannelsLiveServerTestCase, cls)._pre_setup()
+        self._live_server_modified_settings = modify_settings(
+            ALLOWED_HOSTS={"append": self.host}
+        )
+        self._live_server_modified_settings.enable()
 
-            cls._live_server_modified_settings = modify_settings(
-                ALLOWED_HOSTS={"append": cls.host}
-            )
-            cls._live_server_modified_settings.enable()
-
-            get_application = partial(
-                make_application,
-                static_wrapper=cls.static_wrapper if cls.serve_static else None,
-            )
-            cls._server_process = cls.ProtocolServerProcess(cls.host, get_application)
-            cls._server_process.start()
-            cls._server_process.ready.wait()
-            cls._port = cls._server_process.port.value
-
-    else:
-
-        def _pre_setup(self):
-            for connection in connections.all():
-                if self._is_in_memory_db(connection):
-                    raise ImproperlyConfigured(
-                        "ChannelLiveServerTestCase can not be used with in memory "
-                        "databases"
-                    )
-
-            super(ChannelsLiveServerTestCase, self)._pre_setup()
-
-            self._live_server_modified_settings = modify_settings(
-                ALLOWED_HOSTS={"append": self.host}
-            )
-            self._live_server_modified_settings.enable()
-
-            get_application = partial(
-                make_application,
-                static_wrapper=self.static_wrapper if self.serve_static else None,
-            )
-            self._server_process = self.ProtocolServerProcess(
-                self.host, get_application
-            )
-            self._server_process.start()
-            self._server_process.ready.wait()
-            self._port = self._server_process.port.value
+        get_application = partial(
+            make_application,
+            static_wrapper=self.static_wrapper if self.serve_static else None,
+        )
+        self._server_process = self.ProtocolServerProcess(self.host, get_application)
+        self._server_process.start()
+        self._server_process.ready.wait()
+        self._port = self._server_process.port.value
 
     def _post_teardown(self):
         self._server_process.terminate()
@@ -108,3 +76,11 @@ class ChannelsLiveServerTestCase(TransactionTestCase):
         """
         if connection.vendor == "sqlite":
             return connection.is_in_memory_db()
+
+
+# Workaround for Django 5.2: _pre_setup became a classmethod.
+# TODO: Remove this workaround once support for Django <5.2 is dropped.
+if VERSION >= (5, 2):
+    ChannelsLiveServerTestCase._pre_setup = classmethod(
+        ChannelsLiveServerTestCase._pre_setup
+    )
