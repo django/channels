@@ -13,11 +13,38 @@ def pytest_configure():
             }
         },
         INSTALLED_APPS=[
+            "daphne",
             "django.contrib.auth",
             "django.contrib.contenttypes",
             "django.contrib.sessions",
             "django.contrib.admin",
+            "django.contrib.staticfiles",
+            "tests.sample_project.sampleapp",
             "channels",
+        ],
+        STATIC_URL="static/",
+        ASGI_APPLICATION="tests.sample_project.config.asgi.application",
+        MIDDLEWARE=[
+            "django.contrib.sessions.middleware.SessionMiddleware",
+            "django.contrib.auth.middleware.AuthenticationMiddleware",
+        ],
+        ROOT_URLCONF="tests.sample_project.config.urls",
+        CHANNEL_LAYERS={
+            "default": {
+                "BACKEND": "channels.layers.InMemoryChannelLayer",
+            },
+        },
+        TEMPLATES=[
+            {
+                "BACKEND": "django.template.backends.django.DjangoTemplates",
+                "APP_DIRS": True,
+                "OPTIONS": {
+                    "context_processors": [
+                        "django.template.context_processors.request",
+                        "django.contrib.auth.context_processors.auth",
+                    ],
+                },
+            },
         ],
         SECRET_KEY="Not_a_secret_key",
     )

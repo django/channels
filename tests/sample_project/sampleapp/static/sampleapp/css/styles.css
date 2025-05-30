@@ -1,0 +1,97 @@
+.container {
+  margin: 20px 0;
+  padding: 15px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 4px rgba(169, 168, 168, 0.1);
+  background: var(--body-bg);
+  color: var(--body-fg);
+  border-radius: 15px;
+}
+
+#heading {
+  color: var(--heading-fg);
+  margin-bottom: 20px;
+  font-size: 1.2em;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#msgTitle,
+#msgTextArea {
+  padding: 8px;
+  background: var(--input-bg);
+  color: var(--input-fg);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 1em;
+  font-family: inherit;
+}
+
+#sendBtn {
+  padding: 6px 12px;
+  background: var(--button-bg);
+  color: var(--button-fg);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  border-radius: 4px;
+  align-self: flex-start;
+}
+#sendBtn:hover {
+  background: var(--button-hover-bg);
+}
+
+.stats {
+  margin-top: 15px;
+  margin-bottom: 10px;
+  font-size: 0.9em;
+}
+
+#cardsContainer {
+  display: flex;
+  gap: 10px;
+}
+
+.messageCard {
+  position: relative;
+  height: max-content;
+  background: var(--body-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  padding: 10px 12px 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-width: 25%;
+}
+
+.messageCard h3 {
+  margin: 0 0 6px;
+  font-size: 1.1em;
+  font-weight: bold;
+  color: var(--body-fg);
+  padding-right: 20px;
+}
+
+.messageCard p {
+  margin: 0;
+  font-size: 0.95em;
+  color: var(--body-fg);
+  overflow-wrap: break-word;
+}
+
+.messageCard #deleteBtn {
+  margin-top: 7px;
+  background: transparent;
+  padding: 0;
+  color: red;
+  border: none;
+  cursor: pointer;
+  line-height: 1;
+  align-self: flex-end;
+}
