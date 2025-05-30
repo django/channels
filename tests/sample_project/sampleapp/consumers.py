@@ -1,5 +1,3 @@
-import traceback
-
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
@@ -32,24 +30,19 @@ class LiveMessageConsumer(AsyncJsonWebsocketConsumer):
         Message.objects.filter(id=msg_id).delete()
 
     async def receive_json(self, content):
-        try:
-            action = content.get("action", "create")
+        action = content.get("action", "create")
 
-            if action == "create":
-                title = content.get("title", "")
-                text = content.get("message", "")
-                await self._create_message(title=title, text=text)
+        if action == "create":
+            title = content.get("title", "")
+            text = content.get("message", "")
+            await self._create_message(title=title, text=text)
 
-            elif action == "delete":
-                msg_id = content.get("id")
-                await self._delete_message(msg_id)
+        elif action == "delete":
+            msg_id = content.get("id")
+            await self._delete_message(msg_id)
 
-            # After any action, rebroadcast current state
-            await self.send_current_state()
-
-        except Exception as err:
-            tb = traceback.format_exc()
-            print(f"Error in LiveMessageConsumer: {err}\n{tb}")
+        # After any action, rebroadcast current state
+        await self.send_current_state()
 
     async def send_current_state(self):
         state = await self._fetch_state()

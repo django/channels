@@ -12,7 +12,7 @@ from channels.sessions import SessionMiddlewareStack
 from channels.testing import WebsocketCommunicator
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 @pytest.mark.asyncio
 async def test_websocket_consumer():
     """
@@ -54,7 +54,7 @@ async def test_websocket_consumer():
     assert "disconnected" in results
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 @pytest.mark.asyncio
 async def test_multiple_websocket_consumers_with_sessions():
     """
@@ -95,7 +95,7 @@ async def test_multiple_websocket_consumers_with_sessions():
     await second_communicator.disconnect()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 @pytest.mark.asyncio
 async def test_websocket_consumer_subprotocol():
     """
@@ -118,7 +118,7 @@ async def test_websocket_consumer_subprotocol():
     assert subprotocol == "subprotocol2"
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 @pytest.mark.asyncio
 async def test_websocket_consumer_groups():
     """
@@ -294,7 +294,7 @@ async def test_async_websocket_consumer_specific_channel_layer():
         await communicator.disconnect()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 @pytest.mark.asyncio
 async def test_json_websocket_consumer():
     """
@@ -434,7 +434,7 @@ async def test_block_leading_dot_type_function_call():
 
 
 @pytest.mark.parametrize("async_consumer", [False, True])
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 @pytest.mark.asyncio
 async def test_accept_headers(async_consumer):
     """
@@ -459,7 +459,7 @@ async def test_accept_headers(async_consumer):
 
 
 @pytest.mark.parametrize("async_consumer", [False, True])
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 @pytest.mark.asyncio
 async def test_close_reason(async_consumer):
     """
@@ -487,7 +487,7 @@ async def test_close_reason(async_consumer):
     assert msg["reason"] == "test reason"
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 @pytest.mark.asyncio
 async def test_websocket_receive_with_none_text():
     """

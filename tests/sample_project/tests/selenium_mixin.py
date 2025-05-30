@@ -19,7 +19,7 @@ class SeleniumMixin:
     @classmethod
     def get_chrome_webdriver(cls):
         options = webdriver.ChromeOptions()
-        # options.add_argument("--headless")
+        options.add_argument("--headless")
         options.page_load_strategy = "eager"
         return webdriver.Chrome(options=options)
 
@@ -121,9 +121,7 @@ class SeleniumMixin:
             print(self.get_browser_logs(driver))
             self.fail(f'{method} of "{value}" failed: {e}')
 
-    def wait_for_websocket_connection(
-        self, substring="WebSocket connected", timeout=50
-    ):
+    def wait_for_websocket_connection(self, substring="WebSocket connected", timeout=5):
         """
         Wait until window.websocketConnected is true, or fail after timeout.
         """

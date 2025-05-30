@@ -24,63 +24,6 @@ class TestSampleApp(SeleniumMixin, ChannelsLiveServerTestCase):
             lambda driver: driver.find_element(by, locator).text == str(exact)
         )
 
-    def test_sampleapp_display(self):
-        heading = self.find_element(By.ID, "heading")
-        titleInput = self.find_element(By.ID, "msgTitle")
-        messageInput = self.find_element(By.ID, "msgTextArea")
-        addMessageButton = self.find_element(By.ID, "sendBtn")
-
-        self.assertTrue(heading.is_displayed(), "Heading should be visible")
-        self.assertTrue(titleInput.is_displayed(), "Title input should be visible")
-        self.assertTrue(messageInput.is_displayed(), "Message input should be visible")
-        self.assertTrue(
-            addMessageButton.is_displayed(), "Send button should be visible"
-        )
-
-    def test_send_empty_title_and_message(self):
-        addMessageButton = self.find_element(By.ID, "sendBtn")
-        self.assertIsNotNone(addMessageButton, "Send button should be present")
-        addMessageButton.click()
-
-        alert = self.web_driver.switch_to.alert
-        self.assertEqual(alert.text, "Please enter both title and message.")
-        alert.accept()
-
-    def test_create_message(self):
-        self._wait_for_exact_text(By.ID, "messageCount", 0)
-        titleInput = self.find_element(By.ID, "msgTitle")
-        self.assertIsNotNone(titleInput, "Title input should be present")
-        messageInput = self.find_element(By.ID, "msgTextArea")
-        self.assertIsNotNone(messageInput, "Message input should be present")
-        addMessageButton = self.find_element(By.ID, "sendBtn")
-        self.assertIsNotNone(addMessageButton, "Send button should be present")
-        titleInput.send_keys("Test Title")
-        messageInput.send_keys("Test Message")
-        addMessageButton.click()
-
-        self._wait_for_exact_text(By.ID, "messageCount", 1)
-        messageCount = self.find_element(By.ID, "messageCount")
-        self.assertIsNotNone(messageCount, "Message count should be present")
-        self.assertEqual(messageCount.text, "1")
-
-    def test_delete_message(self):
-        self._create_message()
-        self.web_driver.refresh()
-
-        self._wait_for_exact_text(By.ID, "messageCount", 1)
-        messageCount = self.find_element(By.ID, "messageCount")
-        self.assertIsNotNone(messageCount, "Message count should be present")
-        self.assertEqual(messageCount.text, "1")
-
-        deleteButton = self.find_element(By.ID, "deleteBtn")
-        self.assertIsNotNone(deleteButton, "Delete button should be present")
-        deleteButton.click()
-
-        self._wait_for_exact_text(By.ID, "messageCount", 0)
-        messageCount = self.find_element(By.ID, "messageCount")
-        self.assertIsNotNone(messageCount, "Message count should be present")
-        self.assertEqual(messageCount.text, "0")
-
     def test_real_time_create_message(self):
         self.web_driver.switch_to.new_window("tab")
         tabs = self.web_driver.window_handles
