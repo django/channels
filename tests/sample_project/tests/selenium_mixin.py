@@ -10,6 +10,9 @@ class SeleniumMixin:
     """
     Mixin to provide a headless Chromium browser for
     end-to-end tests to test ChannelsLiveServerTestCase.
+
+    Adapted from OpenWISP's SeleniumTestMixin in openwisp_utils.
+    https://github.com/openwisp/openwisp-utils/blob/master/openwisp_utils/tests/selenium.py
     """
 
     admin_username = "admin"
