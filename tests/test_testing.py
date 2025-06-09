@@ -6,7 +6,7 @@ from django.urls import path
 
 from channels.consumer import AsyncConsumer
 from channels.generic.websocket import WebsocketConsumer
-from channels.routing import URLRouter
+from channels.routing import URLRouter, ValidURLRouter
 from channels.testing import HttpCommunicator, WebsocketCommunicator
 
 
@@ -194,3 +194,44 @@ async def test_connection_scope(path):
     connected, _ = await communicator.connect()
     assert connected
     await communicator.disconnect()
+
+
+@pytest.mark.skip
+@pytest.mark.asyncio
+async def test_route_validator_http():
+    """
+    Ensures ValidURLRouter returns 404 when route can't be matched.
+    """
+    router = ValidURLRouter([path("test/", SimpleHttpApp())])
+    communicator = HttpCommunicator(router, "GET", "/test/?foo=bar")
+    response = await communicator.get_response()
+    assert response["body"] == b"test response"
+    assert response["status"] == 200
+
+    communicator = HttpCommunicator(router, "GET", "/not-test/")
+    response = await communicator.get_response()
+    assert response["body"] == b"404 Not Found"
+    assert response["status"] == 404
+
+
+@pytest.mark.skip
+@pytest.mark.asyncio
+async def test_route_validator_websocket():
+    """
+    Ensures WebSocket connections are closed on unmatched routes.
+
+    Forces ValidURLRouter to return 403 for unmatched routes during the handshake.
+    WebSocket clients will receive a 1008 close code.
+
+    Ideally this should result in a 404, but that is not achievable in this context.
+    """
+    router = ValidURLRouter([path("testws/", SimpleWebsocketApp())])
+    communicator = WebsocketCommunicator(router, "/testws/")
+    connected, subprotocol = await communicator.connect()
+    assert connected
+    assert subprotocol is None
+
+    communicator = WebsocketCommunicator(router, "/not-testws/")
+    connected, subprotocol = await communicator.connect()
+    assert connected is False
+    assert subprotocol == 1008
