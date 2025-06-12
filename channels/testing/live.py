@@ -1,7 +1,6 @@
 from functools import partial
 
 from daphne.testing import DaphneProcess
-from django import VERSION
 from django.contrib.staticfiles.handlers import ASGIStaticFilesHandler
 from django.core.exceptions import ImproperlyConfigured
 from django.db import connections
@@ -40,47 +39,46 @@ class ChannelsLiveServerTestCase(TransactionTestCase):
     def live_server_ws_url(self):
         return "ws://%s:%s" % (self.host, self._port)
 
-    def _pre_setup(self):
+    @classmethod
+    def setUpClass(cls):
         for connection in connections.all():
-            if self._is_in_memory_db(connection):
+            if cls._is_in_memory_db(connection):
                 raise ImproperlyConfigured(
                     "ChannelLiveServerTestCase can not be used with in memory databases"
                 )
 
-        super(ChannelsLiveServerTestCase, self)._pre_setup()
+        super().setUpClass()
 
-        self._live_server_modified_settings = modify_settings(
-            ALLOWED_HOSTS={"append": self.host}
+        cls._live_server_modified_settings = modify_settings(
+            ALLOWED_HOSTS={"append": cls.host}
         )
-        self._live_server_modified_settings.enable()
+        cls._live_server_modified_settings.enable()
 
         get_application = partial(
             make_application,
-            static_wrapper=self.static_wrapper if self.serve_static else None,
+            static_wrapper=cls.static_wrapper if cls.serve_static else None,
         )
-        self._server_process = self.ProtocolServerProcess(self.host, get_application)
-        self._server_process.start()
-        self._server_process.ready.wait()
-        self._port = self._server_process.port.value
+        cls._server_process = cls.ProtocolServerProcess(cls.host, get_application)
+        cls._server_process.start()
+        while True:
+            if not cls._server_process.ready.wait(timeout=1):
+                if cls._server_process.is_alive():
+                    continue
+                raise RuntimeError("Server stopped") from None
+            break
+        cls._port = cls._server_process.port.value
 
-    def _post_teardown(self):
-        self._server_process.terminate()
-        self._server_process.join()
-        self._live_server_modified_settings.disable()
-        super(ChannelsLiveServerTestCase, self)._post_teardown()
+    @classmethod
+    def tearDownClass(cls):
+        cls._server_process.terminate()
+        cls._server_process.join()
+        cls._live_server_modified_settings.disable()
+        super().tearDownClass()
 
-    @staticmethod
-    def _is_in_memory_db(connection):
+    @classmethod
+    def _is_in_memory_db(cls, connection):
         """
         Check if DatabaseWrapper holds in memory database.
         """
         if connection.vendor == "sqlite":
             return connection.is_in_memory_db()
-
-
-# Workaround for Django 5.2: _pre_setup became a classmethod.
-# TODO: Remove this workaround once support for Django <5.2 is dropped.
-if VERSION >= (5, 2):
-    ChannelsLiveServerTestCase._pre_setup = classmethod(
-        ChannelsLiveServerTestCase._pre_setup
-    )
