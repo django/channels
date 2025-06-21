@@ -34,7 +34,7 @@ We also assume that you have :doc:`Channels and Daphne installed
 
 This tutorial is written for Channels 4.0, which supports Python 3.7+ and Django
 3.2+. If the Channels version does not match, you can refer to the tutorial for
-your version of Channels by using the version switcher at the bottom left corner
+your version of Channels by using the version switcher at the bottom right corner
 of this page, or update Channels to the newest version.
 
 This tutorial also **uses Docker** to install and run Redis. We use Redis as the
