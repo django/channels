@@ -35,8 +35,8 @@ and `tutorial <https://channels.readthedocs.io/en/latest/tutorial/index.html>`_ 
 Dependencies
 ------------
 
-All Channels projects currently support Python 3.8 and up. ``channels`` is
-compatible with Django 4.2 and 5.0.
+All Channels projects currently support Python 3.9 and up. ``channels`` is
+compatible with Django 4.2+.
 
 
 Contributing
