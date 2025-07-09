@@ -142,7 +142,8 @@ async def test_websocket_application():
 @pytest.mark.asyncio
 async def test_timeout_disconnect():
     """
-    Tests that disconnect() still works after a timeout.
+    Tests that communicator.disconnect() raises after a timeout. (Application
+    is finished.)
     """
     communicator = WebsocketCommunicator(ErrorWebsocketApp(), "/testws/")
     # Test connection
@@ -153,8 +154,9 @@ async def test_timeout_disconnect():
     await communicator.send_to(text_data="hello")
     with pytest.raises(asyncio.TimeoutError):
         await communicator.receive_from()
-    # Close out
-    await communicator.disconnect()
+
+    with pytest.raises(asyncio.exceptions.CancelledError):
+        await communicator.disconnect()
 
 
 class ConnectionScopeValidator(WebsocketConsumer):
