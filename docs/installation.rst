@@ -69,6 +69,22 @@ take control of the ``runserver`` command. See :doc:`introduction` for more.
     or remove the offending app altogether.
 
 
+Type checking support
+---------------------
+
+If you want type checking support, you can install the type stubs:
+
+.. code-block:: sh
+
+    python -m pip install types-channels
+
+Or install channels with type support using the ``types`` extra:
+
+.. code-block:: sh
+
+    python -m pip install 'channels[types]'
+
+
 Installing the latest development version
 -----------------------------------------
 
