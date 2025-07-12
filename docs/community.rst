@@ -16,6 +16,8 @@ These projects from the community are developed on top of Channels:
 * channels-valkey_, a Django Channels channel layer that uses valkey as it's backing store.
   SimpleJWT_ middleware, such as QueryStringSimpleJWTAuthTokenMiddleware_ for WebSocket
   authentication.
+* types-channels_, type stubs for Channels from the `Python typeshed project`_.
+  These stubs provide type checking support for mypy, PyCharm, and other type checkers.
 
 If you'd like to add your project, please submit a PR with a link and brief description.
 
@@ -33,3 +35,5 @@ If you'd like to add your project, please submit a PR with a link and brief desc
 .. _channels-valkey: https://github.com/amirreza8002/channels_valkey   
 .. _SimpleJWT: https://github.com/jazzband/djangorestframework-simplejwt
 .. _QueryStringSimpleJWTAuthTokenMiddleware: https://github.com/YegorDB/django-channels-auth-token-middlewares/tree/master/tutorial/drf#querystringsimplejwtauthtokenmiddleware
+.. _types-channels: https://pypi.org/project/types-channels/
+.. _Python typeshed project: https://github.com/python/typeshed
