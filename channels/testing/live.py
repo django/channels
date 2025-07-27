@@ -18,6 +18,13 @@ def make_application(*, static_wrapper):
     return application
 
 
+def set_database_connection():
+    from django.conf import settings
+
+    test_db_name = settings.DATABASES["default"]["TEST"]["NAME"]
+    settings.DATABASES["default"]["NAME"] = test_db_name
+
+
 class ChannelsLiveServerTestCase(TransactionTestCase):
     """
     Does basically the same as TransactionTestCase but also launches a
@@ -58,7 +65,11 @@ class ChannelsLiveServerTestCase(TransactionTestCase):
             make_application,
             static_wrapper=cls.static_wrapper if cls.serve_static else None,
         )
-        cls._server_process = cls.ProtocolServerProcess(cls.host, get_application)
+        cls._server_process = cls.ProtocolServerProcess(
+            cls.host,
+            get_application,
+            setup=set_database_connection,
+        )
         cls._server_process.start()
         while True:
             if not cls._server_process.ready.wait(timeout=1):
