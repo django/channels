@@ -1,0 +1,22 @@
+4.3.0 Release Notes
+===================
+
+Channels 4.3 is a maintenance release in the 4.x series.
+
+Bugfixes & Small Changes
+------------------------
+
+* Updated asgiref dependency to v3.9+.
+
+  The ``ApplicationCommunicator`` testing utility will now return its result if
+  the application is finished when sending input. Assert the
+  ``CancelledError``` rather than allowing a timeout in your tests if you're
+  affected by this change.
+
+* Dropped support for EOL Python and Django versions. Python 3.9 is now the
+  minimum supported version.
+
+* Fixed compatibility of ``ChannelsLiveServerTestCase`` with Django 5.2.
+
+* Fixed DB setup for spawned testing subprocess, typically on Windows and macOS.
+

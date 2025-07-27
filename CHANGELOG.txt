@@ -1,6 +1,22 @@
 Full release notes, with more details and upgrade information, are available at:
 https://channels.readthedocs.io/en/latest/releases
 
+4.3.0 (2025-07-28)
+------------------
+
+* Updated asgiref dependency to v3.9+.
+
+* Dropped support for EOL Python and Django versions. Python 3.9 is now the
+  minimum supported version.
+
+* Fixed compatibility of ``ChannelsLiveServerTestCase`` with Django 5.2.
+
+* Fixed DB setup for spawned testing subprocess, typically on Windows and macOS.
+
+See the `Version 4.3.0 release notes
+<https://channels.readthedocs.io/en/latest/releases/4.3.0.html>`_ for more
+details.
+
 4.2.2 (2025-03-30)
 ------------------
 
