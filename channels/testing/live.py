@@ -4,6 +4,7 @@ from daphne.testing import DaphneProcess
 from django.contrib.staticfiles.handlers import ASGIStaticFilesHandler
 from django.core.exceptions import ImproperlyConfigured
 from django.db import connections
+from django.db.backends.base.creation import TEST_DATABASE_PREFIX
 from django.test.testcases import TransactionTestCase
 from django.test.utils import modify_settings
 
@@ -22,6 +23,8 @@ def set_database_connection():
     from django.conf import settings
 
     test_db_name = settings.DATABASES["default"]["TEST"]["NAME"]
+    if not test_db_name:
+        test_db_name = TEST_DATABASE_PREFIX + settings.DATABASES["default"]["NAME"]
     settings.DATABASES["default"]["NAME"] = test_db_name
 
 
