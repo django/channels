@@ -40,14 +40,15 @@ class ChannelsLiveServerTestCase(TransactionTestCase):
     ProtocolServerProcess = DaphneProcess
     static_wrapper = ASGIStaticFilesHandler
     serve_static = True
+    port = 0
 
     @property
     def live_server_url(self):
-        return "http://%s:%s" % (self.host, self._port)
+        return "http://%s:%s" % (self.host, self.port)
 
     @property
     def live_server_ws_url(self):
-        return "ws://%s:%s" % (self.host, self._port)
+        return "ws://%s:%s" % (self.host, self.port)
 
     @classmethod
     def setUpClass(cls):
@@ -72,6 +73,7 @@ class ChannelsLiveServerTestCase(TransactionTestCase):
             cls.host,
             get_application,
             setup=set_database_connection,
+            port=cls.port,
         )
         cls._server_process.start()
         while True:
