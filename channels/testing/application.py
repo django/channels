@@ -1,17 +1,21 @@
-from unittest import mock
+from contextlib import asynccontextmanager
 
 from asgiref.testing import ApplicationCommunicator as BaseApplicationCommunicator
-
-
-def no_op():
-    pass
+from channels.db import aclose_old_connections
+from channels.signals import consumer_started, consumer_terminated, db_sync_to_async
+from django.db import close_old_connections
 
 
 class ApplicationCommunicator(BaseApplicationCommunicator):
-    async def send_input(self, message):
-        with mock.patch("channels.db.close_old_connections", no_op):
-            return await super().send_input(message)
 
-    async def receive_output(self, timeout=1):
-        with mock.patch("channels.db.close_old_connections", no_op):
-            return await super().receive_output(timeout)
+    @asynccontextmanager
+    async def handle_db(self):
+        consumer_started.disconnect(aclose_old_connections)
+        consumer_terminated.disconnect(aclose_old_connections)
+        db_sync_to_async.disconnect(close_old_connections)
+        try:
+            yield
+        finally:
+            consumer_started.connect(aclose_old_connections)
+            consumer_terminated.connect(aclose_old_connections)
+            db_sync_to_async.connect(close_old_connections)

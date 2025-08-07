@@ -3,9 +3,10 @@ import functools
 from asgiref.sync import async_to_sync
 
 from . import DEFAULT_CHANNEL_LAYER
-from .db import aclose_old_connections, database_sync_to_async
+from .db import database_sync_to_async
 from .exceptions import StopConsumer
 from .layers import get_channel_layer
+from .signals import consumer_started, consumer_terminated
 from .utils import await_many_dispatch
 
 
@@ -62,7 +63,7 @@ class AsyncConsumer:
                 await await_many_dispatch([receive], self.dispatch)
         except StopConsumer:
             # Exit cleanly
-            pass
+            await consumer_terminated.asend(sender=self.__class__)
 
     async def dispatch(self, message):
         """
@@ -70,7 +71,7 @@ class AsyncConsumer:
         """
         handler = getattr(self, get_handler_name(message), None)
         if handler:
-            await aclose_old_connections()
+            await consumer_started.asend(sender=self.__class__)
             await handler(message)
         else:
             raise ValueError("No handler for message type %s" % message["type"])
