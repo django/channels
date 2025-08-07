@@ -38,7 +38,8 @@ class ConnectionClosingTests(TestCase):
             "This bug only occurs when the database is materialized on disk",
         )
         communicator = WebsocketCommunicator(WebsocketConsumer.as_asgi(), "/")
-        connected, subprotocol = await communicator.connect()
+        async with communicator.handle_db():
+            connected, subprotocol = await communicator.connect()
         self.assertTrue(connected)
         self.assertEqual(subprotocol, "fun")
 
@@ -51,5 +52,6 @@ class ConnectionClosingTests(TestCase):
         communicator = HttpCommunicator(
             HttpConsumer.as_asgi(), method="GET", path="/test/"
         )
-        connected = await communicator.get_response()
+        async with communicator.handle_db():
+            connected = await communicator.get_response()
         self.assertTrue(connected)
