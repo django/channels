@@ -1,4 +1,5 @@
 import json
+from json.decoder import JSONDecodeError
 
 from asgiref.sync import async_to_sync
 
@@ -21,6 +22,7 @@ class WebsocketConsumer(SyncConsumer):
     groups = None
 
     def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         if self.groups is None:
             self.groups = []
 
@@ -128,7 +130,12 @@ class JsonWebsocketConsumer(WebsocketConsumer):
 
     def receive(self, text_data=None, bytes_data=None, **kwargs):
         if text_data:
-            self.receive_json(self.decode_json(text_data), **kwargs)
+            try:
+                content = self.decode_json(text_data)
+                self.receive_json(content, **kwargs)
+            except JSONDecodeError as e:
+                raise ValueError(f"Invalid JSON format: {e}")
+
         else:
             raise ValueError("No text section for incoming WebSocket frame!")
 
@@ -162,6 +169,7 @@ class AsyncWebsocketConsumer(AsyncConsumer):
     groups = None
 
     def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         if self.groups is None:
             self.groups = []
 
