@@ -27,4 +27,3 @@ async def aclose_old_connections(**kwargs):
 consumer_started.connect(aclose_old_connections)
 consumer_terminated.connect(aclose_old_connections)
 db_sync_to_async.connect(close_old_connections)
-

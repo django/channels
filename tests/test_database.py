@@ -4,7 +4,7 @@ from django.test import TestCase
 from channels.db import database_sync_to_async
 from channels.generic.http import AsyncHttpConsumer
 from channels.generic.websocket import AsyncWebsocketConsumer
-from channels.testing import HttpCommunicator, WebsocketCommunicator
+from channels.testing import HttpCommunicator, WebsocketCommunicator, keep_db_open
 
 
 @database_sync_to_async
@@ -31,6 +31,8 @@ class HttpConsumer(AsyncHttpConsumer):
 
 
 class ConnectionClosingTests(TestCase):
+
+    @keep_db_open
     async def test_websocket(self):
         self.assertNotRegex(
             db.connections["default"].settings_dict.get("NAME"),
@@ -38,11 +40,11 @@ class ConnectionClosingTests(TestCase):
             "This bug only occurs when the database is materialized on disk",
         )
         communicator = WebsocketCommunicator(WebsocketConsumer.as_asgi(), "/")
-        async with communicator.handle_db():
-            connected, subprotocol = await communicator.connect()
+        connected, subprotocol = await communicator.connect()
         self.assertTrue(connected)
         self.assertEqual(subprotocol, "fun")
 
+    @keep_db_open
     async def test_http(self):
         self.assertNotRegex(
             db.connections["default"].settings_dict.get("NAME"),
@@ -52,6 +54,5 @@ class ConnectionClosingTests(TestCase):
         communicator = HttpCommunicator(
             HttpConsumer.as_asgi(), method="GET", path="/test/"
         )
-        async with communicator.handle_db():
-            connected = await communicator.get_response()
+        connected = await communicator.get_response()
         self.assertTrue(connected)
