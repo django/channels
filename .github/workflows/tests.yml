@@ -10,6 +10,15 @@ jobs:
   tests:
     name: Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
+    services:
+      postgres:
+          env:
+            POSTGRES_USER: channels
+            POSTGRES_PASSWORD: channels
+            POSTGRES_DB: channels
+          image: postgres:14-alpine
+          ports: ["5432:5432"]
+          options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
     strategy:
       fail-fast: false
       matrix:

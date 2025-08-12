@@ -4,14 +4,18 @@ from django.test import TestCase
 from channels.db import database_sync_to_async
 from channels.generic.http import AsyncHttpConsumer
 from channels.generic.websocket import AsyncWebsocketConsumer
-from channels.testing import HttpCommunicator, WebsocketCommunicator
+from channels.testing import ConsumerTestMixin, HttpCommunicator, WebsocketCommunicator
 
 
 @database_sync_to_async
 def basic_query():
     with db.connections["default"].cursor() as cursor:
-        cursor.execute("SELECT 1234")
-        return cursor.fetchone()[0]
+        cursor.execute("SELECT 1234;")
+        cursor.fetchone()[0]
+
+    with db.connections["other"].cursor() as cursor:
+        cursor.execute("SELECT 1234;")
+        cursor.fetchone()[0]
 
 
 class WebsocketConsumer(AsyncWebsocketConsumer):
@@ -30,7 +34,9 @@ class HttpConsumer(AsyncHttpConsumer):
         )
 
 
-class ConnectionClosingTests(TestCase):
+class ConnectionClosingTests(ConsumerTestMixin, TestCase):
+    databases = {'default', 'other'}
+
     async def test_websocket(self):
         self.assertNotRegex(
             db.connections["default"].settings_dict.get("NAME"),
