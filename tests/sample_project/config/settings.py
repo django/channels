@@ -64,6 +64,12 @@ DATABASES = {
         # Override Django’s default behaviour of using an in-memory database
         # in tests for SQLite, since that avoids connection.close() working.
         "TEST": {"NAME": "test_db.sqlite3"},
+    },
+    "other": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "channels",
+        "USER": "channels",
+        "PASSWORD": "channels",
     }
 }
 
