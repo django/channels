@@ -10,8 +10,12 @@ from channels.testing import ConsumerTestMixin, HttpCommunicator, WebsocketCommu
 @database_sync_to_async
 def basic_query():
     with db.connections["default"].cursor() as cursor:
-        cursor.execute("SELECT 1234")
-        return cursor.fetchone()[0]
+        cursor.execute("SELECT 1234;")
+        cursor.fetchone()[0]
+
+    with db.connections["other"].cursor() as cursor:
+        cursor.execute("SELECT 1234;")
+        cursor.fetchone()[0]
 
 
 class WebsocketConsumer(AsyncWebsocketConsumer):
@@ -31,6 +35,7 @@ class HttpConsumer(AsyncHttpConsumer):
 
 
 class ConnectionClosingTests(ConsumerTestMixin, TestCase):
+    databases = {'default', 'other'}
 
     async def test_websocket(self):
         self.assertNotRegex(
