@@ -70,6 +70,8 @@ DATABASES = {
         "NAME": "channels",
         "USER": "channels",
         "PASSWORD": "channels",
+        "HOST": "localhost",
+        "PORT": 5432,
     }
 }
 
