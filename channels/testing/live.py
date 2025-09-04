@@ -7,8 +7,26 @@ from django.db.backends.base.creation import TEST_DATABASE_PREFIX
 from django.test.testcases import TransactionTestCase
 from django.test.utils import modify_settings
 from django.utils.functional import classproperty
+from django.utils.version import PY311
 
 from channels.routing import get_default_application
+
+if not PY311:
+    # Backport of unittest.case._enter_context() from Python 3.11.
+    def _enter_context(cm, addcleanup):
+        # Look up the special methods on the type to match the with statement.
+        cls = type(cm)
+        try:
+            enter = cls.__enter__
+            exit = cls.__exit__
+        except AttributeError:
+            raise TypeError(
+                f"'{cls.__module__}.{cls.__qualname__}' object does not support the "
+                f"context manager protocol"
+            ) from None
+        result = enter(cm)
+        addcleanup(exit, cm, None, None, None)
+        return result
 
 
 def make_application(*, static_wrapper):
@@ -124,6 +142,12 @@ class ChannelsLiveServerTestCase(TransactionTestCase):
     static_handler = ASGIStaticFilesHandler
     serve_static = True
 
+    if not PY311:
+        # Backport of unittest.TestCase.enterClassContext() from Python 3.11.
+        @classmethod
+        def enterClassContext(cls, cm):
+            return _enter_context(cm, cls.addClassCleanup)
+
     @classproperty
     def live_server_url(cls):
         return "http://%s:%s" % (cls.host, cls.server_thread.port)
@@ -192,11 +216,6 @@ class ChannelsLiveServerTestCase(TransactionTestCase):
         # Restore shared connections' non-shareability.
         for conn in cls.server_thread.connections_override.values():
             conn.dec_thread_sharing()
-
-    @classmethod
-    def tearDownClass(cls):
-        # The cleanup is now handled by addClassCleanup in _start_server_thread
-        super().tearDownClass()
 
     @classmethod
     def _is_in_memory_db(cls, connection):
