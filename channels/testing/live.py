@@ -9,6 +9,7 @@ from django.utils.functional import classproperty
 from django.utils.version import PY311
 
 from channels.routing import get_default_application
+from daphne.testing import _reinstall_reactor
 
 
 if not PY311:
@@ -49,17 +50,15 @@ def set_database_connection():
 class ChannelsLiveServerThread(threading.Thread):
     """Thread for running a live ASGI server while the tests are running."""
 
-    # We don't use a traditional server_class like Django since we use Daphne,
-    # but we keep this for API consistency
     server_class = None
 
     def __init__(self, host, static_handler, connections_override=None, port=0):
         self.host = host
         self.port = port
-        self.static_handler = static_handler
-        self.connections_override = connections_override
         self.is_ready = threading.Event()
         self.error = None
+        self.static_handler = static_handler
+        self.connections_override = connections_override
         super().__init__()
 
     def run(self):
@@ -72,29 +71,18 @@ class ChannelsLiveServerThread(threading.Thread):
             # provided by the main thread.
             for alias, conn in self.connections_override.items():
                 connections[alias] = conn
-
         try:
             # Reinstall the reactor for this thread (same as DaphneProcess)
-            from daphne.testing import _reinstall_reactor
 
             _reinstall_reactor()
 
-            from daphne.endpoints import build_endpoint_description_strings
-            from daphne.server import Server
-
             # Create the application (similar to Django's pattern)
             application = make_application(static_wrapper=self.static_handler)
-
-            # Create the server
-            endpoints = build_endpoint_description_strings(
-                host=self.host, port=self.port
-            )
-            self.server = Server(
+            
+            # Create the server using _create_server method
+            self.server = self._create_server(
                 application=application,
-                endpoints=endpoints,
-                signal_handlers=False,
-                ready_callable=self._set_ready,
-                verbosity=0,
+                connections_override=self.connections_override,
             )
 
             # Run database setup
@@ -108,11 +96,19 @@ class ChannelsLiveServerThread(threading.Thread):
         finally:
             connections.close_all()
 
-    def _set_ready(self):
-        """Called by Daphne when the server is ready."""
-        if self.server.listening_addresses:
-            self.port = self.server.listening_addresses[0][1]
-        self.is_ready.set()
+    def _create_server(self, application, connections_override=None):
+        """Create and configure the Daphne server."""
+        from daphne.endpoints import build_endpoint_description_strings
+        from daphne.server import Server
+        
+        endpoints = build_endpoint_description_strings(host=self.host, port=self.port)
+        return Server(
+            application=application,
+            endpoints=endpoints,
+            signal_handlers=False,
+            ready_callable=self._set_ready,
+            verbosity=0,
+        )
 
     def terminate(self):
         if hasattr(self, "server"):
@@ -122,6 +118,12 @@ class ChannelsLiveServerThread(threading.Thread):
             if reactor.running:
                 reactor.callFromThread(reactor.stop)
         self.join(timeout=5)
+
+
+    def _set_ready(self):
+        if self.server.listening_addresses:
+            self.port = self.server.listening_addresses[0][1]
+        self.is_ready.set()
 
 
 class ChannelsLiveServerTestCase(TransactionTestCase):
