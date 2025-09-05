@@ -8,9 +8,13 @@ from django.test.utils import modify_settings
 from django.utils.functional import classproperty
 from django.utils.version import PY311
 
+
+
 from channels.routing import get_default_application
 from daphne.testing import _reinstall_reactor
-
+from daphne.endpoints import build_endpoint_description_strings
+from daphne.server import Server
+        
 
 if not PY311:
     # Backport of unittest.case._enter_context() from Python 3.11.
@@ -30,12 +34,6 @@ if not PY311:
         return result
 
 
-def make_application(*, static_wrapper):
-    # Module-level function for pickle-ability
-    application = get_default_application()
-    if static_wrapper is not None:
-        application = static_wrapper(application)
-    return application
 
 
 def set_database_connection():
@@ -77,10 +75,12 @@ class ChannelsLiveServerThread(threading.Thread):
             _reinstall_reactor()
 
             # Create the application (similar to Django's pattern)
-            application = make_application(static_wrapper=self.static_handler)
+            application = get_default_application()
+            if self.static_handler is not None:
+                application = self.static_handler(application)
             
             # Create the server using _create_server method
-            self.server = self._create_server(
+            self.httpd = self._create_server(
                 application=application,
                 connections_override=self.connections_override,
             )
@@ -89,7 +89,7 @@ class ChannelsLiveServerThread(threading.Thread):
             set_database_connection()
 
             # Start the server
-            self.server.run()
+            self.httpd.run()
         except Exception as e:
             self.error = e
             self.is_ready.set()
@@ -97,10 +97,7 @@ class ChannelsLiveServerThread(threading.Thread):
             connections.close_all()
 
     def _create_server(self, application, connections_override=None):
-        """Create and configure the Daphne server."""
-        from daphne.endpoints import build_endpoint_description_strings
-        from daphne.server import Server
-        
+
         endpoints = build_endpoint_description_strings(host=self.host, port=self.port)
         return Server(
             application=application,
@@ -111,7 +108,7 @@ class ChannelsLiveServerThread(threading.Thread):
         )
 
     def terminate(self):
-        if hasattr(self, "server"):
+        if hasattr(self, "httpd"):
             # Stop the ASGI server
             from twisted.internet import reactor
 
@@ -121,8 +118,8 @@ class ChannelsLiveServerThread(threading.Thread):
 
 
     def _set_ready(self):
-        if self.server.listening_addresses:
-            self.port = self.server.listening_addresses[0][1]
+        if self.httpd.listening_addresses:
+            self.port = self.httpd.listening_addresses[0][1]
         self.is_ready.set()
 
 
