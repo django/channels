@@ -1,5 +1,4 @@
 import threading
-from functools import partial
 
 from django.contrib.staticfiles.handlers import ASGIStaticFilesHandler
 from django.db import connections
@@ -10,6 +9,7 @@ from django.utils.functional import classproperty
 from django.utils.version import PY311
 
 from channels.routing import get_default_application
+
 
 if not PY311:
     # Backport of unittest.case._enter_context() from Python 3.11.
@@ -49,14 +49,15 @@ def set_database_connection():
 class ChannelsLiveServerThread(threading.Thread):
     """Thread for running a live ASGI server while the tests are running."""
 
-    def __init__(
-        self, host, get_application, connections_override=None, port=0, setup=None
-    ):
+    # We don't use a traditional server_class like Django since we use Daphne,
+    # but we keep this for API consistency
+    server_class = None
+
+    def __init__(self, host, static_handler, connections_override=None, port=0):
         self.host = host
         self.port = port
-        self.get_application = get_application
+        self.static_handler = static_handler
         self.connections_override = connections_override
-        self.setup = setup
         self.is_ready = threading.Event()
         self.error = None
         super().__init__()
@@ -81,8 +82,8 @@ class ChannelsLiveServerThread(threading.Thread):
             from daphne.endpoints import build_endpoint_description_strings
             from daphne.server import Server
 
-            # Get the application
-            application = self.get_application()
+            # Create the application (similar to Django's pattern)
+            application = make_application(static_wrapper=self.static_handler)
 
             # Create the server
             endpoints = build_endpoint_description_strings(
@@ -96,9 +97,8 @@ class ChannelsLiveServerThread(threading.Thread):
                 verbosity=0,
             )
 
-            # Run setup if provided
-            if self.setup is not None:
-                self.setup()
+            # Run database setup
+            set_database_connection()
 
             # Start the server
             self.server.run()
@@ -140,7 +140,6 @@ class ChannelsLiveServerTestCase(TransactionTestCase):
     port = 0
     server_thread_class = ChannelsLiveServerThread
     static_handler = ASGIStaticFilesHandler
-    serve_static = True
 
     if not PY311:
         # Backport of unittest.TestCase.enterClassContext() from Python 3.11.
@@ -197,16 +196,11 @@ class ChannelsLiveServerTestCase(TransactionTestCase):
 
     @classmethod
     def _create_server_thread(cls, connections_override):
-        get_application = partial(
-            make_application,
-            static_wrapper=cls.static_handler if cls.serve_static else None,
-        )
         return cls.server_thread_class(
             cls.host,
-            get_application,
+            cls.static_handler,
             connections_override=connections_override,
             port=cls.port,
-            setup=set_database_connection,
         )
 
     @classmethod
