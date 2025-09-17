@@ -19,14 +19,16 @@ jobs:
         - "3.11"
         - "3.12"
         - "3.13"
+        - "3.14"
 
     steps:
       - uses: actions/checkout@v5
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
+          allow-prereleases: true
 
       - name: Set up Chrome
         uses: browser-actions/setup-chrome@v2
@@ -40,8 +42,7 @@ jobs:
           python -m pip install --upgrade tox
 
       - name: Run tox targets for ${{ matrix.python-version }}
-        run: tox run -f py$(echo ${{ matrix.python-version }} | tr -d .)
-
+        run: tox run -e py
   lint:
     name: Lint
     runs-on: ubuntu-latest
@@ -49,7 +50,7 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
