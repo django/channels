@@ -42,7 +42,8 @@ jobs:
           python -m pip install --upgrade tox
 
       - name: Run tox targets for ${{ matrix.python-version }}
-        run: tox run -e py
+        run: tox run -f py$(echo ${{ matrix.python-version }} | tr -d .)
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
