@@ -48,7 +48,7 @@ def set_database_connection():
 class ChannelsLiveServerThread(threading.Thread):
     """Thread for running a live ASGI server while the tests are running."""
 
-    server_class = None
+    server_class = Server
 
     def __init__(self, host, static_handler, connections_override=None, port=0):
         self.host = host
@@ -71,24 +71,19 @@ class ChannelsLiveServerThread(threading.Thread):
                 connections[alias] = conn
         try:
             # Reinstall the reactor for this thread (same as DaphneProcess)
-
             _reinstall_reactor()
 
-            # Create the application (similar to Django's pattern)
-            application = get_default_application()
-            if self.static_handler is not None:
-                application = self.static_handler(application)
-            
-            # Create the server using _create_server method
             self.httpd = self._create_server(
-                application=application,
                 connections_override=self.connections_override,
             )
+            # If binding to port zero, assign the port allocated by the OS.
+            if self.port == 0:
+                self.port = self.httpd.listening_addresses[0][1]
 
             # Run database setup
             set_database_connection()
 
-            # Start the server
+            self.is_ready.set()
             self.httpd.run()
         except Exception as e:
             self.error = e
@@ -96,14 +91,14 @@ class ChannelsLiveServerThread(threading.Thread):
         finally:
             connections.close_all()
 
-    def _create_server(self, application, connections_override=None):
-
+    def _create_server(self, connections_override=None):
         endpoints = build_endpoint_description_strings(host=self.host, port=self.port)
-        return Server(
+        # Create the handler for serving static files
+        application = self.static_handler(get_default_application())
+        return self.server_class(
             application=application,
             endpoints=endpoints,
             signal_handlers=False,
-            ready_callable=self._set_ready,
             verbosity=0,
         )
 
@@ -114,13 +109,7 @@ class ChannelsLiveServerThread(threading.Thread):
 
             if reactor.running:
                 reactor.callFromThread(reactor.stop)
-        self.join(timeout=5)
-
-
-    def _set_ready(self):
-        if self.httpd.listening_addresses:
-            self.port = self.httpd.listening_addresses[0][1]
-        self.is_ready.set()
+        self.join()
 
 
 class ChannelsLiveServerTestCase(TransactionTestCase):
@@ -209,11 +198,3 @@ class ChannelsLiveServerTestCase(TransactionTestCase):
         # Restore shared connections' non-shareability.
         for conn in cls.server_thread.connections_override.values():
             conn.dec_thread_sharing()
-
-    @classmethod
-    def _is_in_memory_db(cls, connection):
-        """
-        Check if DatabaseWrapper holds in memory database.
-        """
-        if connection.vendor == "sqlite":
-            return connection.is_in_memory_db()
