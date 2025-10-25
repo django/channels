@@ -76,14 +76,11 @@ class ChannelsLiveServerThread(threading.Thread):
             self.httpd = self._create_server(
                 connections_override=self.connections_override,
             )
-            # If binding to port zero, assign the port allocated by the OS.
-            if self.port == 0:
-                self.port = self.httpd.listening_addresses[0][1]
 
             # Run database setup
             set_database_connection()
 
-            self.is_ready.set()
+            # The server will call ready_callable when ready
             self.httpd.run()
         except Exception as e:
             self.error = e
@@ -99,8 +96,16 @@ class ChannelsLiveServerThread(threading.Thread):
             application=application,
             endpoints=endpoints,
             signal_handlers=False,
+            ready_callable=self._server_is_ready,
             verbosity=0,
         )
+
+    def _server_is_ready(self):
+        """Called by Daphne when the server is ready and listening."""
+        # If binding to port zero, assign the port allocated by the OS.
+        if self.port == 0:
+            self.port = self.httpd.listening_addresses[0][1]
+        self.is_ready.set()
 
     def terminate(self):
         if hasattr(self, "httpd"):
@@ -109,7 +114,7 @@ class ChannelsLiveServerThread(threading.Thread):
 
             if reactor.running:
                 reactor.callFromThread(reactor.stop)
-        self.join()
+        self.join(timeout=5)
 
 
 class ChannelsLiveServerTestCase(TransactionTestCase):
