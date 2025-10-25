@@ -1,5 +1,8 @@
 import threading
 
+from daphne.endpoints import build_endpoint_description_strings
+from daphne.server import Server
+from daphne.testing import _reinstall_reactor
 from django.contrib.staticfiles.handlers import ASGIStaticFilesHandler
 from django.db import connections
 from django.db.backends.base.creation import TEST_DATABASE_PREFIX
@@ -8,13 +11,7 @@ from django.test.utils import modify_settings
 from django.utils.functional import classproperty
 from django.utils.version import PY311
 
-
-
 from channels.routing import get_default_application
-from daphne.testing import _reinstall_reactor
-from daphne.endpoints import build_endpoint_description_strings
-from daphne.server import Server
-        
 
 if not PY311:
     # Backport of unittest.case._enter_context() from Python 3.11.
@@ -32,8 +29,6 @@ if not PY311:
         result = enter(cm)
         addcleanup(exit, cm, None, None, None)
         return result
-
-
 
 
 def set_database_connection():
