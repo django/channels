@@ -1,6 +1,6 @@
 import functools
 
-from asgiref.sync import async_to_sync
+from asgiref.sync import async_to_sync, sync_to_async
 
 from . import DEFAULT_CHANNEL_LAYER
 from .db import database_sync_to_async
@@ -8,6 +8,16 @@ from .exceptions import StopConsumer
 from .layers import get_channel_layer
 from .signals import consumer_started, consumer_terminated
 from .utils import await_many_dispatch
+
+
+async def _asend_wrapper(signal, **kwargs):
+    """
+    Signal.asend was introduced in Django 5.0, thus a wrapper is needed for older versions.
+    """
+    if hasattr(signal, "asend"):
+        await signal.asend(**kwargs)
+    else:
+        await sync_to_async(signal.send)(**kwargs)
 
 
 def get_handler_name(message):
@@ -63,7 +73,7 @@ class AsyncConsumer:
                 await await_many_dispatch([receive], self.dispatch)
         except StopConsumer:
             # Exit cleanly
-            await consumer_terminated.asend(sender=self.__class__)
+            await _asend_wrapper(consumer_terminated, sender=self.__class__)
 
     async def dispatch(self, message):
         """
@@ -71,7 +81,7 @@ class AsyncConsumer:
         """
         handler = getattr(self, get_handler_name(message), None)
         if handler:
-            await consumer_started.asend(sender=self.__class__)
+            await _asend_wrapper(consumer_started, sender=self.__class__)
             await handler(message)
         else:
             raise ValueError("No handler for message type %s" % message["type"])
