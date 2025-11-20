@@ -140,7 +140,7 @@ def AllowedHostsOriginValidator(application):
     """
     allowed_hosts = settings.ALLOWED_HOSTS
     if settings.DEBUG and not allowed_hosts:
-        allowed_hosts = ["localhost", "127.0.0.1", "[::1]"]
+        allowed_hosts = [".localhost", "127.0.0.1", "[::1]"]
     return OriginValidator(application, allowed_hosts)
 
 
