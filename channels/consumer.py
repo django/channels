@@ -23,7 +23,7 @@ def get_handler_name(message):
         raise ValueError("Malformed type in message (leading underscore)")
     return handler_name
 
-
+DEFAULT_AWAIT_MANY_DISPATCH = await_many_dispatch
 class AsyncConsumer:
     """
     Base consumer class. Implements the ASGI application spec, and adds on
@@ -33,7 +33,8 @@ class AsyncConsumer:
 
     _sync = False
     channel_layer_alias = DEFAULT_CHANNEL_LAYER
-
+    await_many_and_dispatch = DEFAULT_AWAIT_MANY_DISPATCH
+    priority_message_types = ["websocket.disconnect"]
     async def __call__(self, scope, receive, send):
         """
         Dispatches incoming messages to type-based handlers asynchronously.
@@ -55,11 +56,11 @@ class AsyncConsumer:
         # Pass messages in from channel layer or client to dispatch method
         try:
             if self.channel_layer is not None:
-                await await_many_dispatch(
+                await self.await_many_and_dispatch(
                     [receive, self.channel_receive], self.dispatch
                 )
             else:
-                await await_many_dispatch([receive], self.dispatch)
+                await self.await_many_and_dispatch([receive], self.dispatch)
         except StopConsumer:
             # Exit cleanly
             pass
