@@ -5,6 +5,8 @@ from django.core.exceptions import ImproperlyConfigured
 from django.urls.exceptions import Resolver404
 from django.urls.resolvers import RegexPattern, RoutePattern, URLResolver
 
+from channels.exceptions import RouterResolver404
+
 """
 All Routing instances inside this file are also valid ASGI applications - with
 new Channels routing, whatever you end up with as the top level object is just
@@ -99,7 +101,7 @@ class URLRouter:
             root_path = scope.get("root_path", "")
             if root_path and not path.startswith(root_path):
                 # If root_path is present, path must start with it.
-                raise ValueError("No route found for path %r." % path)
+                raise RouterResolver404("No route found for path %r." % path)
             path = path[len(root_path) :]
 
         # Remove leading / to match Django's handling
@@ -127,13 +129,13 @@ class URLRouter:
                         receive,
                         send,
                     )
-            except Resolver404:
+            except RouterResolver404:
                 pass
         else:
             if "path_remaining" in scope:
-                raise Resolver404("No route found for path %r." % path)
+                raise RouterResolver404("No route found for path %r." % path)
             # We are the outermost URLRouter
-            raise ValueError("No route found for path %r." % path)
+            raise RouterResolver404("No route found for path %r." % path)
 
 
 class ChannelNameRouter:
