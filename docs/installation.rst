@@ -62,11 +62,15 @@ take control of the ``runserver`` command. See :doc:`introduction` for more.
 
     Please be wary of any other third-party apps that require an overloaded or
     replacement ``runserver`` command. Daphne provides a separate
-    ``runserver`` command and may conflict with it. An example
-    of such a conflict is with `whitenoise.runserver_nostatic <https://github.com/evansd/whitenoise/issues/77>`_
-    from `whitenoise <https://github.com/evansd/whitenoise>`_. In order to
-    solve such issues, make sure ``daphne`` is at the top of your ``INSTALLED_APPS``
-    or remove the offending app altogether.
+    ``runserver`` command and may conflict with it. In order to solve such
+    issues, make sure ``daphne`` is at the top of your ``INSTALLED_APPS`` or 
+    remove the offending app altogether.
+    
+    However, `WhiteNoise <https://github.com/evansd/whitenoise>`_ does
+    `provide support`<https://whitenoise.readthedocs.io/en/latest/django.html#using-whitenoise-in-development>
+    for running ``runserver`` with Daphne, provided that
+    ``whitenoise.runserver_nostatic`` is placed *above* ``daphne`` in
+    ``INSTALLED_APPS`.
 
 
 Type checking support
