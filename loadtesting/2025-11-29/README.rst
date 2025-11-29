@@ -153,9 +153,9 @@ Worker:
 Latency & Throughput Results
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. image:: channels-latency.PNG
+.. image:: channels-latency.png
 
-.. image:: channels-throughput.PNG
+.. image:: channels-throughput.png
 
 **Throughput (Effective RPS)**
 
