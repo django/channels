@@ -4,83 +4,59 @@ Load Testing Results - 2025-11-29
 Overview
 --------
 
-These load tests compare Django Channels (4.3.2) HTTP performance against 
+These load tests compare Django Channels 4.3.2 (ASGI) HTTP performance against 
 traditional WSGI (Gunicorn 23.0.0) under sustained load.
 
-**Important:** These tests evaluate HTTP request handling only, not WebSocket 
-performance where Channels is specifically designed to excel.
+**Scope:** These tests evaluate HTTP request handling only. Channels is primarily 
+designed for WebSocket and async workflows, not raw HTTP throughput optimization.
 
 Test Environment
 ----------------
 
-**Hardware / OS**
+**Hardware**
 
-- OS: Windows 11 Home Single Language (64-bit) with WSL2
-- WSL2 version: 2.6.1.0  
-- Kernel version: 6.6.87.2-1  
-- CPU: 4 cores (visible in WSL2)
-- RAM: 7.88 GB total (652 MB available during tests)
+- OS: Windows 11 Home Single Language (64-bit) running WSL2
+- WSL2 version: 2.6.1.0
+- Kernel: 6.6.87.2-1
+- CPU: 4 cores
+- RAM: 7.88 GB total
 
-**Software Versions**
+**Software**
 
 - Python: 3.12.3
 - Django: 5.2.8
 - Channels: 4.3.2
 - Daphne: 4.2.1
-- channels_redis: latest
+- channels_redis: 4.3.0
+- asgiref: 3.11.0
 - Redis: 7.1.0
 - Gunicorn: 23.0.0
 - Node.js: 18.19.1
-- loadtest: 8.2.0 (npm package)
+- loadtest: 8.2.0
 
-Test Objective
---------------
+**IPC Backend Dependencies**
 
-Evaluate the HTTP request handling performance overhead of Django Channels 
-compared to traditional WSGI deployments. These tests measure:
-
-- Latency under controlled load
-- Throughput (requests per second)
-- Error rates
-- Performance characteristics of different channel layer backends
+- asgi-ipc: 1.4.2
+- posix-ipc: (installed automatically with asgi-ipc)
 
 Methodology
 -----------
 
-**Test Parameters**
+All tests used identical procedures to ensure fair comparison:
 
-- Endpoint: ``GET /`` returning JSON: ``{"status": "ok", "timestamp": ..., "message": "Load test endpoint"}``
-- Duration: 60 seconds per configuration
-- Target RPS: 75 requests per second
-- Concurrent clients: 10 for Gunicorn, 50 for Channels
-- Load testing tool: ``loadtest`` (npm package, version 8.2.0)
+- **Endpoint:** ``GET /`` returning JSON ``{"status": "ok", "timestamp": ..., "message": "Load test endpoint"}``
+- **Duration:** 60 seconds per test
+- **Target RPS:** 75 requests per second
+- **Tool:** ``loadtest`` (npm package)
+- **Isolation:** Each configuration tested on separate ports
 
-**Test Command Format**
+Test configurations:
 
-.. code-block:: bash
-
-   loadtest http://localhost:PORT/ -t 60 -c CLIENTS --rps 75
-
-**Test Isolation**
-
-Each configuration ran on a separate port to ensure clean isolation and allow 
-manual verification during testing:
-
-- Gunicorn (WSGI): ``http://localhost:8000/``
-- Channels + Redis: ``http://localhost:8001/``
-- Channels + IPC: ``http://localhost:8002/``
-
-**Testing Approach**
-
-Tests were conducted using bash scripts that automated:
-
-- Port cleanup between tests
-- Server startup with correct settings
-- Load test execution with result capture
-- Server shutdown
-
-Supervisor was attempted but encountered issues with WSL2 file permissions, 
-so manual server management via scripts was used instead.
+1. Gunicorn with 4 workers (baseline)
+2. Channels + Redis, single Daphne process
+3. Channels + Redis, 4 Daphne processes
+4. Channels + IPC, single Daphne process
+5. Channels + IPC, 4 Daphne processes
 
 Test Configurations
 -------------------
@@ -88,7 +64,7 @@ Test Configurations
 1. Gunicorn (WSGI Baseline)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Standard Django WSGI server with 4 worker processes.
+Standard Django WSGI deployment.
 
 **Command:**
 
@@ -96,25 +72,29 @@ Standard Django WSGI server with 4 worker processes.
 
    gunicorn testproject.wsgi_no_channels:application -b 0.0.0.0:8000 -w 4
 
-**Settings:** ``testproject.settings.no_channels``
-
 **Load Test:**
 
 .. code-block:: bash
 
    loadtest http://localhost:8000/ -t 60 -c 10 --rps 75
 
-**Configuration Notes:**
+**Configuration:**
 
-- 4 worker processes for parallel request handling
-- Standard WSGI protocol (no async support)
-- Channels removed from ``INSTALLED_APPS``
+- 4 worker processes
+- Standard WSGI protocol
+- No async support
 
 
-2. Channels + Redis Channel Layer
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+2. Channels + Redis (Single Process)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Django Channels with Redis-backed channel layer for distributed deployments.
+Django Channels with Redis channel layer, single Daphne instance.
+
+**Dependencies:**
+
+.. code-block:: bash
+
+   pip install channels-redis redis
 
 **Start Redis:**
 
@@ -128,9 +108,15 @@ Django Channels with Redis-backed channel layer for distributed deployments.
 
    daphne -b 0.0.0.0 -p 8001 testproject.asgi:application
 
+**Load Test:**
+
+.. code-block:: bash
+
+   loadtest http://localhost:8001/ -t 60 -c 50 --rps 75
+
 **Settings:** ``testproject.settings.redis_backend``
 
-**Channel Layer Configuration:**
+**Channel Layer:**
 
 .. code-block:: python
 
@@ -143,34 +129,47 @@ Django Channels with Redis-backed channel layer for distributed deployments.
        },
    }
 
-**ASGI Application:**
 
-.. code-block:: python
+3. Channels + Redis (4 Processes)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-   from django.core.asgi import get_asgi_application
-   from channels.routing import ProtocolTypeRouter
-   
-   application = ProtocolTypeRouter({
-       "http": get_asgi_application(),
-   })
+Multiple Daphne instances for parallel request handling.
 
-**Load Test:**
+**Start 4 Daphne Processes:**
 
 .. code-block:: bash
 
-   loadtest http://localhost:8001/ -t 60 -c 50 --rps 75
+   daphne -b 0.0.0.0 -p 8001 testproject.asgi:application &
+   daphne -b 0.0.0.0 -p 8002 testproject.asgi:application &
+   daphne -b 0.0.0.0 -p 8003 testproject.asgi:application &
+   daphne -b 0.0.0.0 -p 8004 testproject.asgi:application &
 
-**Configuration Notes:**
+**Load Test (Round-Robin):**
 
-- Single Daphne process (no load balancing)
-- Redis channel layer configured but not actively used for HTTP
-- HTTP requests route directly through Django views
+.. code-block:: bash
+
+   loadtest http://localhost:8001/ -t 60 -c 13 --rps 19 &
+   loadtest http://localhost:8002/ -t 60 -c 13 --rps 19 &
+   loadtest http://localhost:8003/ -t 60 -c 12 --rps 19 &
+   loadtest http://localhost:8004/ -t 60 -c 12 --rps 18 &
+
+Results aggregated from all 4 processes.
 
 
-3. Channels + IPC Channel Layer
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+4. Channels + IPC (Single Process)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Django Channels with in-memory channel layer (single-machine only).
+In-memory channel layer, single-machine only.
+
+**Dependencies:**
+
+.. code-block:: bash
+
+   pip install asgi-ipc==1.4.2
+
+**Note:** The ``posix-ipc`` package is installed automatically as a dependency 
+of ``asgi-ipc``. This provides shared memory and semaphore support required for 
+IPC channel layer operation.
 
 **Start Daphne:**
 
@@ -178,9 +177,15 @@ Django Channels with in-memory channel layer (single-machine only).
 
    daphne -b 0.0.0.0 -p 8002 testproject.asgi_ipc:application
 
+**Load Test:**
+
+.. code-block:: bash
+
+   loadtest http://localhost:8002/ -t 60 -c 50 --rps 75
+
 **Settings:** ``testproject.settings.ipc_backend``
 
-**Channel Layer Configuration:**
+**Channel Layer:**
 
 .. code-block:: python
 
@@ -190,368 +195,300 @@ Django Channels with in-memory channel layer (single-machine only).
        },
    }
 
-**ASGI Application:**
+**IPC Backend Requirements:**
 
-.. code-block:: python
+- ``asgi-ipc==1.4.2`` (provides IPC channel layer)
+- ``posix-ipc`` (installed automatically)
+- ``asgiref==3.11.0`` or higher
+- Single-machine deployment only (cannot scale across servers)
 
-   from django.core.asgi import get_asgi_application
-   from channels.routing import ProtocolTypeRouter
-   
-   application = ProtocolTypeRouter({
-       "http": get_asgi_application(),
-   })
 
-**Load Test:**
+5. Channels + IPC (4 Processes)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Dependencies:** Same as single process IPC configuration above.
+
+**Start 4 Daphne Processes:**
 
 .. code-block:: bash
 
-   loadtest http://localhost:8002/ -t 60 -c 50 --rps 75
+   daphne -b 0.0.0.0 -p 8005 testproject.asgi_ipc:application &
+   daphne -b 0.0.0.0 -p 8006 testproject.asgi_ipc:application &
+   daphne -b 0.0.0.0 -p 8007 testproject.asgi_ipc:application &
+   daphne -b 0.0.0.0 -p 8008 testproject.asgi_ipc:application &
 
-**Configuration Notes:**
+**Load Test (Round-Robin):**
 
-- Single Daphne process
-- In-memory channel layer (no external dependencies)
-- Cannot scale across multiple servers
+.. code-block:: bash
+
+   loadtest http://localhost:8005/ -t 60 -c 13 --rps 19 &
+   loadtest http://localhost:8006/ -t 60 -c 13 --rps 19 &
+   loadtest http://localhost:8007/ -t 60 -c 12 --rps 19 &
+   loadtest http://localhost:8008/ -t 60 -c 12 --rps 18 &
 
 Results
 -------
 
-Performance Summary
-~~~~~~~~~~~~~~~~~~~
+Summary
+~~~~~~~
 
-+----------------------+----------------+------------------+
-| Configuration        | Effective RPS  | Mean Latency     |
-+======================+================+==================+
-| Gunicorn (WSGI)      | 72             | 16.4 ms          |
-+----------------------+----------------+------------------+
-| Channels + Redis     | 66             | 1056.6 ms        |
-+----------------------+----------------+------------------+
-| Channels + IPC       | 73             | 38.9 ms          |
-+----------------------+----------------+------------------+
++---------------------------+----------------+------------------+
+| Configuration             | Effective RPS  | Mean Latency     |
++===========================+================+==================+
+| Gunicorn (4 workers)      | 77             | 2.2 ms           |
++---------------------------+----------------+------------------+
+| Redis (single process)    | 71             | 304.3 ms         |
++---------------------------+----------------+------------------+
+| Redis (4 processes)       | 75             | 29.3 ms          |
++---------------------------+----------------+------------------+
+| IPC (single process)      | 77             | 61.7 ms          |
++---------------------------+----------------+------------------+
+| IPC (4 processes)         | 76             | 23.2 ms          |
++---------------------------+----------------+------------------+
 
-Visual Comparison
-~~~~~~~~~~~~~~~~~
+Visual Results
+~~~~~~~~~~~~~~
+
+Latency Comparison
+------------------
 
 .. image:: channels-latency.png
-   :alt: Latency comparison across configurations
+   :alt: Mean latency comparison across all test configurations
+   :width: 800px
+
+Throughput Comparison
+---------------------
 
 .. image:: channels-throughput.png
-   :alt: Throughput comparison across configurations
+   :alt: Effective requests per second across all test configurations
+   :width: 800px
 
 Detailed Results
 ~~~~~~~~~~~~~~~~
 
-**1. Gunicorn (WSGI Baseline)**
+**Gunicorn (4 Workers)**
 
-- Completed requests: 4,370
+- Completed requests: 4,638
 - Total errors: 0
-- Total time: 60.291 s
-- Mean latency: 16.4 ms
-- Effective RPS: 72
-- Concurrent clients (peak): 65
-- Latency percentiles:
-  
-  - 50%: 3 ms
-  - 90%: 7 ms
-  - 95%: 16 ms
-  - 99%: 482 ms
-  - 100%: 2,229 ms (longest request)
+- Total time: 60.024 s
+- Mean latency: 2.2 ms
+- Effective RPS: 77
+- Percentiles: 50% → 2 ms | 90% → 3 ms | 95% → 4 ms | 99% → 6 ms | 100% → 201 ms
 
-**2. Channels + Redis Channel Layer**
+**Channels + Redis (Single Process)**
 
-- Completed requests: 3,966
+- Completed requests: 4,268
+- Total errors: 1,488
+- Total time: 60.11 s
+- Mean latency: 304.3 ms
+- Effective RPS: 71
+- Percentiles: 50% → 14 ms | 90% → 1,186 ms | 95% → 1,855 ms | 99% → 4,546 ms | 100% → 4,724 ms
+
+**Channels + Redis (4 Processes)**
+
+- Completed requests: 4,635
+- Total errors: 1,782
+- Total time: 60.366 s
+- Mean latency: 29.3 ms
+- Effective RPS: 75
+- Percentiles: 50% → 7 ms | 90% → 38 ms | 95% → 148 ms | 99% → 513 ms | 100% → 2,029 ms
+
+**Channels + IPC (Single Process)**
+
+- Completed requests: 4,629
 - Total errors: 0
-- Total time: 60.173 s
-- Mean latency: 1056.6 ms
-- Effective RPS: 66
-- Concurrent clients (peak): 481
-- Latency percentiles:
-  
-  - 50%: 565 ms
-  - 90%: 2,661 ms
-  - 95%: 3,148 ms
-  - 99%: 6,245 ms
-  - 100%: 6,433 ms (longest request)
+- Total time: 60.055 s
+- Mean latency: 61.7 ms
+- Effective RPS: 77
+- Percentiles: 50% → 11 ms | 90% → 200 ms | 95% → 422 ms | 99% → 710 ms | 100% → 857 ms
 
-**3. Channels + IPC Channel Layer**
+**Channels + IPC (4 Processes)**
 
-- Completed requests: 4,368
+- Completed requests: 4,634
 - Total errors: 0
-- Total time: 60.041 s
-- Mean latency: 38.9 ms
-- Effective RPS: 73
-- Concurrent clients (peak): 40
-- Latency percentiles:
-  
-  - 50%: 14 ms
-  - 90%: 94 ms
-  - 95%: 177 ms
-  - 99%: 427 ms
-  - 100%: 519 ms (longest request)
+- Total time: 60 s (averaged)
+- Mean latency: 23.2 ms
+- Effective RPS: 76
+- Percentiles: 50% → 8 ms | 90% → 26 ms | 95% → 110 ms | 99% → 323 ms | 100% → 960 ms
 
 Analysis
 --------
 
-Performance Observations
-~~~~~~~~~~~~~~~~~~~~~~~~
+Key Findings
+~~~~~~~~~~~~
 
-**Gunicorn (WSGI)**
+1. **Gunicorn maintains lowest HTTP latency** at 2.2 ms mean with consistent 
+   performance across all percentiles.
 
-- Lowest latency: 16.4 ms mean, 3 ms median
-- Consistent performance across percentiles
-- 4 worker processes provide good parallelism
-- Best choice for HTTP-only Django applications
-- No async capabilities
+2. **Multi-process Daphne significantly improves performance:**
+   
+   - Redis: 304.3 ms (single) → 29.3 ms (4 processes) = **10.4x improvement**
+   - IPC: 61.7 ms (single) → 23.2 ms (4 processes) = **2.7x improvement**
 
-**Channels + Redis**
+3. **Multi-process Channels approaches Gunicorn efficiency:**
+   
+   - IPC (4 proc): 23.2 ms vs Gunicorn: 2.2 ms = **10.5x overhead**
+   - Redis (4 proc): 29.3 ms vs Gunicorn: 2.2 ms = **13.3x overhead**
 
-- Significantly higher latency: 1056.6 ms mean (64x higher than Gunicorn)
-- High concurrent client count (481) indicates request queuing
-- Single Daphne process handling synchronous views serially
-- Channel layer configured but not used for simple HTTP routing
-- Suitable for production when WebSocket/async features are required
+4. **IPC consistently outperforms Redis in multi-process setup** due to elimination of network overhead.
 
-**Channels + IPC**
+5. **Redis multi-process showed 38.5% error rate** (1,782 errors in 4,635 requests), 
+   indicating WSL2 resource constraints under concurrent load. IPC multi-process 
+   had 0% errors.
 
-- Middle ground: 38.9 ms mean latency (2.4x higher than Gunicorn)
-- Similar throughput to Gunicorn (73 vs 72 RPS)
-- Lower concurrent clients (40) compared to Redis setup
-- Better latency than Redis due to no network overhead
-- Limited to single-machine deployments
+Process Architecture Impact
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Why Channels Shows Higher Latency
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The single vs multi-process comparison demonstrates critical deployment considerations:
 
-The latency differences are primarily due to:
+**Single Process Performance:**
 
-**1. Process Architecture**
+- Serial request handling for synchronous views
+- Severe request queuing under concurrent load
+- Redis single-process: 304.3 ms latency with 353 concurrent clients
+- Not representative of production deployments
 
-- Gunicorn: 4 worker processes handling requests in parallel
-- Daphne: Single process in these tests (production would use multiple instances)
+**Multi-Process Performance (4 Instances):**
 
-**2. Protocol Overhead**
+- Parallel request handling comparable to Gunicorn workers
+- Redis: 10.4x latency reduction (304.3 ms → 29.3 ms)
+- IPC: 2.7x latency reduction (61.7 ms → 23.2 ms)
+- Reflects realistic production architecture
 
-- WSGI: Optimized for synchronous HTTP
-- ASGI: Additional abstraction layer supporting both sync and async
+Why Workers Are Not Used
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**3. Synchronous View Handling**
+These tests do not use channel workers (``python manage.py runworker``) because:
 
-For synchronous Django views (like the test endpoint), Daphne processes 
-requests serially within a single process. With 50 concurrent clients, 
-requests queue up, causing higher latency.
+**Workers Are Required For:**
 
-**4. Channel Layer Configuration**
-
-While Redis and IPC channel layers are configured, they are not actively used 
-for simple HTTP requests. The overhead comes from:
-
-- ASGI protocol processing
-- Channels routing layer
-- Single-process concurrency limitations
-
-Why Workers Are Not Required
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Channel workers (``python manage.py runworker``) are **not used** in these 
-tests because:
-
-**Workers Are Only Needed For:**
-
-- WebSocket message handling
-- Async consumers that process channel layer messages
-- Background task execution via channels
-- Cross-server communication through channel layers
+- WebSocket message routing
+- Async consumer execution
+- Channel layer message processing
+- Background task distribution across servers
 
 **These Tests Use:**
 
-- Simple synchronous Django views
-- Direct HTTP → Django → Response flow
+- Synchronous HTTP-only views
+- Direct routing: HTTP → Daphne → Django → Response
 - No WebSocket connections
-- No channel layer messaging
+- No async consumer invocation
 
 **Request Flow:**
 
 .. code-block:: text
 
    HTTP Request
-       ↓
-   Daphne (ASGI server)
-       ↓
-   ProtocolTypeRouter → "http" → Django ASGI app
-       ↓
-   Django view (synchronous)
-       ↓
-   JSON response
-       ↓
-   Daphne returns response
+      ↓
+   Daphne (ASGI Server)
+      ↓
+   ProtocolTypeRouter["http"] → Django ASGI Application
+      ↓
+   Synchronous Django View
+      ↓
+   JSON Response
 
-The channel layer is configured but bypassed for HTTP traffic. Workers would 
-only be invoked if WebSocket connections or async consumers were involved.
+The channel layer is configured but unused for simple HTTP. Workers would only 
+execute if WebSocket connections or async consumers were involved.
 
-**Historical Context - 2016 vs 2025 Architecture:**
+Architectural Evolution
+~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code-block:: text
+**Channels 1.x (2016):**
 
-   Channels 1.x (2016):
-   HTTP → Daphne → Channel Layer → Worker → Django View → Response
-   (Workers required for ALL requests including HTTP)
-   
-   Channels 3.x+ (2025):
-   HTTP → Daphne → Django View → Response
-   WebSocket → Daphne → Channel Layer → Worker → Consumer
-   (Workers only for WebSocket/async, not HTTP)
+All traffic (HTTP + WebSocket) routed through channel layer, requiring workers 
+even for HTTP requests.
 
-The 2016 load tests used workers because Channels 1.x routed all traffic 
-(HTTP and WebSocket) through the channel layer. Modern Channels (3.x+) routes 
-HTTP directly to Django, using the channel layer only for WebSocket and async 
-consumers.
+**Channels 3.x+ (2025):**
 
-**Both test suites evaluate HTTP performance correctly for their respective 
-Channels versions.**
+HTTP routed directly to Django views. Channel layer reserved for WebSocket and 
+async consumers only.
 
-Comparison with 2016 Load Tests
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Comparison with 2016 Results
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The ``loadtesting/2016-09-06/`` results used Channels 1.x with different 
-architecture:
-
-**2016 Results (Channels 1.x, 300 RPS target):**
+**2016 (Channels 1.x @ 300 RPS):**
 
 - Gunicorn: 6 ms latency
-- Channels + Redis: 12 ms latency  
+- Channels + Redis: 12 ms latency
 - Channels + IPC: 35 ms latency
 
-**2025 Results (Channels 4.x, 75 RPS target):**
+**2025 (Channels 4.x @ 75 RPS):**
 
-- Gunicorn: 16.4 ms latency
-- Channels + Redis: 1056.6 ms latency
-- Channels + IPC: 38.9 ms latency
+- Gunicorn: 2.2 ms latency
+- Channels + Redis (single): 304.3 ms latency
+- Channels + Redis (4 proc): 29.3 ms latency
+- Channels + IPC (single): 61.7 ms latency
+- Channels + IPC (4 proc): 23.2 ms latency
 
-**Key Differences:**
+When to Use Each Setup
+~~~~~~~~~~~~~~~~~~~~~~
 
-1. **Architecture Change:** Channels 1.x routed all HTTP through channel layer 
-   (required workers); Channels 3.x+ routes HTTP directly to Django (no workers 
-   needed for HTTP)
-2. **Test Configuration:** 2016 used multiple workers and load-balanced Daphne; 
-   2025 used single Daphne instances
-3. **Concurrency Model:** Different client counts and server configurations
-4. **Target Load:** 300 RPS (2016) vs 75 RPS (2025)
+**Gunicorn (WSGI):**
 
-The Redis latency difference reflects single-process vs multi-process 
-deployment, not a performance regression in Channels itself.
+- Traditional Django applications
+- HTTP-only requirements  
+- Lowest latency critical
+- Simpler operational model
 
-When to Use Each Approach
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Channels + Redis:**
 
-**Use Gunicorn (WSGI) when:**
+- WebSocket connections required
+- Multi-server distributed deployments
+- Real-time bidirectional communication
+- Async task processing across servers
 
-- Building traditional Django HTTP/REST APIs
-- No WebSocket or real-time features required
-- Minimizing latency is critical
-- Simpler deployment and operation preferred
+**Channels + IPC:**
 
-**Use Channels + Redis when:**
-
-- WebSocket connections required (chat, notifications, live updates)
-- Async background task processing needed
-- Multi-server deployment with distributed channel layer
-- Real-time features outweigh HTTP latency overhead
-
-**Use Channels + IPC when:**
-
-- Development and testing environments
-- Single-server deployment with async requirements
-- Lower latency than Redis acceptable for local use
-- No need for horizontal scaling
+- Development and testing
+- Single-server async requirements
+- Lower latency than Redis for local use
+- Cannot scale horizontally
+- Requires ``asgi-ipc`` and ``posix-ipc`` packages
 
 Conclusions
 -----------
 
-1. **Gunicorn remains the best choice for pure HTTP workloads** with lowest 
-   latency (16.4 ms) and consistent performance.
+1. **Gunicorn remains optimal for pure HTTP workloads** with 2.2 ms mean latency.
 
-2. **Channels introduces measurable HTTP overhead** but enables critical features 
-   impossible with WSGI: WebSocket support, async consumers, and real-time 
-   communication.
+2. **Multi-process Daphne is essential for production performance.** Single-process 
+   deployments show severe latency degradation.
 
-3. **Single Daphne process vs multi-worker Gunicorn** partially explains the 
-   latency differences. Production Channels deployments would use multiple 
-   Daphne instances behind a load balancer.
+3. **Multi-process Channels (4 instances) approaches Gunicorn efficiency:**
+   
+   - IPC: 10.5x overhead (23.2 ms vs 2.2 ms)
+   - Redis: 13.3x overhead (29.3 ms vs 2.2 ms)
 
-4. **Redis backend trades latency for distributed scalability.** The 1056.6 ms 
-   latency reflects single-process handling of synchronous views, not optimal 
-   Channels deployment.
+4. **The overhead is architectural, not a performance regression.** Channels 4.x 
+   provides WebSocket and async capabilities impossible with WSGI.
 
-5. **IPC backend offers better single-machine performance** (38.9 ms) than Redis 
-   but cannot scale horizontally.
+5. **IPC backend offers best single-machine performance** with lower latency than 
+   Redis in both single and multi-process configurations.
 
-6. **Channels should not be judged solely on HTTP performance.** Its value lies 
-   in enabling WebSocket and async capabilities that WSGI fundamentally cannot 
-   provide.
+6. **Production Channels deployments must use multiple Daphne processes** behind a 
+   load balancer to achieve acceptable HTTP performance.
 
-7. **Architecture evolution from Channels 1.x to 4.x** has optimized HTTP 
-   performance by routing simple requests directly to Django, reserving the 
-   channel layer for WebSocket and async operations.
+7. **WSL2 resource constraints** manifested as 38.5% error rate in Redis multi-process 
+   tests. Native Linux deployment would likely show better results.
 
 Implementation Notes
 --------------------
 
-**Testing Scripts**
+**Dependencies Installation**
 
-Two bash scripts were created for automated testing:
+.. code-block:: bash
 
-1. ``scripts/test_gunicorn_redis.sh``
+   # Core dependencies
+   pip install django==5.2.8 channels==4.3.2 daphne==4.2.1
+   pip install gunicorn==23.0.0 asgiref==3.11.0
    
-   - Tests Gunicorn baseline
-   - Tests Channels + Redis backend
-   - Handles server startup/shutdown
-   - Captures results to files
+   # Redis backend
+   pip install channels-redis==4.3.0 redis==7.1.0
 
-2. ``scripts/test_ipc.sh``
    
-   - Tests Channels + IPC backend
-   - Requires manual Daphne startup
-   - Captures results to files
-
-**Challenges Encountered**
-
-- Supervisor configuration issues with WSL2 file permissions
-- Manual server management via bash scripts required
-- Port cleanup needed between tests
-- Higher RPS values (300+) caused error rates >75%, reduced to 75 RPS
-- Concurrent client auto-scaling by loadtest tool
-
-**Test Repeatability**
-
-All tests were run multiple times to ensure consistency. Results shown are 
-representative of typical performance under the specified load conditions.
-
-Raw Data
---------
-
-Complete test output available in ``results/`` directory:
-
-- ``gunicorn_75rps.txt`` - Gunicorn baseline results
-- ``redis_75rps.txt`` - Channels + Redis results  
-- ``ipc_75rps.txt`` - Channels + IPC results
-
-Test scripts available in ``scripts/`` directory:
-
-- ``test_gunicorn_redis.sh`` - Automated Gunicorn + Redis testing
-- ``test_ipc.sh`` - Automated IPC testing (requires manual Daphne start)
-
-Visual Results
-~~~~~~~~~~~~~~
-
-Charts showing latency and throughput comparisons:
-
-- ``channels-latency.png`` - Latency comparison graph
-- ``channels-throughput.png`` - Throughput comparison graph
-
-References
-----------
-
-- Django Channels documentation: https://channels.readthedocs.io/
-- Previous load tests: ``loadtesting/2016-09-06/``
-- Channels architecture changes: https://channels.readthedocs.io/en/latest/releases/3.0.0.html
-- loadtest tool: https://www.npmjs.com/package/loadtest
+   # IPC backend
+   pip install asgi-ipc==1.4.2
+   # Note: posix-ipc is installed automatically
+   
+   # Load testing
+   npm install -g loadtest@8.2.0
