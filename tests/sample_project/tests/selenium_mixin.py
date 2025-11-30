@@ -141,6 +141,21 @@ class SeleniumMixin:
                 f"Timed out waiting for window.websocketConnected after {timeout}s"
             )
 
+    def wait_for_websocket_message_handled(self, timeout=5):
+        """
+        Wait until window.messageHandled is true, or fail after timeout.
+        """
+        try:
+            WebDriverWait(self.web_driver, timeout).until(
+                lambda d: d.execute_script("return window.messageHandled === true")
+            )
+        except TimeoutException:
+            logs = self.get_browser_logs()
+            print("\n Browser logs on WS-flag timeout:")
+            for entry in logs:
+                print(f"[{entry['level']}] {entry['message']}")
+            self.fail(f"Timed out waiting for window.messageHandled after {timeout}s")
+
     def tearDown(self):
         logs = self.web_driver.get_log("browser")
         severe_logs = [entry for entry in logs if entry.get("level") == "SEVERE"]
