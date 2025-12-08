@@ -17,7 +17,7 @@ These projects from the community are developed on top of Channels:
 * channels-demultiplexer_, a (de)multiplexer for ``AsyncJsonWebsocketConsumer`` consumers.
 * channels_postgres_, a Django Channels channel layer that uses PostgreSQL as its backing store.
 * channels-auth-token-middlewares_, Django REST framework token authentication middleware and
-* channels-valkey_, a Django Channels channel layer that uses valkey as it's backing store.
+* channels-valkey_, a Django Channels channel layer that uses valkey as its backing store.
   SimpleJWT_ middleware, such as QueryStringSimpleJWTAuthTokenMiddleware_ for WebSocket
   authentication.
 * types-channels_, type stubs for Channels from the `Python typeshed project`_.
@@ -30,14 +30,13 @@ If you'd like to add your project, please submit a PR with a link and brief desc
 .. _EventStream: https://github.com/fanout/django-eventstream
 .. _DjangoChannelsRestFramework: https://github.com/hishnash/djangochannelsrestframework
 .. _Chanx: https://github.com/huynguyengl99/chanx
-** _DjangoLiveView: https://django-liveview.andros.dev/
+.. _DjangoLiveView: https://django-liveview.andros.dev/
 .. _ChannelsMultiplexer: https://github.com/hishnash/channelsmultiplexer
 .. _DjangoChannelsIRC: https://github.com/AdvocatesInc/django-channels-irc
 .. _Apollo: https://github.com/maliesa96/apollo
 .. _DjangoChannelsJsonRpc: https://github.com/millerf/django-channels2-jsonrpc
-** _django-channels-more-than-present: https://github.com/tanrax/django-channels-more-than-present
+.. _django-channels-more-than-present: https://github.com/tanrax/django-channels-more-than-present
 .. _channels-demultiplexer: https://github.com/csdenboer/channels-demultiplexer
-.. _kafka-integration: https://gist.github.com/aryan340/da071d027050cfe0a03df3b500f2f44b
 .. _channels_postgres: https://github.com/danidee10/channels_postgres
 .. _channels-auth-token-middlewares: https://github.com/YegorDB/django-channels-auth-token-middlewares
 .. _channels-valkey: https://github.com/amirreza8002/channels_valkey
