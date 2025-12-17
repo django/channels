@@ -16,9 +16,11 @@ from channels.routing import get_default_application
 _server_command_queue = None
 
 
-def make_application(*, static_wrapper):
+def make_application(*, static_wrapper, commands={}):
     # Module-level function for pickle-ability
     application = get_default_application()
+    # Wrap the application with our command processing middleware
+    application = ServerCommandMiddleware(application, commands)
     if static_wrapper is not None:
         application = static_wrapper(application)
     return application
@@ -104,17 +106,10 @@ class ChannelsLiveServerTestCase(TransactionTestCase):
         _server_command_queue = multiprocessing.Queue()
         cls._server_command_queue = _server_command_queue
 
-        def make_application_with_middleware(*, static_wrapper):
-            application = get_default_application()
-            # Wrap the application with our command processing middleware
-            application = ServerCommandMiddleware(application, cls.commands)
-            if static_wrapper is not None:
-                application = static_wrapper(application)
-            return application
-
         get_application = partial(
-            make_application_with_middleware,
+            make_application,
             static_wrapper=cls.static_wrapper if cls.serve_static else None,
+            commands=cls.commands,
         )
         cls._server_process = cls.ProtocolServerProcess(
             cls.host,
