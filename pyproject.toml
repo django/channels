@@ -1,3 +1,77 @@
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "channels"
+description = "Brings async, event-driven capabilities to Django."
+readme = "README.rst"
+license = "BSD-3-Clause"
+license-files = [ "LICENSE" ]
+authors = [ { name = "Django Software Foundation", email = "foundation@djangoproject.com" } ]
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Web Environment",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Framework :: Django",
+    "Framework :: Django :: 5.2",
+    "Framework :: Django :: 6.0",
+    "Topic :: Internet :: WWW/HTTP",
+]
+dynamic = [ "version" ]
+
+dependencies = [ 
+    "Django>=5.2",
+    "asgiref>=3.9.0,<4",
+]
+
+[project.optional-dependencies]
+tests = [
+    "async-timeout",
+    "coverage~=4.5",
+    "pytest",
+    "pytest-django",
+    "pytest-asyncio",
+    "selenium",
+]
+daphne = [
+    "daphne>=4.0.0",
+]
+types = [
+    "types-channels",
+]
+
+[project.urls]
+Documentation = "https://channels.readthedocs.io/"
+Source = "http://github.com/django/channels"
+
+[tool.setuptools]
+
+[tool.setuptools.dynamic]
+version = { attr = "channels.__version__" }
+
+[tool.setuptools.packages.find]
+include = [ "channels*" ]
+
+[tool.flake8]
+exclude = ["venv/*", "tox/*", "docs/*", "testproject/*", "build/*"]
+max-line-length = 88
+extend-ignore = ["E203", "W503"]
+[tool.flake8.per-file-ignores]
+"tests/sample_project/config/asgi.py" = ["E402"]
+
+[tool.isort]
+profile = "black"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
