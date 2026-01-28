@@ -3,6 +3,7 @@ Community Projects
 
 These projects from the community are developed on top of Channels:
 
+* Django-SIO_, Socket.IO for Django, powered by Channels and compatible with the official Socket.IO clients.
 * Beatserver_, a periodic task scheduler for Django Channels.
 * EventStream_, a library to push data using the Server-Sent Events (SSE) protocol.
 * DjangoChannelsRestFramework_, a framework that provides DRF-like consumers for Channels.
@@ -26,6 +27,7 @@ These projects from the community are developed on top of Channels:
 
 If you'd like to add your project, please submit a PR with a link and brief description.
 
+.. _Django-SIO: https://django-sio.readthedocs.io/en/latest/
 .. _Beatserver: https://github.com/rajasimon/beatserver
 .. _EventStream: https://github.com/fanout/django-eventstream
 .. _DjangoChannelsRestFramework: https://github.com/hishnash/djangochannelsrestframework
