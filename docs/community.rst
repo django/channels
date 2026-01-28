@@ -27,6 +27,7 @@ These projects from the community are developed on top of Channels:
 
 If you'd like to add your project, please submit a PR with a link and brief description.
 
+.. _Django-SIO: https://django-sio.readthedocs.io/en/latest/
 .. _Beatserver: https://github.com/rajasimon/beatserver
 .. _EventStream: https://github.com/fanout/django-eventstream
 .. _DjangoChannelsRestFramework: https://github.com/hishnash/djangochannelsrestframework
