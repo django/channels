@@ -17,10 +17,9 @@ These projects from the community are developed on top of Channels:
 * DjangoChannelsJsonRpc_, a wrapper for the JSON-RPC protocol.
 * channels-demultiplexer_, a (de)multiplexer for ``AsyncJsonWebsocketConsumer`` consumers.
 * channels_postgres_, a Django Channels channel layer that uses PostgreSQL as its backing store.
-* channels-auth-token-middlewares_, Django REST framework token authentication middleware and
+* channels-auth-token-middlewares_, Django REST framework token authentication middleware and SimpleJWT_ middleware,
+  such as QueryStringSimpleJWTAuthTokenMiddleware_ for WebSocket authentication.
 * channels-valkey_, a Django Channels channel layer that uses valkey as its backing store.
-  SimpleJWT_ middleware, such as QueryStringSimpleJWTAuthTokenMiddleware_ for WebSocket
-  authentication.
 * types-channels_, type stubs for Channels from the `Python typeshed project`_.
   These stubs provide type checking support for mypy, PyCharm, and other type checkers.
 * django-channels-more-than-present_,  is a Django app which adds "rooms" and presence notification capability.
