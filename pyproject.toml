@@ -63,11 +63,10 @@ version = { attr = "channels.__version__" }
 include = [ "channels*" ]
 
 [tool.flake8]
-exclude = ["venv/*", "tox/*", "docs/*", "testproject/*", "build/*"]
+exclude = "venv/*,tox/*,docs/*,testproject/*,build/*"
 max-line-length = 88
-extend-ignore = ["E203", "W503"]
-[tool.flake8.per-file-ignores]
-"tests/sample_project/config/asgi.py" = ["E402"]
+extend-ignore = "E203,W503"
+per-file-ignores = "tests/sample_project/config/asgi.py:E402"
 
 [tool.isort]
 profile = "black"
