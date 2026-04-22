@@ -34,7 +34,7 @@ dependencies = [
     "asgiref>=3.9.0,<4",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 tests = [
     "async-timeout",
     "coverage~=4.5",
