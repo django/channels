@@ -34,6 +34,15 @@ dependencies = [
     "asgiref>=3.9.0,<4",
 ]
 
+
+[project.optional-dependencies]
+daphne = [
+    "daphne>=4.0.0",
+]
+types = [
+    "types-channels",
+]
+
 [dependency-groups]
 tests = [
     "async-timeout",
@@ -42,12 +51,6 @@ tests = [
     "pytest-django",
     "pytest-asyncio",
     "selenium",
-]
-daphne = [
-    "daphne>=4.0.0",
-]
-types = [
-    "types-channels",
 ]
 
 [project.urls]
