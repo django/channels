@@ -74,10 +74,10 @@ your environment:
 .. code-block:: sh
 
     cd channels/
-    python -m pip install -e .[tests]
+    python -m pip install -e . --group tests
 
-Note the ``[tests]`` section there; that tells ``pip`` that you want to install
-the ``tests`` extra, which will bring in testing dependencies like
+Note the ``--group tests`` section there; that tells ``pip`` that you want to install
+the ``tests`` dependency group from ``pyproject.toml``, which will bring in testing dependencies like
 ``pytest-django``.
 
 Then, you can run the tests:
