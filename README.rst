@@ -36,7 +36,7 @@ Dependencies
 ------------
 
 All Channels projects currently support Python 3.10 and up. ``channels`` is
-compatible with Django 5.1+.
+compatible with Django 5.2+.
 
 
 Contributing
