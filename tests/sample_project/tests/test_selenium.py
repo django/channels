@@ -8,7 +8,6 @@ from .selenium_mixin import SeleniumMixin
 
 
 class TestSampleApp(SeleniumMixin, ChannelsLiveServerTestCase):
-    serve_static = True
 
     def setUp(self):
         super().setUp()
