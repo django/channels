@@ -2,6 +2,7 @@ import pytest
 from django.core.exceptions import ImproperlyConfigured
 from django.urls import path, re_path
 
+from channels.exceptions import RouterResolver404
 from channels.routing import ChannelNameRouter, ProtocolTypeRouter, URLRouter
 
 
@@ -312,3 +313,26 @@ def test_invalid_routes():
         URLRouter([path("", include([]))])
 
     assert "include() is not supported in URLRouter." in str(exc)
+
+
+@pytest.mark.asyncio
+async def test_non_existent_route_returns_not_found():
+    """
+    Test URLRouter route validation on non existent routes
+    """
+    router = URLRouter([path("ws/existing", MockApplication(return_value=1))])
+
+    with pytest.raises(RouterResolver404):
+        await router(
+            {"type": "websocket", "path": "/", "root_path": "/"},
+            None,
+            None,
+        )
+
+    expected_result = await router(
+        {"type": "websocket", "path": "/ws/existing"},
+        None,
+        None,
+    )
+    assert expected_result == 1
+    # todo check nested routing
