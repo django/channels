@@ -1,6 +1,15 @@
 Full release notes, with more details and upgrade information, are available at:
 https://channels.readthedocs.io/en/latest/releases
 
+4.3.2 (2025-11-20)
+------------------
+
+* Confirmed support for Django 6.0.
+
+* Confirmed support for Python 3.14.
+
+* Added ``types`` extra for ``types-channels`` stubs. See installation docs.
+
 4.3.1 (2025-08-01)
 ------------------
 

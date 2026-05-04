@@ -12,6 +12,7 @@
     const socket = new WebSocket(wsPath);
 
     window.websocketConnected = false;
+    window.messageHandled = false;
 
     socket.onopen = () => {
       window.websocketConnected = true;
@@ -27,6 +28,7 @@
   function handleMessage(e) {
     const data = JSON.parse(e.data);
     renderState(data.count, data.messages);
+    window.messageHandled = true;
   }
 
   function renderState(count, messages) {

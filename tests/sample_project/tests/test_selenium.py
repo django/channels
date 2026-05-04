@@ -13,6 +13,9 @@ class TestSampleApp(SeleniumMixin, ChannelsLiveServerTestCase):
     def setUp(self):
         super().setUp()
         self.login()
+        self.open_admin_message_page()
+
+    def open_admin_message_page(self):
         self.open("/admin/sampleapp/message/")
         self.wait_for_websocket_connection()
 
@@ -29,7 +32,7 @@ class TestSampleApp(SeleniumMixin, ChannelsLiveServerTestCase):
         tabs = self.web_driver.window_handles
         self.web_driver.switch_to.window(tabs[1])
 
-        self.open("/admin/sampleapp/message/")
+        self.open_admin_message_page()
         titleInput = self.find_element(By.ID, "msgTitle")
         self.assertIsNotNone(titleInput, "Title input should be present")
         messageInput = self.find_element(By.ID, "msgTextArea")
@@ -52,6 +55,7 @@ class TestSampleApp(SeleniumMixin, ChannelsLiveServerTestCase):
     def test_real_time_delete_message(self):
         self._create_message()
         self.web_driver.refresh()
+        self.wait_for_websocket_message_handled()
 
         messageCount = self.find_element(By.ID, "messageCount")
         self.assertIsNotNone(messageCount, "Message count should be present")
@@ -61,7 +65,7 @@ class TestSampleApp(SeleniumMixin, ChannelsLiveServerTestCase):
         tabs = self.web_driver.window_handles
         self.web_driver.switch_to.window(tabs[1])
 
-        self.open("/admin/sampleapp/message/")
+        self.open_admin_message_page()
         deleteButton = self.find_element(By.ID, "deleteBtn")
         self.assertIsNotNone(deleteButton, "Delete button should be present")
         deleteButton.click()

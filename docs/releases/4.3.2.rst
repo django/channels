@@ -1,0 +1,13 @@
+4.3.2 Release Notes
+===================
+
+Channels 4.3.1 is a bugfix release in the 4.3 series.
+
+Bugfixes & Small Changes
+------------------------
+
+* Confirmed support for Django 6.0.
+
+* Confirmed support for Python 3.14.
+
+* Added ``types`` extra for ``types-channels`` stubs. See installation docs.
