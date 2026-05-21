@@ -332,14 +332,20 @@ class InMemoryChannelLayer(BaseChannelLayer):
                     self.channels.pop(channel, None)
 
         # Group Expiration
+        expired_channels = set()
         timeout = int(time.time()) - self.group_expiry
-        for channels in self.groups.values():
+        for group, channels in list(self.groups.items()):
             for name, timestamp in list(channels.items()):
                 # If join time is older than group_expiry
                 # end the group membership
                 if timestamp and timestamp < timeout:
                     # Delete from group
                     channels.pop(name, None)
+                    expired_channels.add(name)
+            if not channels:
+                self.groups.pop(group, None)
+        for channel in expired_channels:
+            self._remove_empty_channel(channel)
 
     # Flush extension
 
@@ -357,6 +363,26 @@ class InMemoryChannelLayer(BaseChannelLayer):
         """
         for channels in self.groups.values():
             channels.pop(channel, None)
+
+    def _channel_is_in_group(self, channel):
+        """
+        Checks if a channel remains in any group.
+        """
+        return any(channel in channels for channels in self.groups.values())
+
+    def _remove_empty_channel(self, channel):
+        """
+        Removes an empty channel if it is no longer in any group and no receiver
+        is currently waiting on it.
+        """
+        queue = self.channels.get(channel)
+        if (
+            queue is not None
+            and queue.empty()
+            and not queue._getters
+            and not self._channel_is_in_group(channel)
+        ):
+            self.channels.pop(channel, None)
 
     # Groups extension
 
@@ -383,6 +409,7 @@ class InMemoryChannelLayer(BaseChannelLayer):
             # is group now empty? If yes remove it
             if not group_channels:
                 self.groups.pop(group, None)
+            self._remove_empty_channel(channel)
 
     async def group_send(self, group, message):
         # Check types
