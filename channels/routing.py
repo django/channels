@@ -136,6 +136,46 @@ class URLRouter:
             raise ValueError("No route found for path %r." % path)
 
 
+class ValidURLRouter(URLRouter):
+    """
+    URLRouter variant that returns 404 or closes WebSocket on invalid routes.
+
+    Catches ValueError and Resolver404 from URL resolution.
+
+    - For HTTP, responds with 404.
+    - For WebSocket, closes with code 1008 before handshake (resulting in 403).
+    - Other scope types propagate the exception.
+    """
+
+    async def __call__(self, scope, receive, send):
+        try:
+            return await super().__call__(scope, receive, send)
+        except (ValueError, Resolver404):
+            if scope["type"] == "http":
+                await send(
+                    {
+                        "type": "http.response.start",
+                        "status": 404,
+                        "headers": [(b"content-type", b"text/plain")],
+                    }
+                )
+                await send(
+                    {
+                        "type": "http.response.body",
+                        "body": b"404 Not Found",
+                    }
+                )
+            elif scope["type"] == "websocket":
+                await send(
+                    {
+                        "type": "websocket.close",
+                        "code": 1008,
+                    }
+                )
+            else:
+                raise
+
+
 class ChannelNameRouter:
     """
     Maps to different applications based on a "channel" key in the scope
