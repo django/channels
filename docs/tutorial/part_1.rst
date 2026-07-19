@@ -81,6 +81,23 @@ following contents:
             urls.py
             wsgi.py
 
+Updating your settings
+---------------------
+
+We need to add a few lines to ``settings.py`` to let Django know that it should use Daphne.
+
+.. code-block:: python
+
+    CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': "channels.layers.InMemoryChannelLayer"
+        }
+    }
+
+    WSGI_APPLICATION = 'um_be.wsgi.application'
+    ASGI_APPLICATION = 'um_be.asgi.application'
+
+
 Creating the Chat app
 ---------------------
 
