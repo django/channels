@@ -46,8 +46,12 @@ async def await_many_dispatch(consumer_callables, dispatch):
             # Find the completed one(s), yield results, and replace them
             for i, task in enumerate(tasks):
                 if task.done():
-                    result = task.result()
-                    await dispatch(result)
+                    # Pass task result to dispatch
+                    await dispatch(task.result())
+                    # Cleanup memory for task and replace it with a new one
+                    # this reduces the reference counter for result which
+                    # may be released before an other task completes
+                    del task
                     tasks[i] = asyncio.ensure_future(consumer_callables[i]())
     finally:
         # Make sure we clean up tasks on exit
