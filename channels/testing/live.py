@@ -1,3 +1,4 @@
+import multiprocessing
 from functools import partial
 
 from daphne.testing import DaphneProcess
@@ -23,7 +24,7 @@ def set_database_connection():
     from django.conf import settings
 
     test_db_name = settings.DATABASES["default"]["TEST"]["NAME"]
-    if not test_db_name:
+    if not test_db_name and multiprocessing.get_start_method() == "spawn":
         test_db_name = TEST_DATABASE_PREFIX + settings.DATABASES["default"]["NAME"]
     settings.DATABASES["default"]["NAME"] = test_db_name
 
