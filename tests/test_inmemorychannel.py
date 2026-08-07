@@ -118,6 +118,55 @@ async def test_groups_basic(channel_layer):
 
 
 @pytest.mark.asyncio
+async def test_group_discard_removes_empty_orphaned_channel(channel_layer):
+    """
+    Tests that group_discard cleans up empty channel queues that are no longer
+    reachable through any group.
+    """
+    await channel_layer.group_add("test-group", "test-gr-chan-1")
+    channel_layer.channels["test-gr-chan-1"] = asyncio.Queue()
+
+    await channel_layer.group_discard("test-group", "test-gr-chan-1")
+
+    assert "test-gr-chan-1" not in channel_layer.channels
+
+
+@pytest.mark.asyncio
+async def test_group_discard_preserves_waiting_receiver(channel_layer):
+    """
+    Tests that group_discard does not remove an empty channel queue that still
+    has a pending receiver.
+    """
+    receive_task = asyncio.create_task(channel_layer.receive("test-gr-chan-1"))
+    await asyncio.sleep(0)
+
+    await channel_layer.group_add("test-group", "test-gr-chan-1")
+    await channel_layer.group_discard("test-group", "test-gr-chan-1")
+
+    assert "test-gr-chan-1" in channel_layer.channels
+
+    await channel_layer.send("test-gr-chan-1", {"type": "message.1"})
+    assert (await receive_task)["type"] == "message.1"
+    assert "test-gr-chan-1" not in channel_layer.channels
+
+
+@pytest.mark.asyncio
+async def test_group_expiry_removes_empty_orphaned_channel(channel_layer):
+    """
+    Tests that group expiry cleans up empty channel queues that are no longer
+    reachable through any group.
+    """
+    await channel_layer.group_add("test-group", "test-gr-chan-1")
+    channel_layer.channels["test-gr-chan-1"] = asyncio.Queue()
+    channel_layer.groups["test-group"]["test-gr-chan-1"] = 1
+
+    await channel_layer.group_send("test-group", {"type": "message.1"})
+
+    assert "test-group" not in channel_layer.groups
+    assert "test-gr-chan-1" not in channel_layer.channels
+
+
+@pytest.mark.asyncio
 async def test_groups_channel_full(channel_layer):
     """
     Tests that group_send ignores ChannelFull
