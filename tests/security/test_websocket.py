@@ -1,8 +1,40 @@
 import pytest
+from django.test import override_settings
 
 from channels.generic.websocket import AsyncWebsocketConsumer
-from channels.security.websocket import OriginValidator
+from channels.security.websocket import (
+    AllowedHostsOriginValidator,
+    OriginValidator,
+)
 from channels.testing import WebsocketCommunicator
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.asyncio
+async def test_allowed_hosts_origin_validator():
+    """
+    Tests that AllowedHostsOriginValidator correctly allows/denies connections.
+    """
+    with override_settings(
+        DEBUG=True,
+        ALLOWED_HOSTS=[],
+    ):
+        # Make our test application
+        application = AllowedHostsOriginValidator(AsyncWebsocketConsumer())
+        # Test a subdomain of localhost
+        communicator = WebsocketCommunicator(
+            application, "/", headers=[(b"origin", b"http://subdomain.localhost:8000")]
+        )
+        connected, _ = await communicator.connect()
+        assert connected
+        await communicator.disconnect()
+        # Test a bad connection
+        communicator = WebsocketCommunicator(
+            application, "/", headers=[(b"origin", b"http://bad-domain.com")]
+        )
+        connected, _ = await communicator.connect()
+        assert not connected
+        await communicator.disconnect()
 
 
 @pytest.mark.django_db(transaction=True)
