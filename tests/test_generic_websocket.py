@@ -329,6 +329,25 @@ async def test_json_websocket_consumer():
 
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.asyncio
+async def test_json_websocket_consumer_invalid_json():
+    class TestConsumer(JsonWebsocketConsumer):
+        def connect(self):
+            self.accept()
+
+        def receive_json(self, data=None):
+            self.send_json({"got": data})
+
+    communicator = WebsocketCommunicator(TestConsumer(), "/testws/")
+    connected, _ = await communicator.connect()
+    assert connected
+    await communicator.send_to(text_data="{not-json")
+    response = await communicator.receive_output()
+    assert response["type"] == "websocket.close"
+    assert response["code"] == 1007
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.asyncio
 async def test_async_json_websocket_consumer():
     """
     Tests that AsyncJsonWebsocketConsumer is implemented correctly.
@@ -358,6 +377,25 @@ async def test_async_json_websocket_consumer():
     await communicator.send_to(bytes_data=b"w\0\0\0")
     with pytest.raises(ValueError):
         await communicator.wait()
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.asyncio
+async def test_async_json_websocket_consumer_invalid_json():
+    class TestConsumer(AsyncJsonWebsocketConsumer):
+        async def connect(self):
+            await self.accept()
+
+        async def receive_json(self, data=None):
+            await self.send_json({"got": data})
+
+    communicator = WebsocketCommunicator(TestConsumer(), "/testws/")
+    connected, _ = await communicator.connect()
+    assert connected
+    await communicator.send_to(text_data="{not-json")
+    response = await communicator.receive_output()
+    assert response["type"] == "websocket.close"
+    assert response["code"] == 1007
 
 
 @pytest.mark.django_db(transaction=True)

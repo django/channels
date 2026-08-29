@@ -317,6 +317,10 @@ The only API differences are:
 If you want to customise the JSON encoding and decoding, you can override
 the ``encode_json`` and ``decode_json`` classmethods.
 
+Malformed text frames no longer crash the worker. The connection is closed
+with WebSocket code 1007; override ``handle_invalid_json`` if you want to
+reply with an error payload instead.
+
 
 AsyncJsonWebsocketConsumer
 ~~~~~~~~~~~~~~~~~~~~~~~~~~

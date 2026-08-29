@@ -1,4 +1,5 @@
 import json
+import logging
 
 from asgiref.sync import async_to_sync
 
@@ -10,6 +11,8 @@ from ..exceptions import (
     InvalidChannelLayerError,
     StopConsumer,
 )
+
+logger = logging.getLogger("django.channels.generic.websocket")
 
 
 class WebsocketConsumer(SyncConsumer):
@@ -127,10 +130,19 @@ class JsonWebsocketConsumer(WebsocketConsumer):
     """
 
     def receive(self, text_data=None, bytes_data=None, **kwargs):
-        if text_data:
-            self.receive_json(self.decode_json(text_data), **kwargs)
-        else:
+        if not text_data:
             raise ValueError("No text section for incoming WebSocket frame!")
+        try:
+            content = self.decode_json(text_data)
+        except json.JSONDecodeError:
+            self.handle_invalid_json(text_data)
+            return
+        self.receive_json(content, **kwargs)
+
+    def handle_invalid_json(self, raw_data):
+        """Close with 1007 so a bad frame doesn't take down the process."""
+        logger.warning("Malformed JSON on WebSocket")
+        self.close(code=1007)
 
     def receive_json(self, content, **kwargs):
         """
@@ -266,10 +278,19 @@ class AsyncJsonWebsocketConsumer(AsyncWebsocketConsumer):
     """
 
     async def receive(self, text_data=None, bytes_data=None, **kwargs):
-        if text_data:
-            await self.receive_json(await self.decode_json(text_data), **kwargs)
-        else:
+        if not text_data:
             raise ValueError("No text section for incoming WebSocket frame!")
+        try:
+            content = await self.decode_json(text_data)
+        except json.JSONDecodeError:
+            await self.handle_invalid_json(text_data)
+            return
+        await self.receive_json(content, **kwargs)
+
+    async def handle_invalid_json(self, raw_data):
+        """Close with 1007 so a bad frame doesn't take down the process."""
+        logger.warning("Malformed JSON on WebSocket")
+        await self.close(code=1007)
 
     async def receive_json(self, content, **kwargs):
         """
