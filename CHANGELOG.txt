@@ -1,6 +1,13 @@
 Full release notes, with more details and upgrade information, are available at:
 https://channels.readthedocs.io/en/latest/releases
 
+4.3.3 (unreleased)
+------------------
+
+* ``JsonWebsocketConsumer`` / ``AsyncJsonWebsocketConsumer`` close with
+  1007 on malformed JSON instead of letting ``JSONDecodeError`` kill the
+  process.
+
 4.3.2 (2025-11-20)
 ------------------
 
