@@ -1,3 +1,6 @@
+from django.urls import Resolver404
+
+
 class RequestAborted(Exception):
     """
     Raised when the incoming request tells us it's aborted partway through
@@ -60,6 +63,15 @@ class MessageTooLarge(Exception):
 class StopConsumer(Exception):
     """
     Raised when a consumer wants to stop and close down its application instance.
+    """
+
+    pass
+
+
+class RouterResolver404(Resolver404, ValueError):
+    """
+    Raised when a router cannot resolve a path.
+    Backwards compatible, in future ValueError will be deprecated in favor of Resolver404
     """
 
     pass
