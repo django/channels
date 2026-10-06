@@ -1,4 +1,5 @@
 import asyncio
+import re
 
 import async_timeout
 import pytest
@@ -68,6 +69,24 @@ async def test_send_capacity(channel_layer):
     await channel_layer.send("test-channel-1", {"type": "test.message"})
     with pytest.raises(ChannelFull):
         await channel_layer.send("test-channel-1", {"type": "test.message"})
+
+
+@pytest.mark.asyncio
+async def test_send_channel_capacity():
+    """
+    Makes sure channel_capacity patterns override the default capacity
+    """
+    channel_layer = InMemoryChannelLayer(
+        capacity=3, channel_capacity={"small-*": 1, re.compile(r"^big-"): 5}
+    )
+    assert channel_layer.get_capacity("small-channel") == 1
+    assert channel_layer.get_capacity("big-channel") == 5
+    assert channel_layer.get_capacity("other-channel") == 3
+    await channel_layer.send("small-channel", {"type": "test.message"})
+    with pytest.raises(ChannelFull):
+        await channel_layer.send("small-channel", {"type": "test.message"})
+    await channel_layer.flush()
+    await channel_layer.close()
 
 
 @pytest.mark.asyncio
