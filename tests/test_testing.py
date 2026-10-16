@@ -35,6 +35,28 @@ async def test_http_communicator():
     assert response["status"] == 200
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "body_messages,expected_body",
+    [
+        ([{}], b""),
+        ([{"body": b"hello", "more_body": True}, {}], b"hello"),
+        ([{"more_body": True}, {"body": b"hello"}], b"hello"),
+        ([{"body": b"hello"}], b"hello"),
+    ],
+)
+async def test_http_communicator_optional_response_body(body_messages, expected_body):
+    async def application(scope, receive, send):
+        await receive()
+        await send({"type": "http.response.start", "status": 200})
+        for message in body_messages:
+            await send({"type": "http.response.body", **message})
+
+    communicator = HttpCommunicator(application, "GET", "/")
+    response = await communicator.get_response()
+    assert response == {"status": 200, "headers": [], "body": expected_body}
+
+
 class SimpleWebsocketApp(WebsocketConsumer):
     """
     Barebones WebSocket ASGI app for testing.
