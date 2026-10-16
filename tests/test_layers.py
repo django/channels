@@ -103,7 +103,15 @@ async def test_send_receive():
 )
 @pytest.mark.parametrize(
     "channel_name,expected_valid",
-    [("¯\\_(ツ)_/¯", False), ("chat", True), ("chat" * 100, False)],
+    [
+        ("¯\\_(ツ)_/¯", False),
+        ("chat", True),
+        ("chat_01.-", True),
+        ("chat" * 100, False),
+        ("chat\n", False),
+        ("chat١", False),
+        ("chat９", False),
+    ],
 )
 def test_channel_and_group_name_validation(method, channel_name, expected_valid):
     if expected_valid:
@@ -111,6 +119,25 @@ def test_channel_and_group_name_validation(method, channel_name, expected_valid)
     else:
         with pytest.raises(TypeError):
             method(channel_name)
+
+
+@pytest.mark.parametrize(
+    "name,expected_valid",
+    [
+        ("specific!", True),
+        ("specific!local_01.-", True),
+        ("specific!é", False),
+        ("specific!١", False),
+        ("specific!local\n", False),
+    ],
+)
+def test_process_specific_channel_name_validation(name, expected_valid):
+    layer = BaseChannelLayer()
+    if expected_valid:
+        assert layer.require_valid_channel_name(name)
+    else:
+        with pytest.raises(TypeError):
+            layer.require_valid_channel_name(name)
 
 
 @pytest.mark.parametrize(

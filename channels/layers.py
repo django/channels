@@ -144,8 +144,8 @@ class BaseChannelLayer:
 
     # Name validation functions
 
-    channel_name_regex = re.compile(r"^[a-zA-Z\d\-_.]+(\![\d\w\-_.]*)?$")
-    group_name_regex = re.compile(r"^[a-zA-Z\d\-_.]+$")
+    channel_name_regex = re.compile(r"^[a-zA-Z0-9\-_.]+(\![a-zA-Z0-9\-_.]*)?\Z")
+    group_name_regex = re.compile(r"^[a-zA-Z0-9\-_.]+\Z")
     invalid_name_error = (
         "{} name must be a valid unicode string "
         + "with length < {} ".format(MAX_NAME_LENGTH)
