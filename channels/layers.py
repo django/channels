@@ -108,7 +108,7 @@ class BaseChannelLayer:
     def __init__(self, expiry=60, capacity=100, channel_capacity=None):
         self.expiry = expiry
         self.capacity = capacity
-        self.channel_capacity = channel_capacity or {}
+        self.channel_capacity = self.compile_capacities(channel_capacity or {})
 
     def compile_capacities(self, channel_capacity):
         """
