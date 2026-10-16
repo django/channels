@@ -103,6 +103,34 @@ async def test_websocket_communicator():
 
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.asyncio
+@pytest.mark.parametrize("payload", ["", b""])
+async def test_websocket_communicator_empty_frame(payload):
+    communicator = WebsocketCommunicator(SimpleWebsocketApp(), "/testws/")
+    connected, _ = await communicator.connect()
+    assert connected
+    try:
+        if isinstance(payload, str):
+            await communicator.send_to(text_data=payload)
+        else:
+            await communicator.send_to(bytes_data=payload)
+        assert await communicator.receive_from() == payload
+    finally:
+        await communicator.disconnect()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "text_data,bytes_data",
+    [(None, None), ("", b""), ("hello", b""), ("", b"hello"), ("hello", b"hello")],
+)
+async def test_websocket_communicator_requires_one_payload(text_data, bytes_data):
+    communicator = WebsocketCommunicator(SimpleWebsocketApp(), "/testws/")
+    with pytest.raises(AssertionError, match="You must supply exactly one"):
+        await communicator.send_to(text_data=text_data, bytes_data=bytes_data)
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.asyncio
 async def test_websocket_incorrect_read_json():
     """
     When using an invalid communicator method, an assertion error will be raised with

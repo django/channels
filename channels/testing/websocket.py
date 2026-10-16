@@ -51,11 +51,11 @@ class WebsocketCommunicator(ApplicationCommunicator):
         Sends a WebSocket frame to the application.
         """
         # Make sure we have exactly one of the arguments
-        assert bool(text_data) != bool(
-            bytes_data
+        assert (text_data is not None) != (
+            bytes_data is not None
         ), "You must supply exactly one of text_data or bytes_data"
         # Send the right kind of event
-        if text_data:
+        if text_data is not None:
             assert isinstance(text_data, str), "The text_data argument must be a str"
             await self.send_input({"type": "websocket.receive", "text": text_data})
         else:
