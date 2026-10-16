@@ -46,8 +46,9 @@ class HttpCommunicator(ApplicationCommunicator):
         while True:
             chunk = await self.receive_output(timeout)
             assert chunk["type"] == "http.response.body"
-            assert isinstance(chunk["body"], bytes)
-            response_start["body"] += chunk["body"]
+            body = chunk.get("body", b"")
+            assert isinstance(body, bytes)
+            response_start["body"] += body
             if not chunk.get("more_body", False):
                 break
         # Return structured info
