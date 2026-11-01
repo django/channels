@@ -72,7 +72,7 @@ class CookieMiddleware:
         if expires is not None:
             if isinstance(expires, datetime.datetime):
                 if timezone.is_aware(expires):
-                    expires = timezone.make_naive(expires, timezone.utc)
+                    expires = timezone.make_naive(expires, datetime.timezone.utc)
                 delta = expires - expires.utcnow()
                 # Add one second so the date matches exactly (a fraction of
                 # time gets lost between converting to a timedelta and

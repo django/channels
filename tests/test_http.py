@@ -1,3 +1,4 @@
+import datetime
 import re
 from importlib import import_module
 
@@ -31,6 +32,17 @@ async def test_set_cookie():
     assert message == {
         "headers": [(b"Set-Cookie", b"Testing-Key=testing-value; Path=/; SameSite=lax")]
     }
+
+
+def test_set_cookie_aware_expires():
+    message = {}
+    expires = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=1)
+    CookieMiddleware.set_cookie(
+        message, "Testing-Key", "testing-value", expires=expires
+    )
+    value = message["headers"][0][1].decode("utf-8")
+    max_age = int(re.search(r"Max-Age=(\d+)", value).group(1))
+    assert 3599 <= max_age <= 3601
 
 
 @pytest.mark.django_db(transaction=True)
