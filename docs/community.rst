@@ -19,6 +19,8 @@ These projects from the community are developed on top of Channels:
 * channels_postgres_, a Django Channels channel layer that uses PostgreSQL as its backing store.
 * channels-auth-token-middlewares_, Django REST framework token authentication middleware and SimpleJWT_ middleware,
   such as QueryStringSimpleJWTAuthTokenMiddleware_ for WebSocket authentication.
+* channels-jwt-subprotocol_, middleware and consumer mixins that authenticate WebSockets with a SimpleJWT (or any)
+  token sent as a subprotocol instead of the query string, and refuse with a close code the client receives.
 * channels-valkey_, a Django Channels channel layer that uses valkey as its backing store.
 * types-channels_, type stubs for Channels from the `Python typeshed project`_.
   These stubs provide type checking support for mypy, PyCharm, and other type checkers.
@@ -40,6 +42,7 @@ If you'd like to add your project, please submit a PR with a link and brief desc
 .. _channels-demultiplexer: https://github.com/csdenboer/channels-demultiplexer
 .. _channels_postgres: https://github.com/danidee10/channels_postgres
 .. _channels-auth-token-middlewares: https://github.com/YegorDB/django-channels-auth-token-middlewares
+.. _channels-jwt-subprotocol: https://theloops.live/engineering/channels-jwt-subprotocol
 .. _channels-valkey: https://github.com/amirreza8002/channels_valkey
 .. _SimpleJWT: https://github.com/jazzband/djangorestframework-simplejwt
 .. _QueryStringSimpleJWTAuthTokenMiddleware: https://github.com/YegorDB/django-channels-auth-token-middlewares/tree/master/tutorial/drf#querystringsimplejwtauthtokenmiddleware
