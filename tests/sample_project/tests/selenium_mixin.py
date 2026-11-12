@@ -89,6 +89,10 @@ class SeleniumMixin:
             driver.find_element(by=By.NAME, value="username").send_keys(username)
             driver.find_element(by=By.NAME, value="password").send_keys(password)
             driver.find_element(by=By.XPATH, value='//input[@type="submit"]').click()
+            # The click returns before the navigation starts: wait for the
+            # redirect away from the login page, otherwise the next
+            # driver.get() races with (and is overridden by) the login redirect.
+            WebDriverWait(driver, 5).until(lambda d: "admin/login" not in d.current_url)
         self._wait_until_page_ready(driver=driver)
 
     def logout(self, driver=None):
