@@ -1,98 +1,171 @@
-from functools import partial
+import threading
 
-from daphne.testing import DaphneProcess
+from daphne.endpoints import build_endpoint_description_strings
+from daphne.testing import _reinstall_reactor
 from django.contrib.staticfiles.handlers import ASGIStaticFilesHandler
-from django.core.exceptions import ImproperlyConfigured
 from django.db import connections
-from django.db.backends.base.creation import TEST_DATABASE_PREFIX
 from django.test.testcases import TransactionTestCase
 from django.test.utils import modify_settings
+from django.utils.functional import classproperty
 
 from channels.routing import get_default_application
 
 
-def make_application(*, static_wrapper):
-    # Module-level function for pickle-ability
-    application = get_default_application()
-    if static_wrapper is not None:
-        application = static_wrapper(application)
-    return application
+class ChannelsLiveServerThread(threading.Thread):
+    """Thread for running a live ASGI server while the tests are running."""
 
+    # Defaults to daphne.server.Server. It can't be imported at module level:
+    # it is bound to a Twisted reactor which can't be restarted, so a fresh
+    # one is installed (and daphne.server re-imported) by each thread.
+    server_class = None
 
-def set_database_connection():
-    from django.conf import settings
+    def __init__(self, host, static_handler=None, connections_override=None, port=0):
+        self.host = host
+        self.port = port
+        self.is_ready = threading.Event()
+        self.error = None
+        self.static_handler = static_handler
+        self.connections_override = connections_override
+        super().__init__()
 
-    test_db_name = settings.DATABASES["default"]["TEST"]["NAME"]
-    if not test_db_name:
-        test_db_name = TEST_DATABASE_PREFIX + settings.DATABASES["default"]["NAME"]
-    settings.DATABASES["default"]["NAME"] = test_db_name
+    def run(self):
+        """
+        Set up the live server and then loop over handling ASGI requests.
+        """
+        if self.connections_override:
+            # Override this thread's database connections with the ones
+            # provided by the main thread.
+            for alias, conn in self.connections_override.items():
+                connections[alias] = conn
+        try:
+            # The Twisted reactor can't be restarted: install a fresh one
+            # for this thread, as DaphneProcess does in its own process.
+            _reinstall_reactor()
+            from twisted.internet import reactor
+
+            self.reactor = reactor
+            self.httpd = self._create_server()
+            # The server calls _server_is_ready() once it is listening, and
+            # then blocks running the reactor until terminate() stops it.
+            self.httpd.run()
+            if not self.is_ready.is_set():
+                raise RuntimeError("The live server stopped before being ready.")
+        except Exception as e:
+            self.error = e
+        finally:
+            connections.close_all()
+            # Never leave the main thread waiting.
+            self.is_ready.set()
+
+    def _create_server(self):
+        server_class = self.server_class
+        if server_class is None:
+            from daphne.server import Server as server_class
+        endpoints = build_endpoint_description_strings(host=self.host, port=self.port)
+        application = get_default_application()
+        if self.static_handler is not None:
+            application = self.static_handler(application)
+        return server_class(
+            application=application,
+            endpoints=endpoints,
+            signal_handlers=False,
+            ready_callable=self._server_is_ready,
+            verbosity=0,
+        )
+
+    def _server_is_ready(self):
+        """Called by Daphne when the server is ready and listening."""
+        # If binding to port zero, assign the port allocated by the OS.
+        if self.port == 0:
+            self.port = self.httpd.listening_addresses[0][1]
+        self.is_ready.set()
+
+    def terminate(self):
+        reactor = getattr(self, "reactor", None)
+        if reactor is not None and reactor.running:
+            # Stop the ASGI server from within its own thread.
+            reactor.callFromThread(reactor.stop)
+        self.join(timeout=5)
 
 
 class ChannelsLiveServerTestCase(TransactionTestCase):
     """
-    Does basically the same as TransactionTestCase but also launches a
-    live Daphne server in a separate process, so
-    that the tests may use another test framework, such as Selenium,
-    instead of the built-in dummy client.
+    Do basically the same as TransactionTestCase but also launch a live ASGI
+    server in a separate thread so that the tests may use another testing
+    framework, such as Selenium for example, instead of the built-in dummy
+    client.
+    It inherits from TransactionTestCase instead of TestCase because the
+    threads don't share the same transactions (unless if using in-memory
+    sqlite) and each thread needs to commit all their transactions so that the
+    other thread can see the changes.
     """
 
     host = "localhost"
-    ProtocolServerProcess = DaphneProcess
+    port = 0
+    server_thread_class = ChannelsLiveServerThread
     static_wrapper = ASGIStaticFilesHandler
     serve_static = True
 
-    @property
-    def live_server_url(self):
-        return "http://%s:%s" % (self.host, self._port)
+    @classproperty
+    def live_server_url(cls):
+        return "http://%s:%s" % (cls.host, cls.server_thread.port)
 
-    @property
-    def live_server_ws_url(self):
-        return "ws://%s:%s" % (self.host, self._port)
+    @classproperty
+    def live_server_ws_url(cls):
+        return "ws://%s:%s" % (cls.host, cls.server_thread.port)
+
+    @classproperty
+    def allowed_host(cls):
+        return cls.host
+
+    @classmethod
+    def _make_connections_override(cls):
+        connections_override = {}
+        for conn in connections.all():
+            # If using in-memory sqlite databases, pass the connections to
+            # the server thread.
+            if conn.vendor == "sqlite" and conn.is_in_memory_db():
+                connections_override[conn.alias] = conn
+        return connections_override
 
     @classmethod
     def setUpClass(cls):
-        for connection in connections.all():
-            if cls._is_in_memory_db(connection):
-                raise ImproperlyConfigured(
-                    "ChannelLiveServerTestCase can not be used with in memory databases"
-                )
-
         super().setUpClass()
-
-        cls._live_server_modified_settings = modify_settings(
-            ALLOWED_HOSTS={"append": cls.host}
+        cls.enterClassContext(
+            modify_settings(ALLOWED_HOSTS={"append": cls.allowed_host})
         )
-        cls._live_server_modified_settings.enable()
+        cls._start_server_thread()
 
-        get_application = partial(
-            make_application,
-            static_wrapper=cls.static_wrapper if cls.serve_static else None,
-        )
-        cls._server_process = cls.ProtocolServerProcess(
+    @classmethod
+    def _start_server_thread(cls):
+        connections_override = cls._make_connections_override()
+        for conn in connections_override.values():
+            # Explicitly enable thread-shareability for this connection.
+            conn.inc_thread_sharing()
+
+        cls.server_thread = cls._create_server_thread(connections_override)
+        cls.server_thread.daemon = True
+        cls.server_thread.start()
+        cls.addClassCleanup(cls._terminate_thread)
+
+        # Wait for the live server to be ready
+        cls.server_thread.is_ready.wait()
+        if cls.server_thread.error:
+            raise cls.server_thread.error
+
+    @classmethod
+    def _create_server_thread(cls, connections_override):
+        return cls.server_thread_class(
             cls.host,
-            get_application,
-            setup=set_database_connection,
+            cls.static_wrapper if cls.serve_static else None,
+            connections_override=connections_override,
+            port=cls.port,
         )
-        cls._server_process.start()
-        while True:
-            if not cls._server_process.ready.wait(timeout=1):
-                if cls._server_process.is_alive():
-                    continue
-                raise RuntimeError("Server stopped") from None
-            break
-        cls._port = cls._server_process.port.value
 
     @classmethod
-    def tearDownClass(cls):
-        cls._server_process.terminate()
-        cls._server_process.join()
-        cls._live_server_modified_settings.disable()
-        super().tearDownClass()
-
-    @classmethod
-    def _is_in_memory_db(cls, connection):
-        """
-        Check if DatabaseWrapper holds in memory database.
-        """
-        if connection.vendor == "sqlite":
-            return connection.is_in_memory_db()
+    def _terminate_thread(cls):
+        # Terminate the live server's thread.
+        cls.server_thread.terminate()
+        # Restore shared connections' non-shareability.
+        for conn in cls.server_thread.connections_override.values():
+            conn.dec_thread_sharing()
