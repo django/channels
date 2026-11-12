@@ -344,23 +344,14 @@ standard Django ``LiveServerTestCase``:
         def test_live_stuff(self):
             call_external_testing_thing(self.live_server_url)
 
-.. note::
+The live server runs in a separate thread of the test process, like Django's
+``LiveServerTestCase``. This means that in-memory SQLite databases can be used,
+and that state held in the test process's memory, such as Django's
+``mail.outbox``, is shared between the tests and the server.
 
-    You can't use an in-memory database for your live tests. Therefore
-    include a test database file name in your settings to tell Django to
-    use a file database if you use SQLite:
-
-    .. code-block:: python
-
-        DATABASES = {
-            "default": {
-                "ENGINE": "django.db.backends.sqlite3",
-                "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
-                "TEST": {
-                    "NAME": os.path.join(BASE_DIR, "db_test.sqlite3"),
-                },
-            },
-        }
+Because the test and the server threads use separate database connections, the
+test case inherits from ``TransactionTestCase``: data created by a test is
+committed so that the server can see it.
 
 serve_static
 ~~~~~~~~~~~~
