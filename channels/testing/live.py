@@ -13,6 +13,14 @@ from channels.routing import get_default_application
 
 def make_application(*, static_wrapper):
     # Module-level function for pickle-ability
+    # The server runs in a child process that may be a fresh interpreter
+    # (spawn, or forkserver, the default on Python 3.14): make sure Django
+    # is set up before importing the application, which may import models.
+    # django.setup() is a no-op when the apps are already populated, as
+    # under fork.
+    import django
+
+    django.setup()
     application = get_default_application()
     if static_wrapper is not None:
         application = static_wrapper(application)
